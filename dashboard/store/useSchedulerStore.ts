@@ -141,7 +141,7 @@ export const useSchedulerStore = create<SchedulerState>((set, get) => ({
                 priority: e.priority ?? 'medium',
                 recurrenceType: e.recurrenceType ?? 'none',
                 status: e.status ?? 'scheduled',
-            }));
+            } as SchedulerEvent));
             set({ events, isLoading: false });
         } catch (e) {
             console.error('fetchEvents error:', e);
