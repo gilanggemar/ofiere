@@ -65,20 +65,35 @@ export async function PUT(
 
     // Secret fields — only update if a new value is explicitly provided (not the redacted placeholder)
     if (body.openclawAuthToken !== undefined && body.openclawAuthToken !== '••••••••') {
+        updates.openclaw_auth_token = encrypt(body.openclawAuthToken);
+    }
+    if (body.agentZeroApiKey !== undefined && body.agentZeroApiKey !== '••••••••') {
+        updates.agent_zero_api_key = encrypt(body.agentZeroApiKey);
+    }
+
+    const { error } = await db.from('connection_profiles').update(updates).eq('user_id', userId).eq('id', id);
+    if (error) return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
+    return NextResponse.json({ success: true });
+}
+
+// DELETE — Remove profile
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
 ) {
-            const userId = await getAuthUserId();
-            if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await getAuthUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const { id } = await params;
 
-            const { id } = await params;
-            // Prevent deleting the active profile
-            const { data: profile } = await db.from('connection_profiles').select('is_active').eq('user_id', userId).eq('id', id).single();
-            if (profile && profile.is_active) {
-                return NextResponse.json(
-                    { error: 'Cannot delete the active profile. Switch to another profile first.' },
-                    { status: 400 }
-                );
-            }
-            await db.from('connection_profiles').delete().eq('user_id', userId).eq('id', id);
-            return NextResponse.json({ success: true });
-        }
+    // Prevent deleting the active profile
+    const { data: profile } = await db.from('connection_profiles').select('is_active').eq('user_id', userId).eq('id', id).single();
+    if (profile && profile.is_active) {
+        return NextResponse.json(
+            { error: 'Cannot delete the active profile. Switch to another profile first.' },
+            { status: 400 }
+        );
+    }
+    await db.from('connection_profiles').delete().eq('user_id', userId).eq('id', id);
+    return NextResponse.json({ success: true });
+}
