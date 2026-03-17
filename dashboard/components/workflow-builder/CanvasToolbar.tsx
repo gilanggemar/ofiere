@@ -2,18 +2,21 @@
 
 import React, { useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Play, Square, Save, Flame, BoxSelect } from "lucide-react";
+import { Plus, Play, Square, Save, Flame, BoxSelect, Loader2 } from "lucide-react";
 import { useWorkflowBuilderStore } from "@/store/useWorkflowBuilderStore";
 
 export default function CanvasToolbar() {
     const workflowMeta = useWorkflowBuilderStore((s) => s.workflowMeta);
+    const nodes = useWorkflowBuilderStore((s) => s.nodes);
+    const edges = useWorkflowBuilderStore((s) => s.edges);
     const isDirty = useWorkflowBuilderStore((s) => s.isDirty);
     const isExecuting = useWorkflowBuilderStore((s) => s.isExecuting);
     const togglePalette = useWorkflowBuilderStore((s) => s.togglePalette);
     const setWorkflowMeta = useWorkflowBuilderStore((s) => s.setWorkflowMeta);
-    const startExecution = useWorkflowBuilderStore((s) => s.startExecution);
-    const completeExecution = useWorkflowBuilderStore((s) => s.completeExecution);
+    const startMissionExecution = useWorkflowBuilderStore((s) => s.startMissionExecution);
+    const abortExecution = useWorkflowBuilderStore((s) => s.abortExecution);
     const setDirty = useWorkflowBuilderStore((s) => s.setDirty);
+    const addExecutionLog = useWorkflowBuilderStore((s) => s.addExecutionLog);
     const createGroupFromSelection = useWorkflowBuilderStore((s) => s.createGroupFromSelection);
     const hasSelection = useWorkflowBuilderStore((s) => s.nodes.filter((n) => n.selected && n.type !== 'group').length >= 2);
 
@@ -24,9 +27,70 @@ export default function CanvasToolbar() {
         }, [setWorkflowMeta]
     );
 
+    // ─── Save: persist nodes/edges to the API ───
     const handleSave = useCallback(async () => {
-        setDirty(false);
-    }, [setDirty]);
+        const wfId = workflowMeta.id;
+        if (!wfId) return;
+
+        try {
+            const res = await fetch(`/api/workflows/${wfId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: workflowMeta.name,
+                    description: workflowMeta.description,
+                    nodes,
+                    edges,
+                }),
+            });
+            if (!res.ok) throw new Error("Save failed");
+            setDirty(false);
+        } catch (err) {
+            console.error("Failed to save workflow:", err);
+            addExecutionLog({
+                nodeId: "system",
+                timestamp: Date.now(),
+                type: "error",
+                message: `Save failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+            });
+        }
+    }, [workflowMeta, nodes, edges, setDirty, addExecutionLog]);
+
+    // ─── Execute: save first, then run ───
+    const handleExecute = useCallback(async () => {
+        const wfId = workflowMeta.id;
+        if (!wfId) return;
+
+        if (nodes.length === 0) {
+            addExecutionLog({
+                nodeId: "system",
+                timestamp: Date.now(),
+                type: "error",
+                message: "Cannot execute: no nodes on the canvas.",
+            });
+            return;
+        }
+
+        // Auto-save before executing
+        try {
+            await fetch(`/api/workflows/${wfId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: workflowMeta.name,
+                    description: workflowMeta.description,
+                    nodes,
+                    edges,
+                }),
+            });
+            setDirty(false);
+        } catch {
+            // Continue even if save fails — the run API will read from DB
+        }
+
+        // Now trigger execution via the engine
+        await startMissionExecution(wfId);
+    }, [workflowMeta, nodes, edges, setDirty, startMissionExecution, addExecutionLog]);
 
     return (
         <motion.div
@@ -77,9 +141,9 @@ export default function CanvasToolbar() {
                 )}
 
                 {isExecuting ? (
-                    <TBtn icon={<Square size={13} />} label="Stop" variant="danger" onClick={completeExecution} />
+                    <TBtn icon={<Square size={13} />} label="Stop" variant="danger" onClick={abortExecution} />
                 ) : (
-                    <TBtn icon={<Play size={13} />} label="Execute" variant="primary" onClick={startExecution} />
+                    <TBtn icon={<Play size={13} />} label="Execute" variant="primary" onClick={handleExecute} />
                 )}
 
                 <TBtn icon={<Save size={13} />} label="Save" onClick={handleSave} />

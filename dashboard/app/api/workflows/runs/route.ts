@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthUserId } from '@/lib/auth';
 
+
 // GET /api/workflows/runs — list run history
 export async function GET(request: Request) {
     const userId = await getAuthUserId();
@@ -18,8 +19,19 @@ export async function GET(request: Request) {
 
         const { data: rows, error } = await query;
         if (error) throw new Error(error.message);
-        // step_results is already parsed (jsonb)
-        return NextResponse.json(rows);
+        
+        // Map snake_case database columns to camelCase frontend properties
+        const formattedRows = rows.map((row) => ({
+            id: row.id,
+            workflowId: row.workflow_id,
+            status: row.status,
+            stepResults: Array.isArray(row.step_results) ? row.step_results : JSON.parse(row.step_results),
+            triggeredBy: row.triggered_by,
+            startedAt: row.started_at,
+            completedAt: row.completed_at ?? undefined,
+        }));
+        
+        return NextResponse.json(formattedRows);
     } catch (error: unknown) {
         console.error('Failed to list workflow runs:', error);
         return NextResponse.json({ error: 'Failed to list runs' }, { status: 500 });

@@ -11,7 +11,6 @@ export async function GET(
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-
     const { id } = await params;
     try {
         const { data: convo, error } = await db.from('conversations').select('*').eq('user_id', userId).eq('id', id).single();
@@ -37,7 +36,6 @@ export async function POST(
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-
     const { id } = await params;
     try {
         const body = await request.json();
@@ -49,7 +47,8 @@ export async function POST(
 
         const tokenCount = estimateTokens(content);
 
-        await db.from('conversation_messages').insert({ user_id: userId,
+        await db.from('conversation_messages').insert({
+            user_id: userId,
             conversation_id: id,
             role,
             content,
@@ -73,6 +72,42 @@ export async function POST(
     }
 }
 
+// PATCH /api/memory/conversations/[id] — update conversation fields (rename, pin, archive)
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const userId = await getAuthUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+    try {
+        const body = await request.json();
+        const allowed = ['title', 'pinned', 'archived', 'mission_config'] as const;
+        const updates: Record<string, any> = {};
+        for (const key of allowed) {
+            if (body[key] !== undefined) updates[key] = body[key];
+        }
+        if (Object.keys(updates).length === 0) {
+            return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+        }
+        updates.updated_at = new Date().toISOString();
+
+        const { data, error } = await db.from('conversations')
+            .update(updates)
+            .eq('user_id', userId)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw new Error(error.message);
+        return NextResponse.json(data);
+    } catch (error: unknown) {
+        console.error('Failed to update conversation:', error);
+        return NextResponse.json({ error: 'Failed to update conversation' }, { status: 500 });
+    }
+}
+
 // DELETE /api/memory/conversations/[id] — delete conversation and messages
 export async function DELETE(
     _request: Request,
@@ -80,7 +115,6 @@ export async function DELETE(
 ) {
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
 
     const { id } = await params;
     try {

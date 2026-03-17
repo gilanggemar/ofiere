@@ -13,7 +13,6 @@ import {
 import useMeasure from "react-use-measure"
 
 import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
 
 export type Item = {
   text: string
@@ -128,33 +127,25 @@ function SortableListItem({
                     animate={{ opacity: 1, filter: "blur(0px)" }}
                     exit={{ opacity: 0, filter: "blur(4px)" }}
                     transition={{ duration: 0.001 }}
-                    className="flex items-center gap-3 min-w-0 flex-1 py-2"
+                    className="flex items-center gap-3 min-w-0 flex-1 py-2.5"
                   >
                     {/* List Remove Actions */}
-                    <div className="pl-3 shrink-0 flex items-center justify-center">
-                      <div className="h-5 w-5 shrink-0 flex items-center justify-center">
-                        {isDeleteMode ? (
+                    {isDeleteMode && (
+                      <div className="pl-3 shrink-0 flex items-center justify-center">
+                        <div className="h-5 w-5 shrink-0 flex items-center justify-center">
                           <div
                             className="h-full w-full flex items-center justify-center cursor-pointer text-red-500/60 hover:text-red-500 transition-colors"
                             onClick={() => onRemoveItem(item.id)}
                           >
                             <Trash className="w-4 h-4" />
                           </div>
-                        ) : (
-                          <Checkbox
-                            checked={item.checked}
-                            id={`checkbox-${item.id}`}
-                            aria-label="Mark complete"
-                            onCheckedChange={() => onCompleteItem(item.id)}
-                            className="h-5 w-5 shrink-0 rounded-full border-white/20 bg-transparent data-[state=checked]:bg-zinc-800 data-[state=checked]:text-[#13EEE3]"
-                          />
-                        )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     {/* List Title */}
                     <motion.div
                       key={`${item.checked}`}
-                      className="min-w-0 flex-1 pr-1"
+                      className={cn("min-w-0 flex-1 pr-1", !isDeleteMode && "pl-4")}
                       initial={{
                         opacity: 0,
                         filter: "blur(4px)",
@@ -168,9 +159,10 @@ function SortableListItem({
                     >
                       <h4
                         className={cn(
-                          "tracking-tight text-base md:text-[14px] font-medium truncate leading-none mt-[1px]",
-                          item.checked ? "text-white/40 line-through" : "text-white/80"
+                          "tracking-tight text-[13px] font-medium truncate leading-normal",
+                          item.checked ? "text-white/40 line-through" : "text-white/70"
                         )}
+                        style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}
                       >
                         {item.text}
                       </h4>

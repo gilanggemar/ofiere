@@ -2,12 +2,9 @@
 
 import { useThemeStore } from '@/store/useThemeStore';
 import { Sun, Moon } from 'lucide-react';
-import { useSidebar } from '@/components/ui/sidebar';
 
 export function ThemeToggle() {
     const { theme, setTheme } = useThemeStore();
-    const { state } = useSidebar();
-    const isCollapsed = state === 'collapsed';
 
     const isDark = theme === 'dark' || theme === 'system';
 
@@ -23,11 +20,6 @@ export function ThemeToggle() {
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            {!isCollapsed && (
-                <span className="ml-2 text-xs text-muted-foreground">
-                    {isDark ? 'Light mode' : 'Dark mode'}
-                </span>
-            )}
         </button>
     );
 }

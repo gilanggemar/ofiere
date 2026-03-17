@@ -42,16 +42,6 @@ export function PromptChunkTray() {
                     ))}
                 </AnimatePresence>
 
-                {/* Ghost text when empty */}
-                {chunks.length === 0 && (
-                    <button
-                        type="button"
-                        onClick={openCreateDialog}
-                        className="text-xs text-white/30 hover:text-white/50 transition-colors whitespace-nowrap px-2"
-                    >
-                        + Add prompt chunk
-                    </button>
-                )}
             </div>
 
             {/* Dialog renders as a portal */}

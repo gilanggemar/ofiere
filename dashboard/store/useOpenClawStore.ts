@@ -145,6 +145,7 @@ interface OpenClawState {
     setAgents: (agents: any[]) => void;
     clearMessagesForSession: (sessionKey: string) => void;
     setMessagesForSession: (sessionKey: string, messages: ChatMessage[]) => void;
+    clearRunsForSession: (sessionKey: string) => void;
 }
 
 export const useOpenClawStore = create<OpenClawState>((set, get) => ({
@@ -195,6 +196,10 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
             return;
         }
 
+        // The gateway wraps field-level data under payload.data
+        // Flatten it so we can access fields like text, phase, toolName directly
+        const d = payload.data || payload;
+
         set((state) => {
             const runs = new Map(state.activeRuns);
 
@@ -216,18 +221,18 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
             switch (stream) {
                 case "assistant": {
                     // Text delta — append to accumulated text
-                    const text = payload.text || payload.content || payload.delta || "";
+                    const text = d.text || d.content || d.delta || payload.text || payload.content || payload.delta || "";
                     run = { ...run, assistantText: run.assistantText + text };
                     break;
                 }
 
                 case "tool": {
                     // Tool call event
-                    const toolCallId = payload.toolCallId || payload.id || `tc-${Date.now()}`;
-                    const toolName = payload.toolName || payload.tool || payload.name || "unknown";
-                    const input = payload.input || payload.args || payload.parameters || {};
-                    const output = payload.output || payload.result || undefined;
-                    const toolStatus = payload.status || (output ? "completed" : "running");
+                    const toolCallId = d.toolCallId || d.id || d.callId || payload.toolCallId || payload.id || `tc-${Date.now()}`;
+                    const toolName = d.toolName || d.tool || d.name || payload.toolName || payload.tool || payload.name || "unknown";
+                    const input = d.input || d.args || d.parameters || payload.input || payload.args || payload.parameters || {};
+                    const output = d.output || d.result || payload.output || payload.result || undefined;
+                    const toolStatus = d.status || payload.status || (output ? "completed" : "running");
 
                     // Find existing tool call or create new one
                     const existingIdx = run.toolCalls.findIndex(
@@ -262,20 +267,20 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
                 }
 
                 case "thinking": {
-                    const thinking = payload.thinking || payload.text || payload.content || "";
+                    const thinking = d.thinking || d.text || d.content || payload.thinking || payload.text || payload.content || "";
                     run = { ...run, thinkingText: run.thinkingText + thinking };
                     break;
                 }
 
                 case "lifecycle": {
-                    const phase = payload.phase;
+                    const phase = d.phase || payload.phase;
                     if (phase === "start") {
                         run = { ...run, status: "running", startedAt: Date.now() };
                     } else if (phase === "end") {
                         run = { ...run, status: "completed", completedAt: Date.now() };
 
                         // Log telemetry for completed run
-                        logAgentRunTelemetry(run, payload.inputText || '');
+                        logAgentRunTelemetry(run, d.inputText || payload.inputText || '');
 
                         // When run completes, convert accumulated text to a chat message
                         if (run.assistantText.trim()) {
@@ -295,7 +300,7 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
                             return { activeRuns: runs, messagesBySession: messages };
                         }
                     } else if (phase === "error") {
-                        run = { ...run, status: "error", error: payload.error, completedAt: Date.now() };
+                        run = { ...run, status: "error", error: d.error || payload.error, completedAt: Date.now() };
                         // Log error telemetry
                         logAgentRunTelemetry(run);
                     }
@@ -395,6 +400,17 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
             const messages = new Map(state.messagesBySession);
             messages.set(sessionKey, msgs);
             return { messagesBySession: messages };
+        });
+    },
+    clearRunsForSession: (sessionKey) => {
+        set((state) => {
+            const newRuns = new Map(state.activeRuns);
+            for (const [runId, run] of newRuns.entries()) {
+                if (run.sessionKey === sessionKey || run.sessionKey.includes(sessionKey)) {
+                    newRuns.delete(runId);
+                }
+            }
+            return { activeRuns: newRuns };
         });
     },
 }));

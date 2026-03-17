@@ -173,15 +173,21 @@ export async function POST(request: Request) {
             nextRunAt = Math.floor(dt.getTime() / 1000);
         }
 
-        const { error } = await db.from('scheduler_events').insert({ user_id: userId,
+        // Convert priority label to integer (DB column is integer)
+        const priorityMap: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
+        const priorityVal = typeof body.priority === 'number'
+            ? body.priority
+            : priorityMap[String(body.priority).toLowerCase()] ?? 0;
+
+        const insertData: Record<string, any> = {
             id,
             task_id: body.taskId || null,
-            agent_id: body.agentId,
+            agent_id: body.agentId || null,
             title: body.title,
             description: body.description || null,
             scheduled_date: body.scheduledDate,
             scheduled_time: body.scheduledTime || null,
-            duration_minutes: body.durationMinutes || 60,
+            duration_minutes: body.durationMinutes || 30,
             recurrence_type: body.recurrenceType || 'none',
             recurrence_interval: body.recurrenceInterval || 1,
             recurrence_end_date: body.recurrenceEndDate || null,
@@ -191,13 +197,27 @@ export async function POST(request: Request) {
             next_run_at: nextRunAt,
             run_count: 0,
             color: body.color || null,
-            priority: body.priority || 0,
-        });
+            priority: priorityVal,
+        };
+        if (userId) insertData.user_id = userId;
 
-        if (error) throw new Error(error.message);
+        const { error } = await db.from('scheduler_events').insert(insertData);
+
+        if (error) {
+            console.error('POST /api/scheduler/events Supabase error:', error.message, error.details, error.hint);
+            // Retry without user_id if that column doesn't exist
+            if (error.message?.includes('user_id')) {
+                delete insertData.user_id;
+                const retry = await db.from('scheduler_events').insert(insertData);
+                if (retry.error) throw new Error(retry.error.message);
+                return NextResponse.json({ id }, { status: 201 });
+            }
+            throw new Error(error.message);
+        }
         return NextResponse.json({ id }, { status: 201 });
     } catch (error: unknown) {
-        console.error('POST /api/scheduler/events error:', error);
-        return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
+        const errMsg = error instanceof Error ? error.message : String(error);
+        console.error('POST /api/scheduler/events error:', errMsg);
+        return NextResponse.json({ error: 'Failed to create event', details: errMsg }, { status: 500 });
     }
 }

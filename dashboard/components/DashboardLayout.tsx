@@ -1,28 +1,43 @@
 "use client";
 
-import { Suspense } from "react";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { Suspense, useEffect } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { ClientShell } from "@/components/ClientShell";
+import { TopRightUserMenu } from "@/components/navigation/TopRightUserMenu";
+import { TopRail } from "@/components/navigation/TopRail";
+import { ShellFrame } from "@/components/navigation/ShellFrame";
+import { BottomDock } from "@/components/navigation/BottomDock";
+import { PageLoadingIndicator } from "@/components/PageLoadingIndicator";
+import { useTaskStore } from "@/lib/useTaskStore";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const fetchTasks = useTaskStore((s) => s.fetchTasks);
+    const hasFetched = useTaskStore((s) => s.hasFetched);
+
+    useEffect(() => {
+        if (!hasFetched) fetchTasks();
+    }, [hasFetched, fetchTasks]);
     return (
-        <SidebarProvider>
-            <TooltipProvider>
-                <DashboardSidebar />
-                <main className="flex-1 px-8 py-6 pl-3 overflow-auto h-screen relative">
-                    <ClientShell>
-                        <Suspense fallback={
-                            <div className="flex items-center justify-center h-full w-full">
-                                <div className="animate-pulse text-muted-foreground text-sm">Loading...</div>
-                            </div>
-                        }>
-                            {children}
-                        </Suspense>
-                    </ClientShell>
-                </main>
-            </TooltipProvider>
-        </SidebarProvider>
+        <TooltipProvider>
+            <div className="nerv-app-shell">
+                <TopRightUserMenu />
+                <ShellFrame>
+                    <TopRail />
+                    <main className="nerv-content-viewport">
+                        <ClientShell>
+                            <Suspense fallback={
+                                <div className="flex items-center justify-center h-full w-full">
+                                    <div className="animate-pulse text-muted-foreground text-sm">Loading...</div>
+                                </div>
+                            }>
+                                {children}
+                            </Suspense>
+                        </ClientShell>
+                    </main>
+                </ShellFrame>
+                <BottomDock />
+                <PageLoadingIndicator />
+            </div>
+        </TooltipProvider>
     );
 }

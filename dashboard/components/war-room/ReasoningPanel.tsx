@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FileText, ChevronRight } from "lucide-react";
 import type { WarRoomEvent } from '@/lib/war-room/types';
 import { AgentAvatar } from "@/components/agents/AgentAvatar";
+import { useAgentSettingsStore } from "@/store/useAgentSettingsStore";
 
 interface ReasoningPanelProps {
     events: WarRoomEvent[];
@@ -11,8 +12,9 @@ interface ReasoningPanelProps {
 }
 
 export function ReasoningPanel({ events, currentTime }: ReasoningPanelProps) {
+    const { hiddenAgentIds } = useAgentSettingsStore();
     const activeEvents = events.filter(e => e.timestamp <= currentTime);
-    const agents = ['daisy', 'ivy', 'celia', 'thalia'];
+    const agents = ['daisy', 'ivy', 'celia', 'thalia'].filter(a => !hiddenAgentIds.includes(a));
 
     // Get the most recent position statement for each agent
     const currentStances: Record<string, WarRoomEvent | null> = {};

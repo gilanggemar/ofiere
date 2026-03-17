@@ -47,7 +47,7 @@ export function CreateEventModal() {
         { id: 'celia', name: 'Celia' },
         { id: 'thalia', name: 'Thalia' },
     ], []);
-    const agentList = socketAgents.length > 0 ? socketAgents : FALLBACK_AGENTS;
+    const agentList = (socketAgents.length > 0 ? socketAgents : FALLBACK_AGENTS).filter((a: any) => a.id);
     const pendingTasks = useMemo(() =>
         tasks.filter(t => t.status === 'PENDING'),
         [tasks]);
@@ -71,8 +71,9 @@ export function CreateEventModal() {
 
     // Auto-fill from linked task
     const handleTaskLink = (taskId: string) => {
-        setLinkedTaskId(taskId);
-        if (taskId && tasks.find(t => t.id === taskId)) {
+        const realTaskId = taskId === '__none__' ? '' : taskId;
+        setLinkedTaskId(realTaskId);
+        if (realTaskId && tasks.find(t => t.id === realTaskId)) {
             const task = tasks.find(t => t.id === taskId)!;
             if (!title) setTitle(task.title);
             if (!agentId) setAgentId(task.agentId);
@@ -240,12 +241,12 @@ export function CreateEventModal() {
                     {pendingTasks.length > 0 && (
                         <div>
                             <label className="nerv-caption mb-1 block">Link to Existing Task</label>
-                            <Select value={linkedTaskId} onValueChange={handleTaskLink}>
+                            <Select value={linkedTaskId || '__none__'} onValueChange={handleTaskLink}>
                                 <SelectTrigger className="bg-white/[0.04] border-white/[0.06] text-[var(--text-primary)]">
                                     <SelectValue placeholder="None (standalone event)" />
                                 </SelectTrigger>
                                 <SelectContent className="nerv-glass-3">
-                                    <SelectItem value="">None</SelectItem>
+                                    <SelectItem value="__none__">None</SelectItem>
                                     {pendingTasks.map((task) => (
                                         <SelectItem key={task.id} value={task.id}>
                                             {task.title}

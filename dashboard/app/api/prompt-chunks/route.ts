@@ -43,6 +43,7 @@ export async function POST(req: Request) {
 
         const newChunk = {
             id,
+            user_id: userId,
             name,
             content,
             color: color || '#6B7280',

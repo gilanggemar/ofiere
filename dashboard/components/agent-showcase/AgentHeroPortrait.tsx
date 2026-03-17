@@ -22,6 +22,7 @@ interface AgentHeroPortraitProps {
     onNext: () => void;
     onSelectImage: (index: number) => void;
     onGalleryChanged: () => void;
+    onBackgroundChanged?: () => void;
 }
 
 export function AgentHeroPortrait({
@@ -29,6 +30,7 @@ export function AgentHeroPortrait({
     imageCount, images, activeIndex,
     onPrev, onNext,
     onSelectImage, onGalleryChanged,
+    onBackgroundChanged,
 }: AgentHeroPortraitProps) {
     const imageSrc = heroUri || avatarUri || agent.avatar || '/placeholder-hero.png';
     const hasMultiple = imageCount > 1;
@@ -88,6 +90,7 @@ export function AgentHeroPortrait({
                 activeIndex={activeIndex}
                 onSelectImage={onSelectImage}
                 onGalleryChanged={onGalleryChanged}
+                onBackgroundChanged={onBackgroundChanged}
                 className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-auto z-20"
             />
         </div>

@@ -1,8 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Star, Flame, ChevronRight } from 'lucide-react';
-import { MissionTracker } from '@/components/command-center/MissionTracker';
+import { Star, Flame } from 'lucide-react';
+import { AgentCapabilities } from './AgentCapabilities';
 import type { AgentProfile } from '@/lib/agentRoster';
 import { useAgentZeroStore } from '@/store/useAgentZeroStore';
 import { useRouter } from 'next/navigation';
@@ -126,13 +126,13 @@ export function AgentIdentityPlate({ agent, level, currentXp, xpToNext, rank, cu
                     </div>
                 )}
 
-                {/* Divider before missions */}
+                {/* Divider before capabilities */}
                 <div className="w-full h-px bg-white/10" />
             </div>
 
-            {/* Mission Tracker — scrollable */}
+            {/* Agent Capabilities — scrollable */}
             <div className="flex-1 overflow-y-auto min-h-0 identity-scrollbar">
-                <MissionTrackerInline />
+                <AgentCapabilities agent={agent} />
             </div>
 
             {/* Deploy Button */}
@@ -149,71 +149,6 @@ export function AgentIdentityPlate({ agent, level, currentXp, xpToNext, rank, cu
                 >
                     DEPLOY
                 </button>
-            </div>
-        </div>
-    );
-}
-
-/** Inline version of MissionTracker without absolute positioning */
-function MissionTrackerInline() {
-    // Re-use the existing MissionTracker store data but render inline
-    const { dailyMissions, allMissionsCompleted } = require('@/store/useGamificationStore').useGamificationStore();
-    const { Target, CheckCircle2 } = require('lucide-react');
-
-    if (!dailyMissions || dailyMissions.length === 0) return null;
-
-    return (
-        <div className="px-5 pb-4">
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[11px] font-bold tracking-widest uppercase text-white/70 flex items-center gap-2 font-mono">
-                    <Target size={14} className="text-blue-400" />
-                    Daily Directives
-                </h3>
-                <span className="text-[10px] text-blue-400/80 font-mono tracking-wider">
-                    {dailyMissions.filter((m: any) => m.isCompleted).length}/{dailyMissions.length}
-                </span>
-            </div>
-
-            <div className="flex flex-col gap-3">
-                {dailyMissions.map((mission: any) => {
-                    const isDone = Boolean(mission.isCompleted);
-                    const percent = Math.min(100, (mission.current / mission.target) * 100);
-
-                    return (
-                        <div key={mission.id} className={`flex flex-col gap-1.5 ${isDone ? 'opacity-50' : ''}`}>
-                            <div className="flex justify-between items-start gap-2">
-                                <span className={`text-xs font-medium leading-tight ${isDone ? 'line-through text-white/40' : 'text-white/80'}`}>
-                                    {mission.title}
-                                </span>
-                                {isDone && <CheckCircle2 size={14} className="text-green-400 shrink-0" />}
-                            </div>
-                            {!isDone && (
-                                <div className="w-full bg-black/50 h-1.5 rounded-full overflow-hidden">
-                                    <motion.div
-                                        className="h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${percent}%` }}
-                                        transition={{ duration: 1, ease: 'easeOut' }}
-                                    />
-                                </div>
-                            )}
-                            <div className="flex justify-between items-center text-[10px] uppercase tracking-widest text-white/40 font-mono">
-                                <span>{mission.difficulty} · +{mission.xpReward} XP</span>
-                                {!isDone && <span>{mission.current} / {mission.target}</span>}
-                            </div>
-                        </div>
-                    );
-                })}
-
-                {allMissionsCompleted && (
-                    <motion.div
-                        className="mt-2 text-center text-xs font-mono text-green-400 p-2 bg-green-950/30 border border-green-500/30 rounded"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                    >
-                        ALL DIRECTIVES CLEARED (+75 XP BONUS)
-                    </motion.div>
-                )}
             </div>
         </div>
     );

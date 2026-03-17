@@ -1,19 +1,19 @@
-// ─── NERV GRAPH — Shared Node Style Constants ──────────────────────────────
+// ─── NERV GRAPH — V2 Node Style Constants ──────────────────────────────
 
 import React from 'react';
 import type { WfNodeExecStatus } from '@/store/useWorkflowBuilderStore';
 
 export const NODE_ACCENTS = {
-    trigger: 'var(--accent-lime)',
-    agent: 'var(--accent-base)',
-    prompt: 'var(--accent-violet)',
-    tool: 'var(--accent-teal)',
+    // V2 Node Types
+    manual_trigger: 'var(--accent-lime)',
+    webhook_trigger: 'oklch(0.75 0.18 55)',
+    schedule_trigger: 'oklch(0.72 0.14 195)',
+    agent_step: 'var(--accent-base)',
+    formatter_step: 'var(--accent-violet)',
+    human_approval: 'oklch(0.65 0.19 25)',
     condition: 'var(--accent-coral)',
-    transform: 'var(--accent-ocean)',
-    output: 'var(--accent-base)',
-    loop: 'var(--accent-teal)',
-    delay: 'var(--text-muted)',
-    summit: 'var(--accent-violet)',
+    output: 'var(--accent-teal)',
+    // Keep group for canvas grouping
     group: 'var(--accent-ocean)',
 } as const;
 
@@ -25,6 +25,8 @@ export const EXEC_STATUS_COLORS: Record<WfNodeExecStatus, string> = {
     running: 'var(--accent-base)',
     success: 'var(--status-online)',
     error: 'var(--status-error)',
+    waiting: 'oklch(0.80 0.18 80)',
+    skipped: 'var(--text-muted)',
 };
 
 export const NODE_DIMENSIONS = {
@@ -69,55 +71,44 @@ export const NODE_CATEGORIES: NodeCategoryDef[] = [
     {
         id: 'triggers',
         label: 'Triggers',
-        accent: NODE_ACCENTS.trigger,
+        accent: NODE_ACCENTS.manual_trigger,
         items: [
-            { type: 'trigger', label: 'Manual', icon: 'Zap', description: 'Click to run', defaultData: { triggerType: 'Manual', label: 'Manual Trigger' } },
-            { type: 'trigger', label: 'Schedule', icon: 'Clock', description: 'Cron / interval', defaultData: { triggerType: 'Schedule', label: 'Schedule Trigger' } },
-            { type: 'trigger', label: 'Webhook', icon: 'Globe', description: 'HTTP endpoint', defaultData: { triggerType: 'Webhook', label: 'Webhook Trigger' } },
-            { type: 'trigger', label: 'Event', icon: 'Radio', description: 'System event', defaultData: { triggerType: 'Event', label: 'Event Trigger' } },
+            { type: 'manual_trigger', label: 'Execute', icon: 'Zap', description: 'Click to run', defaultData: { label: 'Execute Trigger' } },
+            { type: 'webhook_trigger', label: 'Webhook', icon: 'Globe', description: 'HTTP endpoint', defaultData: { label: 'Webhook Trigger' } },
+            { type: 'schedule_trigger', label: 'Schedule', icon: 'Clock', description: 'Cron / interval', defaultData: { label: 'Schedule Trigger', cron: '0 9 * * 1-5' } },
         ],
     },
     {
-        id: 'agents',
-        label: 'Agents',
-        accent: NODE_ACCENTS.agent,
+        id: 'steps',
+        label: 'Steps',
+        accent: NODE_ACCENTS.agent_step,
         items: [
-            { type: 'agent', label: 'Agent', icon: 'Bot', description: 'Route to agent' },
+            { type: 'agent_step', label: 'Agent Step', icon: 'Bot', description: 'Route to agent', defaultData: { label: 'Agent Step', agentId: '', task: '', responseMode: 'text', timeoutSec: 120 } },
+            { type: 'formatter_step', label: 'Formatter', icon: 'Code', description: 'Template text', defaultData: { label: 'Formatter', template: '' } },
         ],
     },
     {
-        id: 'logic',
-        label: 'Logic',
+        id: 'control',
+        label: 'Control',
         accent: NODE_ACCENTS.condition,
         items: [
-            { type: 'condition', label: 'Condition', icon: 'GitBranch', description: 'If/else branch' },
-            { type: 'delay', label: 'Delay', icon: 'Timer', description: 'Wait timer' },
+            { type: 'condition', label: 'Condition', icon: 'GitBranch', description: 'If / else branch', defaultData: { label: 'Condition', expression: '' } },
+            { type: 'human_approval', label: 'Approval', icon: 'Users', description: 'Human approval gate', defaultData: { label: 'Human Approval', instructions: '' } },
         ],
     },
     {
-        id: 'processing',
-        label: 'Processing',
-        accent: NODE_ACCENTS.prompt,
-        items: [
-            { type: 'prompt', label: 'Prompt', icon: 'MessageSquare', description: 'Template' },
-            { type: 'transform', label: 'Transform', icon: 'Code', description: 'Code block' },
-            { type: 'tool', label: 'MCP Tool', icon: 'Wrench', description: 'Call MCP' },
-        ],
-    },
-    {
-        id: 'output',
-        label: 'Output',
+        id: 'end',
+        label: 'End',
         accent: NODE_ACCENTS.output,
         items: [
-            { type: 'output', label: 'Output', icon: 'Flag', description: 'Send result' },
+            { type: 'output', label: 'Output', icon: 'Flag', description: 'Send result', defaultData: { label: 'Output', outputMode: 'return' } },
         ],
     },
     {
         id: 'special',
         label: 'Special',
-        accent: NODE_ACCENTS.summit,
+        accent: NODE_ACCENTS.group,
         items: [
-            { type: 'summit', label: 'Summit', icon: 'Users', description: 'Multi-agent' },
             { type: 'group', label: 'Group', icon: 'Box', description: 'Container' },
         ],
     },

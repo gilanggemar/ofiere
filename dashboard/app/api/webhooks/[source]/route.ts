@@ -10,13 +10,13 @@ export async function POST(
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-
     const { source } = await params;
     try {
         const payload = await request.json();
 
         // Create a notification for the webhook event
         await createNotification(
+            userId,
             'info',
             `Webhook: ${source}`,
             `Received ${payload.action || payload.event || 'event'} from ${source}`,

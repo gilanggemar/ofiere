@@ -17,6 +17,7 @@ import { useSchedulerStore, type SchedulerEvent } from '@/store/useSchedulerStor
 import { useSocketStore } from '@/lib/useSocket';
 import { useAvailableAgents } from '@/hooks/useAvailableAgents';
 import type { Task } from '@/lib/useTaskStore';
+import type { Workflow } from '@/lib/workflows/types';
 
 const CalendarTimeline = dynamic(
     () => import('@/components/scheduler/CalendarTimeline').then(mod => mod.CalendarTimeline),
@@ -35,7 +36,8 @@ const CreateEventModal = dynamic(
 
 // ─── Agent color helper ─────────────────────────────────────────────────────
 
-function getAgentColor(agentId: string): string {
+function getAgentColor(agentId: string | null | undefined): string {
+    if (!agentId) return 'var(--accent-base)';
     const lower = agentId.toLowerCase();
     if (lower.includes('daisy')) return 'var(--agent-daisy)';
     if (lower.includes('ivy')) return 'var(--agent-ivy)';
@@ -107,6 +109,31 @@ export default function SchedulerPage() {
                 createdAt: 0,
                 updatedAt: 0,
             });
+        } else if (data?.type === 'tray-workflow') {
+            // Convert workflow to a pseudo-event for the overlay
+            const workflow = data.workflow as Workflow;
+            setDraggedEvent({
+                id: `wf-${workflow.id}`,
+                taskId: null,
+                agentId: null as any,
+                title: `⚡ ${workflow.name}`,
+                description: workflow.description || null,
+                scheduledDate: '',
+                scheduledTime: null,
+                durationMinutes: 60,
+                recurrenceType: 'none',
+                recurrenceInterval: 1,
+                recurrenceEndDate: null,
+                recurrenceDaysOfWeek: null,
+                status: 'scheduled',
+                lastRunAt: null,
+                nextRunAt: null,
+                runCount: 0,
+                color: null,
+                priority: 'medium',
+                createdAt: 0,
+                updatedAt: 0,
+            });
         }
     }, [setDraggedEvent]);
 
@@ -142,6 +169,17 @@ export default function SchedulerPage() {
                 scheduledDate: targetDate,
                 priority: (task.priority?.toLowerCase() as SchedulerEvent['priority']) || 'medium',
             });
+        } else if (sourceData?.type === 'tray-workflow') {
+            // Tray workflow → Calendar: Create new event linked to workflow
+            const workflow = sourceData.workflow as Workflow;
+            await createEvent({
+                taskId: null,
+                agentId: null,
+                title: `⚡ ${workflow.name}`,
+                description: workflow.description || null,
+                scheduledDate: targetDate,
+                priority: 'medium',
+            } as any);
         } else if (sourceData?.type === 'calendar-event') {
             // Calendar event → Calendar: Move to new date
             const sourceEvent = sourceData.event as SchedulerEvent;

@@ -19,7 +19,8 @@ const AGENT_COLORS: Record<string, string> = {
     'agent-zero': 'var(--agent-zero)',
 };
 
-function getAgentColor(agentId: string): string {
+function getAgentColor(agentId: string | null | undefined): string {
+    if (!agentId) return 'var(--accent-base)';
     if (AGENT_COLORS[agentId]) return AGENT_COLORS[agentId];
     // Check partial matches
     const lower = agentId.toLowerCase();

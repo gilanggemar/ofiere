@@ -38,7 +38,7 @@ export default function WorkflowBuilderPage() {
                     return;
                 }
                 const wf = await res.json();
-                hydrate([], [], {
+                hydrate(wf.nodes ?? [], wf.edges ?? [], {
                     id: wf.id,
                     name: wf.name || "Untitled Workflow",
                     description: wf.description || "",
@@ -72,22 +72,50 @@ export default function WorkflowBuilderPage() {
 
     return (
         <ReactFlowProvider>
-            <div className="flex flex-col h-full gap-3">
-                {/* Header row */}
-                <div className="flex items-center gap-3 shrink-0">
+            {/* Canvas fills the entire available height — no header row gap */}
+            <div className="flex flex-col h-full">
+                {/* Canvas in Constellation-style glass frame — full height */}
+                <div className="flex-1 min-h-0 nerv-glass-2 rounded-xl overflow-hidden relative">
+                    <WorkflowCanvas />
+                    <CanvasToolbar />
+
+                    {/* Back button — inside canvas, top-left */}
                     <Link
                         href="/dashboard/workflows"
-                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        style={{
+                            position: "absolute",
+                            top: 12,
+                            left: 12,
+                            zIndex: 20,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            padding: "5px 12px",
+                            borderRadius: 8,
+                            background: "oklch(0.11 0.005 0 / 0.7)",
+                            backdropFilter: "blur(16px)",
+                            WebkitBackdropFilter: "blur(16px)",
+                            border: "1px solid oklch(1 0 0 / 0.08)",
+                            color: "var(--text-muted)",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            transition: "color 150ms, border-color 150ms",
+                            cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "var(--text-primary)";
+                            e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.15)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "var(--text-muted)";
+                            e.currentTarget.style.borderColor = "oklch(1 0 0 / 0.08)";
+                        }}
                     >
                         <ArrowLeft size={13} />
                         Workflows
                     </Link>
-                </div>
 
-                {/* Canvas in Constellation-style glass frame */}
-                <div className="flex-1 min-h-0 nerv-glass-2 rounded-xl overflow-hidden relative">
-                    <WorkflowCanvas />
-                    <CanvasToolbar />
                     <NodePalette />
                     <NodeConfigPanel />
                     <ExecutionLog />

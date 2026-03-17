@@ -7,11 +7,13 @@ import { useOverviewData } from '@/hooks/useOverviewData';
 import { SystemHealthBar } from '@/components/SystemHealthBar';
 import { useAgentStore } from '@/store/useAgentStore';
 import { useTaskStore } from '@/store/useTaskStore';
+import { useAgentSettingsStore } from '@/store/useAgentSettingsStore';
 
 export function CommandHeader() {
     const { fleetPowerScore } = useOverviewData();
     const { agents } = useAgentStore();
     const { tasks } = useTaskStore();
+    const { hiddenAgentIds } = useAgentSettingsStore();
     const [timeStr, setTimeStr] = useState('');
 
     const countRaw = useMotionValue(0);
@@ -49,13 +51,15 @@ export function CommandHeader() {
 
             <div className="flex items-center justify-center flex-1">
                 <div className="scale-90 opacity-90">
-                    <SystemHealthBar agents={Object.values(agents).map(a => ({
-                        id: a.id,
-                        name: a.name,
-                        isOnline: a.status === 'ONLINE' || a.status === 'WORKING',
-                        hasError: false,
-                        activeTasks: Object.values(tasks).filter(t => t.status === "IN_PROGRESS" && t.agentId === a.id).length
-                    }))} />
+                    <SystemHealthBar agents={Object.values(agents)
+                        .filter(a => !hiddenAgentIds.includes(a.id))
+                        .map(a => ({
+                            id: a.id,
+                            name: a.name,
+                            isOnline: a.status === 'ONLINE' || a.status === 'WORKING',
+                            hasError: false,
+                            activeTasks: Object.values(tasks).filter(t => t.status === "IN_PROGRESS" && t.agentId === a.id).length
+                        }))} />
                 </div>
             </div>
 

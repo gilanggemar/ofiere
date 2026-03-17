@@ -42,6 +42,8 @@ export async function PUT(
         if (body.steps) updates.steps = body.steps; // jsonb — pass as object
         if (body.schedule !== undefined) updates.schedule = body.schedule || null;
         if (body.status) updates.status = body.status;
+        if (body.nodes !== undefined) updates.nodes = body.nodes;
+        if (body.edges !== undefined) updates.edges = body.edges;
 
         await db.from('workflows').update(updates).eq('id', id);
         return NextResponse.json({ success: true });

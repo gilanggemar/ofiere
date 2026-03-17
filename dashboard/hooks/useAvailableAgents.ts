@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
 import { useSocketStore } from '@/lib/useSocket';
 import { useConnectionStore } from '@/store/useConnectionStore';
+import { useAgentSettingsStore } from '@/store/useAgentSettingsStore';
 import { getAgentProfile } from '@/lib/agentRoster';
 
 export function useAvailableAgents() {
     const socketAgents = useSocketStore((s) => s.agents);
     const { activeProfile } = useConnectionStore();
+    const { hiddenAgentIds } = useAgentSettingsStore();
 
     const availableAgents = useMemo(() => {
         const available = [...socketAgents];
@@ -26,8 +28,12 @@ export function useAvailableAgents() {
                 });
             }
         }
-        return available;
-    }, [socketAgents, activeProfile?.agentZeroEnabled]);
+
+        return available.filter((a: any) => {
+            const id = a.accountId || a.name || a.id;
+            return !hiddenAgentIds.includes(id);
+        });
+    }, [socketAgents, activeProfile?.agentZeroEnabled, hiddenAgentIds]);
 
     return availableAgents;
 }

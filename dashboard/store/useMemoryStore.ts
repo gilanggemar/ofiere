@@ -61,7 +61,7 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     fetchMessages: async (conversationId) => {
         set({ isLoading: true, activeConversationId: conversationId });
         try {
-            const res = await fetch(`/api/memory/conversations/${conversationId}`);
+            const res = await fetch(`/api/chat/messages?conversation_id=${encodeURIComponent(conversationId)}`);
             if (res.ok) {
                 const data = await res.json();
                 set({ messages: data.messages || [] });

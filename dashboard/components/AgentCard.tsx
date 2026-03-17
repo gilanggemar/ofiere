@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AgentTasks } from "./AgentTasks";
@@ -72,11 +72,14 @@ export function AgentCard({ agent }: AgentCardProps) {
     const displayAvatar = localAvatarUri || avatarUri;
 
     const isOnline = status !== 'offline' && status !== 'error';
+    const [hasOpenPopover, setHasOpenPopover] = useState(false);
+    const handlePopoverChange = useCallback((isOpen: boolean) => setHasOpenPopover(isOpen), []);
 
     return (
         <Card className={cn(
             "relative rounded-3xl backdrop-blur-sm transition-all duration-300 shadow-xl border border-border/40",
-            isOnline ? "bg-card" : "bg-card/60"
+            isOnline ? "bg-card" : "bg-card/60",
+            hasOpenPopover && "z-50"
         )}>
             {/* Header matching screenshot */}
             <CardHeader className="flex flex-row items-start justify-between p-6 pb-2 gap-3 space-y-0">
@@ -108,7 +111,7 @@ export function AgentCard({ agent }: AgentCardProps) {
 
                     <div className="flex flex-col gap-1.5 flex-1 min-w-0 pt-1">
                         <div className="flex items-center gap-2">
-                            <h3 className="text-base font-semibold tracking-tight text-foreground truncate">{name} workflow</h3>
+                            <h3 className="text-base font-semibold tracking-tight text-foreground truncate">{name}</h3>
                             <AgentStatusIndicator status={status} size="sm" />
                         </div>
 
@@ -124,7 +127,7 @@ export function AgentCard({ agent }: AgentCardProps) {
             </CardHeader>
 
             <CardContent className="p-0">
-                <AgentTasks agentId={agent.id} />
+                <AgentTasks agentId={agent.id} onPopoverChange={handlePopoverChange} />
             </CardContent>
         </Card >
     );

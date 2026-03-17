@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import useAgentZeroStore from "@/store/useAgentZeroStore";
 import { useSocketStore } from "@/lib/useSocket";
+import { useOpenClawStore, type AgentRun, type ToolCallEvent } from "@/store/useOpenClawStore";
 
 // ─── Tree Node Data ───
 
@@ -210,13 +211,107 @@ const TreeNodeView = ({ node, level = 0 }: { node: ProcessNode; level?: number }
 
 import { parseOpenClawToolCalls, type ToolCallBlock } from "@/lib/openclawToolParser";
 
-// ─── Build OpenClaw Process Tree from Chat Messages ───
+// ─── Build OpenClaw Process Tree from Active Runs + Chat Messages ───
 
-function buildOpenClawTree(agentId: string, chatMessages: any[]): ProcessNode[] {
+/**
+ * Split thinking text into readable chunks for display as thought steps.
+ * Splits on double-newlines or sentence boundaries for longer blocks.
+ */
+function splitThinkingIntoSteps(text: string): string[] {
+    if (!text || !text.trim()) return [];
+    // Split on double newlines first
+    const blocks = text.split(/\n\n+/).map(b => b.trim()).filter(Boolean);
+    if (blocks.length > 1) return blocks;
+    // If single block, split on single newlines
+    const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+    return lines;
+}
+
+/**
+ * Build a tool call ProcessNode from a ToolCallEvent.
+ */
+function buildToolCallNode(tc: ToolCallEvent): ProcessNode {
+    let parsedArgs: any = tc.input || {};
+    if (typeof parsedArgs === "string") {
+        try { parsedArgs = JSON.parse(parsedArgs); } catch { /* keep as string */ }
+    }
+
+    let outputStr: string | undefined = undefined;
+    if (tc.output) {
+        if (typeof tc.output === "string") {
+            try {
+                const outObj = JSON.parse(tc.output);
+                outputStr = JSON.stringify(outObj, null, 2);
+            } catch {
+                outputStr = tc.output;
+            }
+        } else {
+            outputStr = JSON.stringify(tc.output, null, 2);
+        }
+    }
+
+    const status = tc.status === "completed" ? "done"
+        : tc.status === "error" ? "error"
+            : "running";
+
+    return {
+        id: tc.id,
+        name: tc.toolName || "unknown_tool",
+        status,
+        toolName: tc.toolName,
+        toolArgs: parsedArgs,
+        output: outputStr,
+        children: [],
+        timestamp: tc.startedAt ? new Date(tc.startedAt).toLocaleTimeString() : undefined,
+    };
+}
+
+function buildOpenClawTree(
+    agentId: string,
+    activeRuns: Map<string, AgentRun>,
+    chatMessages: any[]
+): ProcessNode[] {
     const nodes: ProcessNode[] = [];
-    const seenToolIds = new Set<string>();
+    const seenRunIds = new Set<string>();
 
-    // Get all assistant messages for this agent
+    // === Source 1: Active runs from the OpenClaw store (live / streaming) ===
+    activeRuns.forEach((run) => {
+        // Filter to only runs that belong to this agent's sessions
+        if (!run.sessionKey.includes(agentId)) return;
+        seenRunIds.add(run.runId);
+
+        const isRunning = run.status === "running";
+        const runChildren: ProcessNode[] = [];
+
+        // 1a. Thinking node — shows the agent's reasoning in real-time
+        if (run.thinkingText && run.thinkingText.trim()) {
+            const thoughtSteps = splitThinkingIntoSteps(run.thinkingText);
+            runChildren.push({
+                id: `thinking-${run.runId}`,
+                name: "Thinking",
+                status: isRunning ? "running" : "done",
+                children: [],
+                thoughts: thoughtSteps,
+                timestamp: new Date(run.startedAt).toLocaleTimeString(),
+            });
+        }
+
+        // 1b. Tool call nodes
+        run.toolCalls.forEach((tc) => {
+            runChildren.push(buildToolCallNode(tc));
+        });
+
+        // Root node for this run
+        nodes.push({
+            id: `run-${run.runId}`,
+            name: isRunning ? "Agent Processing…" : "Agent Response",
+            status: run.status === "error" ? "error" : isRunning ? "running" : "done",
+            children: runChildren,
+            timestamp: new Date(run.startedAt).toLocaleTimeString(),
+        });
+    });
+
+    // === Source 2: Completed runs from chat messages (historical fallback) ===
     const agentMsgs = chatMessages.filter(
         (m) =>
             m.role === "assistant" &&
@@ -224,14 +319,16 @@ function buildOpenClawTree(agentId: string, chatMessages: any[]): ProcessNode[] 
     );
 
     agentMsgs.forEach((msg) => {
-        // Source 1: Check msg.tool_calls[] (populated by agent events + inline parser in useSocket.ts)
+        // Skip if we already have this run from the active runs
+        if (msg.runId && seenRunIds.has(msg.runId)) return;
+
+        const msgChildren: ProcessNode[] = [];
+
+        // Check msg.tool_calls[]
         if (msg.tool_calls && msg.tool_calls.length > 0) {
             msg.tool_calls.forEach((tc: any, idx: number) => {
                 const funcName = tc.function?.name || tc.toolName || tc.name || "unknown_tool";
                 const tcId = tc.id || `tc-${msg.id}-${idx}`;
-
-                if (seenToolIds.has(tcId)) return;
-                seenToolIds.add(tcId);
 
                 let parsedArgs: any = tc.function?.arguments || tc.input || tc.args || "";
                 if (typeof parsedArgs === "string") {
@@ -262,7 +359,7 @@ function buildOpenClawTree(agentId: string, chatMessages: any[]): ProcessNode[] 
                             ? "running"
                             : "done";
 
-                nodes.push({
+                msgChildren.push({
                     id: tcId,
                     name: funcName,
                     status,
@@ -275,20 +372,16 @@ function buildOpenClawTree(agentId: string, chatMessages: any[]): ProcessNode[] 
             });
         }
 
-        // Source 2: Fallback — parse inline tool markup from message text
-        // (in case the chat handler didn't already parse it)
+        // Fallback — parse inline tool markup from message text
         if (msg.content && (!msg.tool_calls || msg.tool_calls.length === 0)) {
             const parseResult = parseOpenClawToolCalls(msg.content);
             parseResult.toolCalls.forEach((tc, idx) => {
-                if (seenToolIds.has(tc.id)) return;
-                seenToolIds.add(tc.id);
-
                 let outputStr: string | undefined = undefined;
                 if (tc.output) {
                     outputStr = JSON.stringify(tc.output, null, 2);
                 }
 
-                nodes.push({
+                msgChildren.push({
                     id: tc.id || `inline-${msg.id}-${idx}`,
                     name: tc.toolName,
                     status: tc.status === "completed" ? "done" : tc.status === "error" ? "error" : (msg.streaming ? "running" : "done"),
@@ -298,6 +391,17 @@ function buildOpenClawTree(agentId: string, chatMessages: any[]): ProcessNode[] 
                     children: [],
                     timestamp: msg.timestamp,
                 });
+            });
+        }
+
+        // Only add a node if there's actual content to show
+        if (msgChildren.length > 0) {
+            nodes.push({
+                id: `msg-run-${msg.id}`,
+                name: "Agent Response",
+                status: "done",
+                children: msgChildren,
+                timestamp: msg.timestamp,
             });
         }
     });
@@ -360,21 +464,30 @@ export const UnifiedProcessTree = ({
     agentId,
     provider,
     className,
+    messages,
 }: {
     agentId: string;
     provider: "openclaw" | "agent-zero" | "external";
     className?: string;
+    messages?: any[];
 }) => {
+    // Agent Zero stores (only used for agent-zero/external providers)
     const a0Logs = useAgentZeroStore((s) => s.logs);
     const a0IsResponding = useAgentZeroStore((s) => s.isResponding);
-    const chatMessages = useSocketStore((s) => s.chatMessages);
+
+    // OpenClaw stores (only used for openclaw provider)
+    const openClawActiveRuns = useOpenClawStore((s) => s.activeRuns);
+    const storeChatMessages = useSocketStore((s) => s.chatMessages);
+    const chatMessagesSource = messages ?? storeChatMessages;
 
     const treeData = useMemo(() => {
         if (provider === "agent-zero" || provider === "external") {
+            // Agent Zero path — completely untouched
             return buildAgentZeroTree(a0Logs, a0IsResponding);
         }
-        return buildOpenClawTree(agentId, chatMessages);
-    }, [provider, agentId, a0Logs, a0IsResponding, chatMessages]);
+        // OpenClaw path — uses active runs for live thinking + tool calls
+        return buildOpenClawTree(agentId, openClawActiveRuns, chatMessagesSource);
+    }, [provider, agentId, a0Logs, a0IsResponding, openClawActiveRuns, chatMessagesSource]);
 
     return (
         <div className={cn("flex flex-col h-full overflow-hidden bg-black/20 rounded-md border border-white/5", className)}>

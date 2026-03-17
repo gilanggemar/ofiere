@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback } from "react";
 import {
     Settings, Save, RotateCcw, Shield, Bell,
-    Cpu, Wifi, AlertTriangle, Server
+    Cpu, Wifi, AlertTriangle, Server, Eye
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,9 +28,12 @@ import {
 } from "@/components/ui/tooltip";
 import ConnectionProfiles from "@/components/settings/ConnectionProfiles";
 
+import { useAgentSettingsStore } from "@/store/useAgentSettingsStore";
+
 export default function SettingsPage() {
     const { agents, isConnected } = useSocketStore();
     const { sendConfigUpdate } = useSocket();
+    const { hiddenAgentIds, setAgentVisibility } = useAgentSettingsStore();
 
     const [selectedAgentId, setSelectedAgentId] = useState<string>("");
     const [systemPrompt, setSystemPrompt] = useState("");
@@ -187,6 +190,43 @@ export default function SettingsPage() {
                                     </div>
                                     <Switch checked={notifyOnError} onCheckedChange={setNotifyOnError} />
                                 </div>
+                            </CardContent>
+                        </Card>
+                    </section>
+
+                    <Separator className="bg-border" />
+
+                    {/* Displayed Agents */}
+                    <section className="space-y-4">
+                        <h2 className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                            <Eye className="w-3.5 h-3.5" /> Displayed Agents
+                        </h2>
+
+                        <Card className="rounded-xl border-border bg-card shadow-none py-0 gap-0">
+                            <CardContent className="p-4 space-y-4">
+                                {agents.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground">No agents available.</p>
+                                ) : (
+                                    agents.map((a: any) => {
+                                        const id = a.accountId || a.name || a.id;
+                                        const label = a.accountId
+                                            ? a.accountId.charAt(0).toUpperCase() + a.accountId.slice(1)
+                                            : a.name || a.id;
+                                        const isHidden = hiddenAgentIds.includes(id);
+                                        return (
+                                            <div key={id} className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <p className="text-xs font-medium text-foreground">{label}</p>
+                                                    <p className="text-[11px] text-muted-foreground">Show this agent on the dashboard</p>
+                                                </div>
+                                                <Switch 
+                                                    checked={!isHidden} 
+                                                    onCheckedChange={(checked) => setAgentVisibility(id, !checked)} 
+                                                />
+                                            </div>
+                                        );
+                                    })
+                                )}
                             </CardContent>
                         </Card>
                     </section>

@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize from 'rehype-sanitize';
 import { Check, Copy } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 function CodeBlock({ className, children, ...props }: any) {
     const [copied, setCopied] = useState(false);
@@ -110,7 +110,7 @@ interface MessageRendererProps {
     content: string;
 }
 
-export function MessageRenderer({ content }: MessageRendererProps) {
+export const MessageRenderer = React.memo(function MessageRenderer({ content }: MessageRendererProps) {
     return (
         <div className="message-content">
             <ReactMarkdown
@@ -248,4 +248,4 @@ export function MessageRenderer({ content }: MessageRendererProps) {
             />
         </div>
     );
-}
+});

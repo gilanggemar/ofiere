@@ -2,13 +2,11 @@
 
 import dynamic from 'next/dynamic';
 import { useCommandCenter } from '@/hooks/useCommandCenter';
+import { useAgentBackground } from '@/hooks/useAgentBackground';
 import { AgentShowcase } from '@/components/command-center/AgentShowcase';
 import { AgentCarousel } from '@/components/command-center/AgentCarousel';
+import { AnimatePresence, motion } from 'framer-motion';
 
-const NebulaBg = dynamic(
-    () => import('@/components/command-center/NebulaBg').then(mod => mod.NebulaBg),
-    { ssr: false }
-);
 
 const AtmosphereLayer = dynamic(
     () => import('@/components/command-center/AtmosphereLayer').then(mod => mod.AtmosphereLayer),
@@ -26,16 +24,35 @@ export default function OverviewPage() {
         availableAgents
     } = useCommandCenter();
 
+    const agentId = activeAgent?.id || '';
+    const { backgroundUri, invalidate: invalidateBg } = useAgentBackground(agentId);
+
     if (!isMounted) {
         return <div className="w-screen h-screen bg-black" />;
     }
 
     return (
-        <div className="relative -ml-3 -mr-8 -mt-6 -mb-6 w-[calc(100%+2.75rem)] overflow-hidden text-white selection:bg-white/20"
-            style={{ height: 'calc(100% + 3rem)' }}
-        >
-            {/* Layer 0: Interactive Particle Background */}
-            <NebulaBg colorHex={activeAgent?.colorHex || '#FF6B00'} />
+        <div className="absolute inset-0 overflow-hidden text-white selection:bg-white/20">
+
+            {/* Layer 0: Custom Background Image (desaturated + dimmed) */}
+            <AnimatePresence mode="wait">
+                {backgroundUri && (
+                    <motion.div
+                        key={backgroundUri}
+                        className="absolute inset-0 z-[1]"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <img
+                            src={backgroundUri}
+                            alt=""
+                            className="w-full h-full object-cover"
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Layer 1: Ambient Atmosphere Glow */}
             <AtmosphereLayer colorHex={activeAgent?.colorHex || '#FF6B00'} />
@@ -53,18 +70,10 @@ export default function OverviewPage() {
                             xpToNext={activeAgentXp.xpToNextLevel}
                             rank={activeAgentXp.rank}
                             currentStreak={currentStreak}
+                            onBackgroundChanged={invalidateBg}
+                            availableAgents={availableAgents}
+                            onSelectAgent={setActiveAgentId}
                         />
-
-                        {/* Carousel Dock — overlays bottom of hero image */}
-                        <div className="absolute bottom-0 left-0 right-0 z-50 pointer-events-none flex justify-center px-2 pb-2">
-                            <div className="pointer-events-auto">
-                                <AgentCarousel
-                                    activeAgentId={activeAgent.id}
-                                    availableAgents={availableAgents}
-                                    onSelectAgent={setActiveAgentId}
-                                />
-                            </div>
-                        </div>
                     </>
                 ) : (
                     <div className="flex flex-col items-center justify-center w-full h-full pb-20 pointer-events-auto">

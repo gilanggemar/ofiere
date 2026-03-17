@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Bell, BellOff, CheckCheck, Trash2, Plus, Shield, AlertTriangle,
     Info, CheckCircle2, XCircle, Clock, Zap, Filter,
+    Check, RefreshCw, X, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { useWorkflowBuilderStore } from "@/store/useWorkflowBuilderStore";
 import { CONDITION_LABELS, SEVERITY_COLORS } from "@/lib/notifications/types";
 import type { AlertRule, AlertCondition, AlertSeverity } from "@/lib/notifications/types";
 import { AgentAvatar } from "@/components/agents/AgentAvatar";
@@ -38,6 +40,11 @@ export default function NotificationsPage() {
         fetchNotifications, fetchAlertRules, markAllRead,
         markRead, deleteNotification,
     } = useNotificationStore();
+
+    const pendingGates = useWorkflowBuilderStore((s) => s.pendingGates);
+    const approveGate = useWorkflowBuilderStore((s) => s.approveGate);
+    const retryGate = useWorkflowBuilderStore((s) => s.retryGate);
+    const declineGate = useWorkflowBuilderStore((s) => s.declineGate);
 
     const [tab, setTab] = useState<Tab>("inbox");
     const [createAlertOpen, setCreateAlertOpen] = useState(false);
@@ -122,7 +129,24 @@ export default function NotificationsPage() {
             <ScrollArea className="flex-1">
                 {tab === "inbox" ? (
                     <div className="space-y-1.5 pb-6 max-w-2xl">
-                        {notifications.length === 0 ? (
+                        {/* Pending Workflow Approvals */}
+                        {pendingGates.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                                <p className="text-[10px] uppercase font-semibold tracking-widest text-orange-400 px-1">
+                                    Pending Approvals
+                                </p>
+                                {pendingGates.map((gate, idx) => (
+                                    <PendingApprovalCard
+                                        key={`${gate.nodeId}-${gate.runId}-${gate.requestedAt}`}
+                                        gate={gate}
+                                        onApprove={approveGate}
+                                        onRetry={retryGate}
+                                        onDecline={declineGate}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                        {notifications.length === 0 && pendingGates.length === 0 ? (
                             <Card className="rounded-xl border-dashed border-border bg-card/50 shadow-none">
                                 <CardContent className="p-8 text-center">
                                     <BellOff className="w-8 h-8 mx-auto text-muted-foreground/40 mb-3" />
@@ -271,6 +295,103 @@ export default function NotificationsPage() {
 
             <CreateAlertDialog open={createAlertOpen} onOpenChange={setCreateAlertOpen} onCreated={fetchAlertRules} />
         </div>
+    );
+}
+
+/* ─── Pending Approval Card ─── */
+function PendingApprovalCard({
+    gate,
+    onApprove,
+    onRetry,
+    onDecline,
+}: {
+    gate: { nodeId: string; workflowId: string; runId: string; workflowName?: string; reviewData: Record<string, unknown>; requestedAt: number };
+    onApprove: (nodeId: string, instructions?: string) => Promise<void>;
+    onRetry: (nodeId: string, instructions?: string) => Promise<void>;
+    onDecline: (nodeId: string) => void;
+}) {
+    const [instructions, setInstructions] = useState("");
+    const [loading, setLoading] = useState<string | null>(null);
+
+    const handleApprove = async () => {
+        setLoading("approve");
+        await onApprove(gate.nodeId, instructions.trim() || undefined);
+        setLoading(null);
+        setInstructions("");
+    };
+    const handleRetry = async () => {
+        setLoading("retry");
+        await onRetry(gate.nodeId, instructions.trim() || undefined);
+        setLoading(null);
+        setInstructions("");
+    };
+    const handleDecline = () => {
+        onDecline(gate.nodeId);
+        setInstructions("");
+    };
+
+    return (
+        <Card className="rounded-xl border-orange-500/30 bg-orange-500/5 shadow-none py-0 gap-0">
+            <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-orange-500/15 text-orange-400 shrink-0 mt-0.5">
+                        <Users className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground">
+                            Human Approval Required
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Workflow <span className="text-foreground font-medium">{gate.workflowName || "Untitled"}</span> is waiting for your review
+                        </p>
+                        <p className="text-[9px] text-muted-foreground/40 mt-0.5">
+                            {new Date(gate.requestedAt).toLocaleString()}
+                        </p>
+
+                        {/* Instructions */}
+                        <textarea
+                            value={instructions}
+                            onChange={(e) => setInstructions(e.target.value)}
+                            placeholder="Reviewer instructions (optional)…"
+                            rows={2}
+                            className="w-full mt-2.5 rounded-lg border border-border bg-background/60 text-xs text-foreground px-2.5 py-1.5 resize-y outline-none focus:border-orange-500/50 transition-colors placeholder:text-muted-foreground/50"
+                        />
+
+                        {/* Action buttons */}
+                        <div className="flex gap-2 mt-2">
+                            <Button
+                                size="sm"
+                                className="h-7 px-3 rounded-lg text-[11px] font-semibold gap-1 bg-emerald-600 hover:bg-emerald-500 text-white"
+                                onClick={handleApprove}
+                                disabled={!!loading}
+                            >
+                                <Check className="w-3 h-3" />
+                                {loading === "approve" ? "…" : "Approve"}
+                            </Button>
+                            <Button
+                                size="sm"
+                                className="h-7 px-3 rounded-lg text-[11px] font-semibold gap-1 bg-amber-600 hover:bg-amber-500 text-white"
+                                onClick={handleRetry}
+                                disabled={!!loading}
+                            >
+                                <RefreshCw className="w-3 h-3" />
+                                {loading === "retry" ? "…" : "Retry"}
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-3 rounded-lg text-[11px] font-semibold gap-1 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                onClick={handleDecline}
+                                disabled={!!loading}
+                            >
+                                <X className="w-3 h-3" />
+                                Decline
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
     );
 }
 

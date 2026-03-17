@@ -1,0 +1,160 @@
+{
+  "plugins": {
+    "allow": [
+      "whatsapp",
+      "discord",
+      "telegram",
+      "slack",
+      "nostr",
+      "googlechat"
+    ],
+    "entries": {
+      "whatsapp": {
+        "enabled": true
+      },
+      "discord": {
+        "enabled": true
+      },
+      "imessage": {
+        "enabled": false
+      },
+      "telegram": {
+        "enabled": true
+      },
+      "slack": {
+        "enabled": true
+      },
+      "nostr": {
+        "enabled": true
+      },
+      "signal": {
+        "enabled": false
+      },
+      "googlechat": {
+        "enabled": true
+      }
+    }
+  },
+  "meta": {
+    "lastTouchedVersion": "2026.3.1",
+    "lastTouchedAt": "2026-03-07T08:22:26.120Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-03-02T15:04:55.441Z",
+    "lastRunVersion": "2026.3.1",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local"
+  },
+  "update": {
+    "channel": "stable",
+    "checkOnStart": false
+  },
+  "browser": {
+    "headless": true,
+    "noSandbox": true,
+    "defaultProfile": "openclaw"
+  },
+  "auth": {
+    "profiles": {
+      "openai-codex:default": {
+        "provider": "openai-codex",
+        "mode": "oauth"
+      }
+    }
+  },
+  "models": {
+    "mode": "merge"
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "openai-codex/gpt-5.3-codex"
+      },
+      "models": {
+        "openai-codex/gpt-5.3-codex": {}
+      },
+      "workspace": "/data/.openclaw/workspace"
+    },
+    "list": [
+      {
+        "id": "main",
+        "name": "main",
+        "default": true,
+        "subagents": {
+          "allowAgents": [
+            "ivy",
+            "daisy",
+            "celia",
+            "thalia"
+          ]
+        }
+      },
+      {
+        "id": "ivy",
+        "name": "Ivy",
+        "workspace": "/data/.openclaw/workspace-ivy"
+      },
+      {
+        "id": "daisy",
+        "name": "Daisy",
+        "workspace": "/data/.openclaw/workspace-daisy"
+      },
+      {
+        "id": "celia",
+        "name": "Celia",
+        "workspace": "/data/.openclaw/workspace-celia"
+      },
+      {
+        "id": "thalia",
+        "name": "Thalia",
+        "workspace": "/data/.openclaw/workspace-thalia"
+      }
+    ]
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "bash": true,
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "hooks": {
+    "token": "hooks_tHu1pVua4nosFlCTXREgDRbrBkGiyQqa"
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "lan",
+    "controlUi": {
+      "dangerouslyAllowHostHeaderOriginFallback": true,
+      "allowInsecureAuth": false,
+      "dangerouslyDisableDeviceAuth": true,
+      "allowedOrigins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://nerv-phi.vercel.app",
+        "https://nerv-84nr198oy-gilanggemar.vercel.app",
+        "*"
+      ]
+    },
+    "auth": {
+      "mode": "token",
+      "token": "tHu1pVua4nosFlCTXREgDRbrBkGiyQqa"
+    },
+    "trustedProxies": [
+      "127.0.0.1/32"
+    ],
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "remote": {
+      "token": "tHu1pVua4nosFlCTXREgDRbrBkGiyQqa"
+    }
+  }
+}

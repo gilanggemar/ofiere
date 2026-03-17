@@ -11,13 +11,22 @@ import {
     addEdge,
 } from '@xyflow/react';
 
-export type WfNodeExecStatus = 'idle' | 'queued' | 'running' | 'success' | 'error';
+export type WfNodeExecStatus = 'idle' | 'queued' | 'running' | 'success' | 'error' | 'waiting' | 'skipped';
 
 export interface ExecutionLogEntry {
     nodeId: string;
     timestamp: number;
-    type: 'info' | 'error' | 'output';
+    type: 'info' | 'error' | 'output' | 'gate';
     message: string;
+}
+
+export interface PendingGate {
+    nodeId: string;
+    workflowId: string;
+    runId: string;
+    workflowName?: string;
+    reviewData: Record<string, unknown>;
+    requestedAt: number;
 }
 
 export interface WorkflowMeta {
@@ -78,8 +87,10 @@ interface WorkflowBuilderState {
     edges: Edge[];
     selectedNodeId: string | null;
     isExecuting: boolean;
+    activeRunId: string | null;
     executionState: Record<string, WfNodeExecStatus>;
     executionLog: ExecutionLogEntry[];
+    pendingGates: PendingGate[];
     nodePaletteOpen: boolean;
     nodePaletteSearch: string;
     configPanelOpen: boolean;
@@ -101,11 +112,19 @@ interface WorkflowBuilderState {
     removeSelectedNodes: () => void;
     updateNodeData: (id: string, data: Record<string, unknown>) => void;
     duplicateNode: (id: string) => void;
+    toggleNodeFreeze: (id: string) => void;
     setSelectedNode: (id: string | null) => void;
     setConfigPanelOpen: (open: boolean) => void;
     startExecution: () => void;
+    startMissionExecution: (workflowId: string, input?: Record<string, unknown>) => Promise<void>;
+    abortExecution: () => void;
+    handleEngineEvent: (event: Record<string, unknown>) => void;
+    approveGate: (nodeId: string, instructions?: string) => Promise<void>;
+    retryGate: (nodeId: string, instructions?: string) => Promise<void>;
+    declineGate: (nodeId: string) => void;
     updateNodeExecution: (nodeId: string, status: WfNodeExecStatus) => void;
     addExecutionLog: (entry: ExecutionLogEntry) => void;
+    clearExecutionLog: () => void;
     completeExecution: () => void;
     togglePalette: () => void;
     setPaletteOpen: (open: boolean) => void;
@@ -138,8 +157,10 @@ export const useWorkflowBuilderStore = create<WorkflowBuilderState>((set, get) =
     edges: [],
     selectedNodeId: null,
     isExecuting: false,
+    activeRunId: null,
     executionState: {},
     executionLog: [],
+    pendingGates: [],
     nodePaletteOpen: false,
     nodePaletteSearch: '',
     configPanelOpen: false,
@@ -156,9 +177,12 @@ export const useWorkflowBuilderStore = create<WorkflowBuilderState>((set, get) =
     onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes), isDirty: true }),
     onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges), isDirty: true }),
     onConnect: (connection: Connection) => {
-        const edgeType = connection.sourceHandle?.startsWith('condition-') || connection.sourceHandle?.startsWith('summit-')
-            ? 'conditional' : 'data';
+        const handle = connection.sourceHandle || '';
+        const isConditional = handle === 'true' || handle === 'false'
+            || handle.startsWith('condition-') || handle.startsWith('summit-');
+        const edgeType = isConditional ? 'conditional' : 'data';
         const labelMap: Record<string, string> = {
+            'true': 'YES', 'false': 'NO',
             'condition-true': 'TRUE', 'condition-false': 'FALSE',
             'summit-text': 'TEXT', 'summit-exec': 'EXEC',
         };
@@ -166,7 +190,7 @@ export const useWorkflowBuilderStore = create<WorkflowBuilderState>((set, get) =
             edges: addEdge({
                 ...connection,
                 type: edgeType,
-                data: { label: labelMap[connection.sourceHandle || ''] },
+                data: { label: labelMap[handle] },
             }, get().edges),
             isDirty: true,
         });
@@ -208,8 +232,11 @@ export const useWorkflowBuilderStore = create<WorkflowBuilderState>((set, get) =
 
     removeSelectedNodes: () => {
         const nodes = get().nodes;
+        const edges = get().edges;
         const selectedIds = nodes.filter((n) => n.selected).map((n) => n.id);
-        if (selectedIds.length === 0) return;
+        const selectedEdgeIds = edges.filter((e) => e.selected).map((e) => e.id);
+
+        if (selectedIds.length === 0 && selectedEdgeIds.length === 0) return;
 
         // For each selected group, cleanly unparent non-selected children
         const groupsBeingRemoved = nodes.filter((n) => n.selected && n.type === 'group');
@@ -225,9 +252,9 @@ export const useWorkflowBuilderStore = create<WorkflowBuilderState>((set, get) =
 
         set({
             nodes: updatedNodes.filter((n) => !n.selected),
-            edges: get().edges.filter((e) => !selectedIds.includes(e.source) && !selectedIds.includes(e.target)),
-            selectedNodeId: null,
-            configPanelOpen: false,
+            edges: edges.filter((e) => !selectedIds.includes(e.source) && !selectedIds.includes(e.target) && !selectedEdgeIds.includes(e.id)),
+            selectedNodeId: selectedIds.length > 0 ? null : get().selectedNodeId,
+            configPanelOpen: selectedIds.length > 0 ? false : get().configPanelOpen,
             isDirty: true,
         });
     },
@@ -250,17 +277,427 @@ export const useWorkflowBuilderStore = create<WorkflowBuilderState>((set, get) =
         });
     },
 
-    setSelectedNode: (id) => set({ selectedNodeId: id, configPanelOpen: id !== null }),
-    setConfigPanelOpen: (open) => set({ configPanelOpen: open, selectedNodeId: open ? get().selectedNodeId : null }),
+    toggleNodeFreeze: (id) => {
+        const nodes = get().nodes;
+        const nodeIndex = nodes.findIndex((n) => n.id === id);
+        if (nodeIndex === -1) return;
+        
+        const node = nodes[nodeIndex];
+        const isCurrentlyFrozen = !!(node.data as any).isFrozen;
+        
+        get().updateNodeData(id, { isFrozen: !isCurrentlyFrozen });
+    },
+
+    setSelectedNode: (id) => set({ selectedNodeId: id }),
+    setConfigPanelOpen: (open) => set({ configPanelOpen: open }),
 
     startExecution: () => {
         const execState: Record<string, WfNodeExecStatus> = {};
         get().nodes.forEach((n) => { execState[n.id] = 'queued'; });
-        set({ isExecuting: true, executionState: execState, executionLog: [] });
+        set({ isExecuting: true, executionState: execState, executionLog: [], pendingGates: [] });
     },
+
+    startMissionExecution: async (workflowId, input) => {
+        const execState: Record<string, WfNodeExecStatus> = {};
+        get().nodes.forEach((n) => { execState[n.id] = 'idle'; });
+        set({ isExecuting: true, executionState: execState, executionLog: [], pendingGates: [], activeRunId: null });
+
+        try {
+            const res = await fetch(`/api/workflows/${workflowId}/run`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input: input ?? {} }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Unknown' }));
+                throw new Error(err.error || `Failed: ${res.status}`);
+            }
+            
+            const reader = res.body?.getReader();
+            const decoder = new TextDecoder();
+            if (reader) {
+                let buffer = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || ''; // Keep the incomplete line segment in the buffer
+                    
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const event = JSON.parse(line);
+                            if (event.runId && !get().activeRunId) {
+                                set({ activeRunId: event.runId });
+                            }
+                            get().handleEngineEvent(event);
+                        } catch (e) {
+                            console.error("Failed to parse event stream line", line, e);
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            set({
+                isExecuting: false,
+                executionLog: [{
+                    nodeId: 'system',
+                    timestamp: Date.now(),
+                    type: 'error',
+                    message: err instanceof Error ? err.message : 'Execution failed to start',
+                }],
+            });
+        }
+    },
+
+    abortExecution: () => set({ isExecuting: false, activeRunId: null }),
+
+    handleEngineEvent: (event) => {
+        // V2 uses event.type, V1 uses event.event
+        const eventType = (event.type as string) || (event.event as string);
+        const nodeId = (event.stepId as string) || (event.nodeId as string);
+
+        switch (eventType) {
+            // V2 events
+            case 'step:start':
+                if (nodeId) {
+                    set({ executionState: { ...get().executionState, [nodeId]: 'running' } });
+                    set({
+                        executionLog: [...get().executionLog, {
+                            nodeId,
+                            timestamp: Date.now(),
+                            type: 'info',
+                            message: `▶ Starting ${event.nodeType || 'step'}…`,
+                        }],
+                    });
+                }
+                break;
+            case 'step:completed':
+                if (nodeId) {
+                    set({ executionState: { ...get().executionState, [nodeId]: 'completed' } });
+                    const result = event.result as any;
+                    
+                    // Save the result to its data so the config panel can show it
+                    const node = get().nodes.find(n => n.id === nodeId);
+                    if (node) {
+                        const updates: any = { lastRunResult: result };
+                        if ((node.data as any).isFrozen) {
+                            updates.frozenResult = result;
+                        }
+                        get().updateNodeData(nodeId, updates);
+                    }
+
+                    set({
+                        executionLog: [...get().executionLog, {
+                            nodeId,
+                            timestamp: Date.now(),
+                            type: 'info',
+                            message: result?.outputText
+                                ? `✓ Completed: ${result.outputText.slice(0, 200)}`
+                                : '✓ Completed',
+                        }],
+                    });
+                }
+                break;
+            case 'step:failed':
+                if (nodeId) {
+                    set({ executionState: { ...get().executionState, [nodeId]: 'error' } });
+                    set({
+                        executionLog: [...get().executionLog, {
+                            nodeId,
+                            timestamp: Date.now(),
+                            type: 'error',
+                            message: `✗ Failed: ${event.error || 'Unknown error'}`,
+                        }],
+                    });
+                }
+                break;
+            case 'step:log':
+                set({
+                    executionLog: [...get().executionLog, {
+                        nodeId: nodeId || 'system',
+                        timestamp: Date.now(),
+                        type: 'info',
+                        message: (event.message as string) || '',
+                    }],
+                });
+                break;
+            case 'run:paused':
+                if (nodeId) {
+                    set({ executionState: { ...get().executionState, [nodeId]: 'waiting' } });
+                    
+                    const alreadyHasGate = get().pendingGates.some(g => g.nodeId === nodeId);
+                    if (!alreadyHasGate) {
+                        set({
+                            pendingGates: [...get().pendingGates, {
+                                nodeId,
+                                reviewData: {},
+                                requestedAt: Date.now(),
+                            }],
+                        });
+                    }
+
+                    set({
+                        executionLog: [...get().executionLog, {
+                            nodeId,
+                            timestamp: Date.now(),
+                            type: 'info',
+                            message: '⏸ Waiting for approval…',
+                        }],
+                    });
+                }
+                break;
+            case 'run:completed':
+                set({ isExecuting: false });
+                set({
+                    executionLog: [...get().executionLog, {
+                        nodeId: 'system',
+                        timestamp: Date.now(),
+                        type: 'info',
+                        message: '✅ Workflow completed successfully',
+                    }],
+                });
+                break;
+            case 'run:failed':
+            case 'run:error':
+                set({ isExecuting: false });
+                set({
+                    executionLog: [...get().executionLog, {
+                        nodeId: 'system',
+                        timestamp: Date.now(),
+                        type: 'error',
+                        message: `❌ ${event.error || 'Workflow execution failed'}`,
+                    }],
+                });
+                break;
+
+            // V1 events (backward compat)
+            case 'node:status':
+                if (nodeId) {
+                    const status = event.status as WfNodeExecStatus;
+                    set({ executionState: { ...get().executionState, [nodeId]: status } });
+                }
+                break;
+            case 'node:log':
+                set({
+                    executionLog: [...get().executionLog, {
+                        nodeId: nodeId || 'system',
+                        timestamp: Date.now(),
+                        type: (event.level as 'info' | 'error') || 'info',
+                        message: (event.message as string) || '',
+                    }],
+                });
+                break;
+            case 'gate:approval_requested': {
+                // Deduplicate: retryGate/approveGate may have already pushed this gate
+                const alreadyExists = get().pendingGates.some(g => g.nodeId === nodeId);
+                if (!alreadyExists) {
+                    set({
+                        pendingGates: [...get().pendingGates, {
+                            nodeId,
+                            workflowId: get().workflowMeta.id,
+                            runId: get().activeRunId || '',
+                            workflowName: get().workflowMeta.name,
+                            reviewData: (event.reviewData as Record<string, unknown>) || {},
+                            requestedAt: Date.now(),
+                        }],
+                    });
+                }
+                break;
+            }
+            case 'run:aborted':
+                set({ isExecuting: false });
+                break;
+        }
+    },
+
+    approveGate: async (nodeId, instructions) => {
+        const gate = get().pendingGates.find(g => g.nodeId === nodeId);
+        const wfId = gate?.workflowId || get().workflowMeta.id;
+        const runId = gate?.runId || get().activeRunId;
+        const wfName = gate?.workflowName || get().workflowMeta.name;
+        if (!wfId || !runId) return;
+
+        set({
+            pendingGates: get().pendingGates.filter(g => g.nodeId !== nodeId),
+            executionState: { ...get().executionState, [nodeId]: 'success' },
+            executionLog: [...get().executionLog, {
+                nodeId, timestamp: Date.now(), type: 'info',
+                message: instructions ? `✓ Approved with instructions: ${instructions.slice(0, 100)}` : '✓ Approved by human',
+            }],
+        });
+
+        try {
+            const res = await fetch(`/api/workflows/${wfId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runId, nodeId, action: 'approve', instructions: instructions || undefined }),
+            });
+            if (!res.ok) throw new Error('Approve request failed');
+
+            const reader = res.body?.getReader();
+            const decoder = new TextDecoder();
+            if (reader) {
+                let buffer = '';
+                let newRunId = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const event = JSON.parse(line);
+                            // Capture new runId from the stream
+                            if (event.runId && !newRunId) newRunId = event.runId;
+
+                            // Intercept gate:approval_requested and enrich with correct IDs
+                            if (event.type === 'gate:approval_requested' || event.type === 'run:paused') {
+                                const gateNodeId = event.nodeId || event.stepId || '';
+                                const alreadyHasGate = get().pendingGates.some(g => g.nodeId === gateNodeId);
+                                if (gateNodeId && !alreadyHasGate) {
+                                    set({
+                                        pendingGates: [...get().pendingGates, {
+                                            nodeId: gateNodeId,
+                                            workflowId: wfId,
+                                            runId: newRunId || runId,
+                                            workflowName: wfName,
+                                            reviewData: event.reviewData || {},
+                                            requestedAt: Date.now(),
+                                        }],
+                                    });
+                                }
+                            }
+                            get().handleEngineEvent(event);
+                        } catch {}
+                    }
+                }
+            }
+        } catch (err) {
+            set({
+                isExecuting: false,
+                executionLog: [...get().executionLog, {
+                    nodeId: 'system', timestamp: Date.now(), type: 'error',
+                    message: `Approval failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+                }],
+            });
+        }
+    },
+
+    retryGate: async (nodeId, instructions) => {
+        const gate = get().pendingGates.find(g => g.nodeId === nodeId);
+        const wfId = gate?.workflowId || get().workflowMeta.id;
+        const runId = gate?.runId || get().activeRunId;
+        const wfName = gate?.workflowName || get().workflowMeta.name;
+        if (!wfId || !runId) return;
+
+        // Reset all node statuses for a fresh run
+        const execState: Record<string, WfNodeExecStatus> = {};
+        get().nodes.forEach((n) => { execState[n.id] = 'idle'; });
+
+        set({
+            pendingGates: [],
+            executionState: execState,
+            executionLog: [{
+                nodeId: 'system', timestamp: Date.now(), type: 'info',
+                message: instructions
+                    ? `🔄 Retrying workflow with reviewer feedback: ${instructions.slice(0, 100)}`
+                    : '🔄 Retrying workflow from start…',
+            }],
+        });
+
+        try {
+            const res = await fetch(`/api/workflows/${wfId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runId, nodeId, action: 'retry', instructions: instructions || undefined }),
+            });
+            if (!res.ok) throw new Error('Retry request failed');
+
+            const reader = res.body?.getReader();
+            const decoder = new TextDecoder();
+            if (reader) {
+                let buffer = '';
+                let newRunId = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const event = JSON.parse(line);
+                            // Capture new runId from the stream
+                            if (event.runId && !newRunId) newRunId = event.runId;
+
+                            // Intercept gate:approval_requested and enrich with correct IDs
+                            if (event.type === 'gate:approval_requested' || event.type === 'run:paused') {
+                                const gateNodeId = event.nodeId || event.stepId || '';
+                                const alreadyHasGate = get().pendingGates.some(g => g.nodeId === gateNodeId);
+                                if (gateNodeId && !alreadyHasGate) {
+                                    set({
+                                        pendingGates: [...get().pendingGates, {
+                                            nodeId: gateNodeId,
+                                            workflowId: wfId,
+                                            runId: newRunId || runId,
+                                            workflowName: wfName,
+                                            reviewData: event.reviewData || {},
+                                            requestedAt: Date.now(),
+                                        }],
+                                    });
+                                }
+                            }
+                            get().handleEngineEvent(event);
+                        } catch {}
+                    }
+                }
+            }
+        } catch (err) {
+            set({
+                isExecuting: false,
+                executionLog: [...get().executionLog, {
+                    nodeId: 'system', timestamp: Date.now(), type: 'error',
+                    message: `Retry failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+                }],
+            });
+        }
+    },
+
+    declineGate: (nodeId) => {
+        const gate = get().pendingGates.find(g => g.nodeId === nodeId);
+        const wfId = gate?.workflowId || get().workflowMeta.id;
+        const runId = gate?.runId || get().activeRunId;
+
+        set({
+            isExecuting: false,
+            pendingGates: get().pendingGates.filter(g => g.nodeId !== nodeId),
+            executionState: { ...get().executionState, [nodeId]: 'error' },
+            executionLog: [...get().executionLog, {
+                nodeId, timestamp: Date.now(), type: 'info',
+                message: '✗ Declined by human — workflow stopped',
+            }],
+        });
+
+        // Fire and forget the API call
+        if (wfId && runId) {
+            fetch(`/api/workflows/${wfId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runId, nodeId, action: 'decline' }),
+            }).catch(() => {});
+        }
+    },
+
     updateNodeExecution: (nodeId, status) => set({ executionState: { ...get().executionState, [nodeId]: status } }),
     addExecutionLog: (entry) => set({ executionLog: [...get().executionLog, entry] }),
-    completeExecution: () => set({ isExecuting: false }),
+    clearExecutionLog: () => set({ executionLog: [] }),
+    completeExecution: () => set({ isExecuting: false, activeRunId: null }),
 
     togglePalette: () => set({ nodePaletteOpen: !get().nodePaletteOpen }),
     setPaletteOpen: (open) => set({ nodePaletteOpen: open }),

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Workflow, Play, Pause, Plus, Trash2, Clock, CheckCircle2,
     XCircle, Loader2, ChevronRight, Calendar, Zap, FileText,
-    Search, ArrowRight, GitBranch, PenTool,
+    Search, ArrowRight, GitBranch, PenTool, Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import { useWorkflowStore } from "@/store/useWorkflowStore";
 import { WORKFLOW_TEMPLATES } from "@/lib/workflows/types";
 import type { WorkflowRun, StepResult } from "@/lib/workflows/types";
 
-type Tab = "workflows" | "runs" | "templates";
+
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
     draft: { icon: FileText, color: "text-muted-foreground", label: "Draft" },
@@ -45,8 +45,13 @@ export default function WorkflowsPage() {
         fetchWorkflows, fetchRuns, triggerRun,
     } = useWorkflowStore();
 
-    const [tab, setTab] = useState<Tab>("workflows");
+
     const [createOpen, setCreateOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<{ id: string; name: string; description: string } | null>(null);
+
+    const handleEdit = useCallback((wf: any) => {
+        setEditTarget({ id: wf.id, name: wf.name, description: wf.description || '' });
+    }, []);
 
     useEffect(() => {
         fetchWorkflows();
@@ -101,36 +106,50 @@ export default function WorkflowsPage() {
                 </Button>
             </div>
 
-            {/* Tab Strip */}
-            <div className="flex items-center gap-1 bg-accent/30 rounded-xl p-1 w-fit">
-                {(["workflows", "runs", "templates"] as Tab[]).map((t) => (
-                    <button
-                        key={t}
-                        onClick={() => setTab(t)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${tab === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            }`}
-                    >
-                        {t === "workflows" && <GitBranch className="w-3.5 h-3.5 inline mr-1.5" />}
-                        {t === "runs" && <Play className="w-3.5 h-3.5 inline mr-1.5" />}
-                        {t === "templates" && <FileText className="w-3.5 h-3.5 inline mr-1.5" />}
-                        {t}
-                    </button>
-                ))}
+            {/* Two-column split layout */}
+            <div className="flex-1 flex gap-5 min-h-0">
+                {/* Left — Workflow List */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-3">
+                        <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                            My Workflows
+                        </span>
+                    </div>
+                    <ScrollArea className="h-[calc(100%-2rem)]">
+                        <WorkflowList
+                            workflows={workflows}
+                            onTrigger={handleTrigger}
+                            onDelete={handleDelete}
+                            onEdit={handleEdit}
+                        />
+                    </ScrollArea>
+                </div>
+
+                {/* Right — Run History Panel */}
+                <div className="flex-1 min-w-0 flex flex-col min-h-0">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Play className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                            Recent Runs
+                        </span>
+                        <span className="ml-auto text-[10px] text-muted-foreground/50">
+                            {runs.length} {runs.length === 1 ? 'run' : 'runs'}
+                        </span>
+                    </div>
+                    <div className="flex-1 min-h-0 rounded-xl border border-border bg-card/30 p-3">
+                        <ScrollArea className="h-full">
+                            <RunHistory runs={runs} onConfirm={openConfirm} />
+                        </ScrollArea>
+                    </div>
+                </div>
             </div>
 
-            <ScrollArea className="flex-1">
-                {tab === "workflows" && (
-                    <WorkflowList
-                        workflows={workflows}
-                        onTrigger={handleTrigger}
-                        onDelete={handleDelete}
-                    />
-                )}
-                {tab === "runs" && <RunHistory runs={runs} onConfirm={openConfirm} />}
-                {tab === "templates" && <TemplateList onCreateFromTemplate={(tpl) => {
-                    setCreateOpen(true);
-                }} />}
-            </ScrollArea>
+            <EditWorkflowDialog
+                workflow={editTarget}
+                onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+                onSaved={() => { setEditTarget(null); fetchWorkflows(); }}
+            />
 
             <CreateWorkflowDialog
                 open={createOpen}
@@ -152,11 +171,12 @@ export default function WorkflowsPage() {
 
 /* ─── Workflow List ─── */
 function WorkflowList({
-    workflows, onTrigger, onDelete,
+    workflows, onTrigger, onDelete, onEdit,
 }: {
     workflows: any[];
     onTrigger: (id: string) => void;
     onDelete: (e: React.MouseEvent, id: string) => void;
+    onEdit: (wf: any) => void;
 }) {
     if (workflows.length === 0) {
         return (
@@ -215,19 +235,16 @@ function WorkflowList({
                                                     </span>
                                                 )}
                                             </div>
-                                            {/* Step chain */}
-                                            <div className="flex items-center gap-1 mt-2 overflow-hidden">
-                                                {(wf.steps || []).map((step: any, i: number) => (
-                                                    <div key={i} className="flex items-center gap-1">
-                                                        {i > 0 && <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/20 shrink-0" />}
-                                                        <span className="text-[9px] px-2 py-0.5 rounded bg-accent/50 text-muted-foreground whitespace-nowrap truncate max-w-24">
-                                                            {step.title}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0">
+                                            <Button
+                                                variant="ghost" size="sm"
+                                                className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-amber-400"
+                                                onClick={(e) => { e.stopPropagation(); onEdit(wf); }}
+                                                title="Edit workflow"
+                                            >
+                                                <Pencil className="w-3 h-3" />
+                                            </Button>
                                             <Link href={`/dashboard/workflows/${wf.id}/builder`}>
                                                 <Button
                                                     variant="ghost" size="sm"
@@ -285,7 +302,7 @@ function RunHistory({ runs, onConfirm }: { runs: WorkflowRun[], onConfirm: (titl
                 const StatusIcon = statusCfg.icon;
                 const isExpanded = expandedId === run.id;
                 const duration = run.completedAt
-                    ? Math.round((run.completedAt - run.startedAt) / 1000)
+                    ? Math.round((new Date(run.completedAt).getTime() - new Date(run.startedAt).getTime()) / 1000)
                     : null;
 
                 return (
@@ -359,17 +376,22 @@ function RunHistory({ runs, onConfirm }: { runs: WorkflowRun[], onConfirm: (titl
                                         exit={{ height: 0, opacity: 0 }}
                                         className="mt-3 overflow-hidden"
                                     >
-                                        <div className="space-y-1 border-l-2 border-border pl-3 ml-3.5">
+                                        <div className="flex items-center gap-1.5 flex-wrap px-1 py-2 overflow-x-auto">
                                             {run.stepResults.map((sr: StepResult, i: number) => {
                                                 const stepCfg = STATUS_CONFIG[sr.status] || STATUS_CONFIG.pending;
                                                 const StepIcon = stepCfg.icon;
                                                 return (
-                                                    <div key={i} className="flex items-center gap-2 py-1">
-                                                        <StepIcon className={`w-3 h-3 ${stepCfg.color} ${sr.status === 'running' ? 'animate-spin' : ''}`} />
-                                                        <span className="text-[11px] text-foreground">{sr.stepId}</span>
-                                                        <Badge variant="secondary" className="text-[9px] h-3.5 rounded px-1 font-normal ml-auto">
-                                                            {stepCfg.label}
-                                                        </Badge>
+                                                    <div key={i} className="flex items-center gap-1.5 shrink-0">
+                                                        {i > 0 && (
+                                                            <ArrowRight className="w-3 h-3 text-muted-foreground/30 shrink-0" />
+                                                        )}
+                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent/30 border border-border/50">
+                                                            <StepIcon className={`w-3 h-3 ${stepCfg.color} shrink-0 ${sr.status === 'running' ? 'animate-spin' : ''}`} />
+                                                            <span className="text-[11px] text-foreground whitespace-nowrap">{sr.stepId}</span>
+                                                            <Badge variant="secondary" className="text-[9px] h-3.5 rounded px-1 font-normal ml-0.5">
+                                                                {stepCfg.label}
+                                                            </Badge>
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
@@ -457,6 +479,14 @@ function CreateWorkflowDialog({
                     description: description.trim() || undefined,
                     steps: [],
                     status: "draft",
+                    definition_version: 2,
+                    nodes: [{
+                        id: `manual_trigger-${Date.now()}`,
+                        type: "manual_trigger",
+                        position: { x: 250, y: 80 },
+                        data: { label: "Execute Trigger" },
+                    }],
+                    edges: [],
                 }),
             });
             setName(""); setDescription("");
@@ -506,6 +536,90 @@ function CreateWorkflowDialog({
                         disabled={saving || !name.trim()}
                     >
                         Create
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/* ─── Edit Workflow Dialog ─── */
+function EditWorkflowDialog({
+    workflow, onOpenChange, onSaved,
+}: {
+    workflow: { id: string; name: string; description: string } | null;
+    onOpenChange: (o: boolean) => void;
+    onSaved: () => void;
+}) {
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [saving, setSaving] = useState(false);
+
+    // Sync local state when workflow changes
+    useEffect(() => {
+        if (workflow) {
+            setName(workflow.name);
+            setDescription(workflow.description);
+        }
+    }, [workflow]);
+
+    const handleSave = async () => {
+        if (!workflow || !name.trim()) return;
+        setSaving(true);
+        try {
+            await fetch(`/api/workflows/${workflow.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name.trim(),
+                    description: description.trim() || undefined,
+                }),
+            });
+            onSaved();
+        } catch (e) {
+            console.error("Failed to update workflow:", e);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Dialog open={!!workflow} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md rounded-2xl">
+                <DialogHeader>
+                    <DialogTitle className="text-base">Edit Workflow</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] text-muted-foreground">Name</label>
+                        <Input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Workflow name"
+                            className="h-8 text-[13px] rounded-xl border-border bg-background"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] text-muted-foreground">Description</label>
+                        <Textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="What does this workflow do?"
+                            className="min-h-16 text-[13px] rounded-xl border-border bg-background resize-none"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="ghost" size="sm" className="rounded-full h-8 px-4 text-xs">Cancel</Button>
+                    </DialogClose>
+                    <Button
+                        size="sm"
+                        className="rounded-full h-8 px-5 text-xs bg-foreground text-background hover:bg-foreground/90"
+                        onClick={handleSave}
+                        disabled={saving || !name.trim()}
+                    >
+                        Save
                     </Button>
                 </DialogFooter>
             </DialogContent>

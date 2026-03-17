@@ -332,7 +332,7 @@ export class OpenClawGateway {
         const privateKey = await crypto.subtle.importKey(
           "jwk",
           parsed.privateKeyJwk,
-          { name: "ECDSA", namedCurve: "P-256" },
+          { name: "Ed25519" },
           false,
           ["sign"]
         );
@@ -342,9 +342,9 @@ export class OpenClawGateway {
       }
     }
 
-    // Generate new ECDSA P-256 keypair
+    // Generate new Ed25519 keypair
     const keyPair = await crypto.subtle.generateKey(
-      { name: "ECDSA", namedCurve: "P-256" },
+      { name: "Ed25519" },
       true, // extractable so we can store it
       ["sign", "verify"]
     );
@@ -377,35 +377,78 @@ export class OpenClawGateway {
     return { publicKey: publicKeyB64, privateKey: keyPair.privateKey, deviceId };
   }
 
-  private async signChallenge(nonce: string, privateKey: CryptoKey): Promise<{
-    signature: string;
-    signedAt: number;
-  }> {
-    const signedAt = Date.now();
-    const payload = `${nonce}:${signedAt}`;
-    const encoded = new TextEncoder().encode(payload);
+  private async signChallenge(params: {
+    deviceId: string;
+    clientId: string;
+    clientMode: string;
+    role: string;
+    scopes: string[];
+    signedAtMs: number;
+    token: string;
+    nonce: string;
+    platform: string;
+    deviceFamily: string;
+    privateKey: CryptoKey;
+  }): Promise<{ signature: string }> {
+    const payloadStr = [
+      "v3",
+      params.deviceId,
+      params.clientId,
+      params.clientMode,
+      params.role,
+      params.scopes.join(","),
+      String(params.signedAtMs),
+      params.token,
+      params.nonce,
+      params.platform,
+      params.deviceFamily,
+    ].join("|");
+
+    const encoded = new TextEncoder().encode(payloadStr);
 
     const sig = await crypto.subtle.sign(
-      { name: "ECDSA", hash: "SHA-256" },
-      privateKey,
+      { name: "Ed25519" },
+      params.privateKey,
       encoded
     );
 
     return {
       signature: OpenClawGateway.base64urlEncode(sig),
-      signedAt,
     };
   }
 
   private async performHandshake(): Promise<void> {
     console.log("[OpenClaw Gateway] Performing handshake...");
 
-    // Get or create device identity
-    const { publicKey, privateKey, deviceId } = await this.getOrCreateDeviceKeypair();
-    const nonce = this.challengeNonce || "";
+    if (!this.challengeNonce) {
+      console.warn("[OpenClaw Gateway] Cannot handshake without challenge nonce");
+      return;
+    }
 
-    // Sign the challenge nonce
-    const { signature, signedAt } = await this.signChallenge(nonce, privateKey);
+    const { publicKey, privateKey, deviceId } = await this.getOrCreateDeviceKeypair();
+
+    const signedAtMs = Date.now();
+    const token = this.config.token || "";
+    const scopes = [
+        "operator.read",
+        "operator.write",
+        "operator.admin",
+        "operator.approvals",
+    ];
+
+    const { signature } = await this.signChallenge({
+      deviceId,
+      clientId: "openclaw-control-ui",
+      clientMode: "webchat",
+      role: "operator",
+      scopes,
+      signedAtMs,
+      token,
+      nonce: this.challengeNonce,
+      platform: "web",
+      deviceFamily: "desktop",
+      privateKey
+    });
 
     const connectFrame = {
       type: "req",
@@ -418,34 +461,28 @@ export class OpenClawGateway {
           id: "openclaw-control-ui",
           version: "0.1.0",
           platform: "web",
+          deviceFamily: "desktop",
           mode: "webchat",
         },
         device: {
           id: deviceId,
           publicKey,
           signature,
-          signedAt,
-          nonce,
+          signedAt: signedAtMs,
+          nonce: this.challengeNonce,
         },
         role: "operator",
-        scopes: [
-          "operator.read",
-          "operator.write",
-          "operator.admin",
-          "operator.approvals",
-        ],
+        scopes,
         caps: [],
         commands: [],
         permissions: {},
         auth: {
-          token: this.config.token || "",
+          token,
         },
         locale: "en-US",
         userAgent: "nerv-dashboard/0.1.0",
       },
     };
-
-    console.log("[OpenClaw Gateway] Connect frame device block:", JSON.stringify(connectFrame.params.device));
 
     // Store the request ID so we can catch the response
     const handshakeId = connectFrame.id;

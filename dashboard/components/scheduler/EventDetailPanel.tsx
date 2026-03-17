@@ -92,14 +92,17 @@ export function EventDetailPanel() {
     // Sync form state with selected event
     useEffect(() => {
         if (!event) return;
-        setTitle(event.title);
+        setTitle(event.title || '');
         setDescription(event.description || '');
-        setScheduledDate(event.scheduledDate);
+        setScheduledDate(event.scheduledDate || '');
         setScheduledTime(event.scheduledTime || '');
-        setDurationMinutes(event.durationMinutes);
-        setPriority(event.priority);
-        setRecurrenceType(event.recurrenceType);
-        setRecurrenceInterval(event.recurrenceInterval);
+        setDurationMinutes(event.durationMinutes || 30);
+        // Priority may come as integer from DB — convert to string label
+        const priorityMap: Record<number, string> = { 0: 'low', 1: 'medium', 2: 'high', 3: 'critical' };
+        const p = event.priority;
+        setPriority(typeof p === 'number' ? (priorityMap[p] || 'medium') : (p || 'medium'));
+        setRecurrenceType(event.recurrenceType || 'none');
+        setRecurrenceInterval(event.recurrenceInterval || 1);
         setRecurrenceDaysOfWeek(event.recurrenceDaysOfWeek || []);
         setRecurrenceEndDate(event.recurrenceEndDate || '');
     }, [event]);

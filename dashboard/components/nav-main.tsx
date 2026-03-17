@@ -6,6 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNotificationStore } from "@/store/useNotificationStore";
+import { useWorkflowBuilderStore } from "@/store/useWorkflowBuilderStore";
 
 import {
     Collapsible,
@@ -28,6 +30,7 @@ export type Route = {
     icon: React.ReactNode;
     link: string;
     status?: 'active' | 'error';
+    badge?: boolean;
     subs?: { title: string; link: string; icon?: React.ReactNode }[];
 };
 
@@ -48,12 +51,27 @@ export default function DashboardNavigation({
 }) {
     const pathname = usePathname();
 
+    // Read notification & workflow states for badge dots
+    const unreadCount = useNotificationStore((s) => s.unreadCount);
+    const notifications = useNotificationStore((s) => s.notifications);
+    const pendingGates = useWorkflowBuilderStore((s) => s.pendingGates);
+
+    // Check for unread agent messages (notifications from agents = chat indicator)
+    const hasUnreadAgentChat = notifications.some(n => !n.isRead && n.agentId);
+
     const renderRoute = (route: Route, isChild = false) => {
         // Improved active detection: exact match for root paths, startsWith for nested
         const isActive = route.link !== "#" && (
             pathname === route.link ||
             (route.link !== "/dashboard" && pathname?.startsWith(route.link + "/")) ||
             (route.link === "/dashboard" && pathname === "/dashboard")
+        );
+
+        // Dynamic badge: show dot on Notifications if unread or pending gates, on Chat if unread agent messages
+        const showBadge = route.badge || (
+            route.id === 'notifications' && (unreadCount > 0 || pendingGates.length > 0)
+        ) || (
+            route.id === 'chat' && hasUnreadAgentChat
         );
 
         return (
@@ -63,12 +81,19 @@ export default function DashboardNavigation({
                     tooltip={route.title}
                     isActive={isActive}
                     className={cn(
-                        "transition-all",
-                        isActive && "border-l-[3px] border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground rounded-l-none"
+                        "transition-all rounded-lg",
+                        isActive
+                            ? "bg-sidebar-accent/80 text-sidebar-accent-foreground"
+                            : "hover:bg-sidebar-accent/40"
                     )}
                 >
                     <Link href={route.link} className="flex relative items-center w-full">
-                        {route.icon}
+                        <span className="relative">
+                            {route.icon}
+                            {showBadge && (
+                                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-sidebar" />
+                            )}
+                        </span>
                         <span className="text-[13px] ml-2 group-data-[collapsible=icon]:hidden">{route.title}</span>
                         {route.status === 'active' && (
                             <span className="absolute right-2 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse group-data-[collapsible=icon]:hidden" />

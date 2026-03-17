@@ -9,6 +9,7 @@ export const agents = pgTable('agents', {
     role: text('role'),
     avatar: text('avatar'),
     heroImage: text('hero_image'),
+    backgroundImage: text('background_image'),
     specialty: jsonb('specialty').default([]),
     temperature: real('temperature').default(0.7),
     status: text('status').default('OFFLINE'),

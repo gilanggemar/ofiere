@@ -2,6 +2,7 @@
 
 import { useSocketStore } from "@/lib/useSocket";
 import { useConnectionStore } from "@/store/useConnectionStore";
+import { useAgentSettingsStore } from "@/store/useAgentSettingsStore";
 import { AgentCard } from "@/components/AgentCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plug2 } from "lucide-react";
@@ -11,9 +12,10 @@ import { Button } from "@/components/ui/button";
 export default function AgentsPage() {
     const { agents: socketAgents } = useSocketStore();
     const { activeProfile } = useConnectionStore();
+    const { hiddenAgentIds } = useAgentSettingsStore();
 
     // Inject Agent Zero into the roster if it's enabled in the active connection profile
-    const availableAgents = [...socketAgents];
+    let availableAgents = [...socketAgents];
     if (activeProfile?.agentZeroEnabled) {
         if (!availableAgents.find(a => a.id === 'agent-zero')) {
             availableAgents.push({
@@ -30,6 +32,12 @@ export default function AgentsPage() {
             });
         }
     }
+
+    // Filter out hidden agents
+    availableAgents = availableAgents.filter((a: any) => {
+        const id = a.accountId || a.name || a.id;
+        return !hiddenAgentIds.includes(id);
+    });
 
     const onlineCount = availableAgents.filter(
         (a: any) => a.running || a.probeOk || a.connected

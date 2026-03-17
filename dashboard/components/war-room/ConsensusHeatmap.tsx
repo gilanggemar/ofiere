@@ -1,6 +1,7 @@
 "use client";
 
 import type { WarRoomEvent } from '@/lib/war-room/types';
+import { useAgentSettingsStore } from "@/store/useAgentSettingsStore";
 
 interface ConsensusHeatmapProps {
     events: WarRoomEvent[];
@@ -8,8 +9,9 @@ interface ConsensusHeatmapProps {
 }
 
 export function ConsensusHeatmap({ events, currentTime }: ConsensusHeatmapProps) {
+    const { hiddenAgentIds } = useAgentSettingsStore();
     const activeEvents = events.filter(e => e.timestamp <= currentTime);
-    const agents = ['daisy', 'ivy', 'celia', 'thalia'];
+    const agents = ['daisy', 'ivy', 'celia', 'thalia'].filter(a => !hiddenAgentIds.includes(a));
 
     // Matrix: matrix[source][target] = weight
     const matrix: Record<string, Record<string, number>> = {};

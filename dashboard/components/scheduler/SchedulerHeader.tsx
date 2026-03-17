@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { format, addWeeks, addDays } from 'date-fns';
-import { ChevronLeft, ChevronRight, CalendarDays, Plus, Flame } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSchedulerStore } from '@/store/useSchedulerStore';
@@ -11,7 +11,8 @@ import { AgentAvatar } from '@/components/agents/AgentAvatar';
 
 // ─── Agent color helper ─────────────────────────────────────────────────────
 
-function getAgentColor(agentId: string): string {
+function getAgentColor(agentId: string | null | undefined): string {
+    if (!agentId) return 'var(--accent-base)';
     const lower = agentId.toLowerCase();
     if (lower.includes('daisy')) return 'var(--agent-daisy)';
     if (lower.includes('ivy')) return 'var(--agent-ivy)';
@@ -84,7 +85,7 @@ export function SchedulerHeader() {
     ];
 
     return (
-        <div className="nerv-glass-2 sticky top-0 z-30 px-6 py-3 border-b border-white/[0.06]">
+        <div className="nerv-glass-2 sticky top-0 z-10 px-6 py-3 border-b border-white/[0.06]">
             {/* ─── Top Row ─── */}
             <div className="flex items-center justify-between gap-4">
                 {/* Left: Title */}
@@ -129,7 +130,7 @@ export function SchedulerHeader() {
                     </Button>
                 </div>
 
-                {/* Right: View range + New Event */}
+                {/* Right: View range */}
                 <div className="flex items-center gap-2">
                     <div className="flex items-center rounded-full bg-white/[0.04] p-0.5">
                         {viewRanges.map(({ label, value }) => (
@@ -147,14 +148,6 @@ export function SchedulerHeader() {
                             </button>
                         ))}
                     </div>
-                    <Button
-                        size="sm"
-                        onClick={() => setCreateModalOpen(true)}
-                        className="rounded-full h-7 px-3 text-xs gap-1 bg-[var(--accent-base)] hover:bg-[var(--accent-hover)] text-[var(--text-on-accent)]"
-                    >
-                        <Plus className="w-3.5 h-3.5" />
-                        New Event
-                    </Button>
                 </div>
             </div>
 

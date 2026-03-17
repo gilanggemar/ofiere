@@ -9,6 +9,7 @@ import { NODE_ACCENTS, type WfNodeType } from "./nodes/nodeStyles";
 export default function ExecutionLog() {
     const isExecuting = useWorkflowBuilderStore((s) => s.isExecuting);
     const executionLog = useWorkflowBuilderStore((s) => s.executionLog);
+    const clearExecutionLog = useWorkflowBuilderStore((s) => s.clearExecutionLog);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll
@@ -85,22 +86,43 @@ export default function ExecutionLog() {
                                 />
                             )}
                         </div>
-                        <button
-                            onClick={handleCopy}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                background: "none",
-                                border: "none",
-                                color: "var(--text-muted)",
-                                cursor: "pointer",
-                                fontSize: 10,
-                            }}
-                        >
-                            <Copy size={11} />
-                            Copy
-                        </button>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <button
+                                onClick={handleCopy}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    background: "none",
+                                    border: "none",
+                                    color: "var(--text-muted)",
+                                    cursor: "pointer",
+                                    fontSize: 10,
+                                }}
+                            >
+                                <Copy size={11} />
+                                Copy
+                            </button>
+                            {!isExecuting && (
+                                <button
+                                    onClick={clearExecutionLog}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 4,
+                                        background: "none",
+                                        border: "none",
+                                        color: "var(--status-error)",
+                                        cursor: "pointer",
+                                        fontSize: 10,
+                                    }}
+                                    title="Close execution log"
+                                >
+                                    <X size={12} />
+                                    Close
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Log entries */}

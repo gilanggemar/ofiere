@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Check, X, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Check, X, Loader2, ImagePlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeroCropModal } from './HeroCropModal';
+import { BackgroundCropModal } from './BackgroundCropModal';
+import { useAgentBackground } from '@/hooks/useAgentBackground';
 import {
     Dialog,
     DialogContent,
@@ -27,6 +29,7 @@ interface HeroGalleryModalProps {
     onImageAdded: () => void;
     onImageDeleted: () => void;
     onClose: () => void;
+    onBackgroundChanged?: () => void;
 }
 
 async function uploadHeroImage(agentId: string, file: File): Promise<boolean> {
@@ -58,11 +61,18 @@ export function HeroGalleryModal({
     onImageAdded,
     onImageDeleted,
     onClose,
+    onBackgroundChanged,
 }: HeroGalleryModalProps) {
     const inputRef = useRef<HTMLInputElement>(null);
+    const bgInputRef = useRef<HTMLInputElement>(null);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+
+    // Background state
+    const { backgroundUri, invalidate: invalidateBg } = useAgentBackground(agentId);
+    const [isBgUploading, setIsBgUploading] = useState(false);
+    const [pendingBgFile, setPendingBgFile] = useState<File | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -91,6 +101,49 @@ export function HeroGalleryModal({
         }
     };
 
+    // Background handlers
+    const handleBgFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (bgInputRef.current) bgInputRef.current.value = '';
+
+        setPendingBgFile(file);
+    };
+
+    const handleBgCropApply = async (file: File) => {
+        setIsBgUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('agentId', agentId);
+            formData.append('backgroundImage', file);
+            await fetch('/api/agents/background', { method: 'POST', body: formData });
+            invalidateBg();
+            onBackgroundChanged?.();
+        } catch (err) {
+            console.error('Failed to upload background:', err);
+        } finally {
+            setIsBgUploading(false);
+            setPendingBgFile(null);
+        }
+    };
+
+    const handleBgDelete = async () => {
+        setIsBgUploading(true);
+        try {
+            await fetch('/api/agents/background', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agentId }),
+            });
+            invalidateBg();
+            onBackgroundChanged?.();
+        } catch (err) {
+            console.error('Failed to remove background:', err);
+        } finally {
+            setIsBgUploading(false);
+        }
+    };
+
     return (
         <>
             <Dialog open onOpenChange={() => !isUploading && onClose()}>
@@ -105,7 +158,7 @@ export function HeroGalleryModal({
                     </DialogHeader>
 
                     <div className="mt-4">
-                        {/* Grid of images */}
+                        {/* Grid of portrait images */}
                         <div className="grid grid-cols-4 gap-3">
                             {images.map((img, idx) => {
                                 const isActive = idx === activeIndex;
@@ -193,10 +246,82 @@ export function HeroGalleryModal({
                             </p>
                         )}
                     </div>
+
+                    {/* ═══ Background Gallery Section ═══ */}
+                    <div className="mt-6 pt-5 border-t border-white/10">
+                        <div className="text-[11px] uppercase tracking-[0.2em] font-mono text-white/70 mb-1">
+                            Background Gallery
+                        </div>
+                        <p className="text-xs text-white/40 mb-4">
+                            Set a custom background for this agent&apos;s showcase view.
+                        </p>
+
+                        <div className="flex gap-3 items-start">
+                            {/* Current background preview */}
+                            {backgroundUri && (
+                                <motion.div
+                                    className="relative group w-36 aspect-video rounded-lg overflow-hidden border-2 transition-all duration-200"
+                                    style={{
+                                        borderColor: agentColor,
+                                        boxShadow: `0 0 12px ${agentColor}30`,
+                                    }}
+                                    whileHover={{ scale: 1.03 }}
+                                >
+                                    <img
+                                        src={backgroundUri}
+                                        alt="Current background"
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center"
+                                        style={{ background: agentColor }}
+                                    >
+                                        <Check size={10} className="text-black" />
+                                    </div>
+
+                                    {/* Delete bg button */}
+                                    <button
+                                        onClick={handleBgDelete}
+                                        disabled={isBgUploading}
+                                        className="absolute top-1 right-1 w-5 h-5 rounded-full
+                                            bg-black/70 flex items-center justify-center
+                                            opacity-0 group-hover:opacity-100 transition-opacity
+                                            hover:bg-red-900/80 cursor-pointer"
+                                    >
+                                        {isBgUploading ? (
+                                            <Loader2 size={10} className="animate-spin text-white/60" />
+                                        ) : (
+                                            <Trash2 size={10} className="text-red-400" />
+                                        )}
+                                    </button>
+                                </motion.div>
+                            )}
+
+                            {/* Add / Change background button */}
+                            <motion.button
+                                onClick={() => bgInputRef.current?.click()}
+                                disabled={isBgUploading}
+                                className="w-36 aspect-video rounded-lg border-2 border-dashed border-white/15
+                                    flex flex-col items-center justify-center gap-1.5
+                                    hover:border-white/30 hover:bg-white/5 transition-all cursor-pointer
+                                    disabled:opacity-50"
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                            >
+                                {isBgUploading ? (
+                                    <Loader2 size={20} className="text-white/40 animate-spin" />
+                                ) : (
+                                    <ImagePlus size={20} className="text-white/40" />
+                                )}
+                                <span className="text-[10px] font-mono uppercase tracking-wider text-white/30">
+                                    {isBgUploading ? 'Uploading...' : backgroundUri ? 'Change' : 'Set BG'}
+                                </span>
+                            </motion.button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Hidden file input */}
+            {/* Hidden file inputs */}
             <input
                 ref={inputRef}
                 type="file"
@@ -204,14 +329,29 @@ export function HeroGalleryModal({
                 className="hidden"
                 onChange={handleFileChange}
             />
+            <input
+                ref={bgInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBgFileChange}
+            />
 
-            {/* Crop modal after file selection */}
+            {/* Crop modals after file selection */}
             {pendingFile && (
                 <HeroCropModal
                     file={pendingFile}
                     agentId={agentId}
                     onClose={() => setPendingFile(null)}
                     onApply={handleCropApply}
+                />
+            )}
+            
+            {pendingBgFile && (
+                <BackgroundCropModal
+                    file={pendingBgFile}
+                    onClose={() => setPendingBgFile(null)}
+                    onApply={handleBgCropApply}
                 />
             )}
         </>

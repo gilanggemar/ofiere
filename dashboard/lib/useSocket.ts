@@ -51,9 +51,9 @@ export interface ChatMessage {
     content: string;
     timestamp: string;
     agentId?: string;
-    sessionKey?: string;
     streaming?: boolean;
     tool_calls?: any[];
+    attachments?: any[];
 }
 
 export interface SummitMessage {
@@ -976,16 +976,32 @@ export function useSocket() {
     /**
      * Send a chat message to an agent via the gateway `chat.send` RPC.
      */
-    const sendChatMessage = useCallback((agentId: string, message: string, customSessionKey?: string): string => {
+    const sendChatMessage = useCallback((agentId: string, message: string, customSessionKey?: string, attachments?: any[], skipStoreAdd?: boolean): string => {
         const gw = getGateway();
         const sessionKey = customSessionKey || `agent:${agentId}:main`;
         const idempotencyKey = uid();
         const reqId = `chat-${idempotencyKey}`;
 
+        // Format for OpenClaw native attachment ingest (per Ivy's schema)
+        const gatewayAttachments = attachments?.length ? attachments.map(a => {
+            // Extract raw base64 string from the data URL format "data:image/png;base64,iVBO..."
+            const match = a.url?.match(/^data:[^;]+;base64,(.+)$/);
+            const rawBase64 = match ? match[1] : a.url;
+
+            return {
+                name: a.name,
+                mimeType: a.type || a.mimeType,
+                content: rawBase64,
+                encoding: "base64",
+                size: a.size
+            };
+        }) : undefined;
+
         if (gw.isConnected) {
             gw.request('chat.send', {
                 sessionKey,
                 message,
+                attachments: gatewayAttachments,
                 idempotencyKey
             }).then((res) => {
                 console.log('[chat.send ok]', res);
@@ -1034,15 +1050,18 @@ export function useSocket() {
 
             addLog(`💬 Sent to ${agentId}: ${message.slice(0, 60)}${message.length > 60 ? '…' : ''}`);
 
-            useSocketStore.getState().addChatMessage({
-                id: `user-${idempotencyKey}`,
-                role: 'user',
-                content: message,
-                timestamp: new Date().toLocaleTimeString(),
-                agentId: agentId,
-                sessionKey: sessionKey,
-                streaming: false,
-            });
+            if (!skipStoreAdd) {
+                useSocketStore.getState().addChatMessage({
+                    id: `user-${idempotencyKey}`,
+                    role: 'user',
+                    content: message,
+                    timestamp: new Date().toLocaleTimeString(),
+                    agentId: agentId,
+                    sessionKey: sessionKey,
+                    streaming: false,
+                    attachments: attachments,
+                });
+            }
         } else {
             addLog('⚠️ Cannot send — WebSocket not connected');
         }

@@ -111,6 +111,32 @@ html {
   --color-agent-celia: var(--agent-celia);
   --color-agent-thalia: var(--agent-thalia);
   --color-agent-zero: var(--agent-zero);
+
+  /* --- NERV Chat Extended Palette (Tailwind v4 mappings) --- */
+  --color-nerv-cyan: var(--nerv-cyan);
+  --color-nerv-cyan-dim: var(--nerv-cyan-dim);
+  --color-nerv-cyan-glow: var(--nerv-cyan-glow);
+  --color-nerv-cyan-muted: var(--nerv-cyan-muted);
+  --color-nerv-violet: var(--nerv-violet);
+  --color-nerv-violet-dim: var(--nerv-violet-dim);
+  --color-nerv-violet-glow: var(--nerv-violet-glow);
+  --color-nerv-warn: var(--nerv-warn);
+  --color-nerv-warn-dim: var(--nerv-warn-dim);
+  --color-nerv-danger: var(--nerv-danger);
+  --color-nerv-danger-dim: var(--nerv-danger-dim);
+  --color-nerv-success: var(--nerv-success);
+  --color-nerv-success-dim: var(--nerv-success-dim);
+  --color-nerv-surface-0: var(--nerv-surface-0);
+  --color-nerv-surface-2: var(--nerv-surface-2);
+  --color-nerv-surface-3: var(--nerv-surface-3);
+  --color-nerv-surface-4: var(--nerv-surface-4);
+  --color-nerv-border-subtle: var(--nerv-border-subtle);
+  --color-nerv-border-default: var(--nerv-border-default);
+  --color-nerv-border-strong: var(--nerv-border-strong);
+  --color-nerv-text-primary: var(--nerv-text-primary);
+  --color-nerv-text-secondary: var(--nerv-text-secondary);
+  --color-nerv-text-tertiary: var(--nerv-text-tertiary);
+  --color-nerv-text-ghost: var(--nerv-text-ghost);
 }
 
 :root {
@@ -419,6 +445,49 @@ html {
   --hover-border-glow: oklch(1 0 0 / 0.12);
   --focus-ring: var(--accent-base);
   --focus-ring-offset: var(--bg-base);
+
+  /* ═══ NERV CHAT — Extended Palette (Additive Only) ═══ */
+
+  /* --- Secondary Accent: Electric Cyan --- */
+  --nerv-cyan: #00e5cc;
+  --nerv-cyan-dim: #00e5cc33;
+  --nerv-cyan-glow: #00e5cc66;
+  --nerv-cyan-muted: #0a7a6e;
+
+  /* --- Tertiary Accent: Helio Violet --- */
+  --nerv-violet: #a78bfa;
+  --nerv-violet-dim: #a78bfa22;
+  --nerv-violet-glow: #a78bfa55;
+
+  /* --- Semantic: Warning / Drift --- */
+  --nerv-warn: #f59e0b;
+  --nerv-warn-dim: #f59e0b1a;
+
+  /* --- Semantic: Danger / Critical --- */
+  --nerv-danger: #ef4444;
+  --nerv-danger-dim: #ef44441a;
+
+  /* --- Semantic: Success / Locked / Ship-Ready --- */
+  --nerv-success: #34d399;
+  --nerv-success-dim: #34d3991a;
+
+  /* --- Surface Layers (panels, modals, drawers) --- */
+  --nerv-surface-0: #09090b;
+  --nerv-surface-1: #111113;  /* reference only — existing main bg */
+  --nerv-surface-2: #18181b;
+  --nerv-surface-3: #1f1f23;
+  --nerv-surface-4: #27272a;
+
+  /* --- Border variants --- */
+  --nerv-border-subtle: #ffffff08;
+  --nerv-border-default: #ffffff12;
+  --nerv-border-strong: #ffffff22;
+
+  /* --- Text hierarchy --- */
+  --nerv-text-primary: #f5f0eb;
+  --nerv-text-secondary: #a89a8c;
+  --nerv-text-tertiary: #6b5e52;
+  --nerv-text-ghost: #4a3f35;
 }
 
 @layer base {
@@ -445,6 +514,72 @@ html {
   textarea::placeholder {
     color: var(--muted-foreground) !important;
   }
+}
+
+/* ─── Page Loading Indicator ─── */
+.nerv-page-loading-indicator {
+  position: fixed;
+  bottom: 28px;
+  left: 28px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px 10px 14px;
+  border-radius: 50px;
+  background: oklch(0.11 0.005 0 / 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid oklch(1 0 0 / 0.10);
+  box-shadow:
+    0 4px 24px oklch(0 0 0 / 0.3),
+    0 0 0 1px oklch(0.75 0.18 55 / 0.08),
+    inset 0 1px 0 oklch(1 0 0 / 0.05);
+  pointer-events: none;
+}
+
+.nerv-page-loading-indicator__orb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-base);
+  box-shadow: 0 0 10px var(--accent-base), 0 0 4px var(--accent-base);
+  animation: nerv-loading-pulse 1.5s ease-in-out infinite;
+}
+
+.nerv-page-loading-indicator__spinner {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-base);
+  animation: spin 1s linear infinite;
+}
+
+.nerv-page-loading-indicator__text {
+  font-size: 12px;
+  font-weight: 500;
+  color: oklch(0.9 0 0);
+  letter-spacing: -0.01em;
+}
+
+/* ─── Chat Bubble Slide-Up Animation ─── */
+@keyframes nerv-chat-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nerv-chat-bubble-enter {
+  animation: nerv-chat-slide-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes nerv-loading-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
 }
 
 /* Custom Minimal Scrollbar (Global) */
@@ -911,6 +1046,124 @@ time,
   border-radius: 8px;
 }
 
+/* ═══ NERV HUD PANEL — Premium game-UI side panel ═══ */
+.nerv-hud-panel {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 11, 10, 0.82) 0%,
+    rgba(8, 7, 6, 0.72) 40%,
+    rgba(6, 5, 4, 0.78) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Top accent bar — uses agent color via CSS variable */
+.nerv-hud-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--panel-accent, var(--accent-base, #FF6D29)) 30%,
+    var(--panel-accent, var(--accent-base, #FF6D29)) 70%,
+    transparent 100%
+  );
+  opacity: 0.6;
+  border-radius: 0 0 4px 4px;
+}
+
+/* Subtle inner glow at top */
+.nerv-hud-panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--panel-accent, var(--accent-base, #FF6D29)) 8%, transparent) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Corner accents — elegant L-shaped brackets */
+.nerv-hud-corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.nerv-hud-corner--tl {
+  top: 4px;
+  left: 4px;
+  border-top: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
+  border-left: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
+  border-radius: 4px 0 0 0;
+  opacity: 0.5;
+}
+
+.nerv-hud-corner--tr {
+  top: 4px;
+  right: 4px;
+  border-top: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
+  border-right: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
+  border-radius: 0 4px 0 0;
+  opacity: 0.5;
+}
+
+.nerv-hud-corner--bl {
+  bottom: 4px;
+  left: 4px;
+  border-bottom: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
+  border-left: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
+  border-radius: 0 0 0 4px;
+  opacity: 0.3;
+}
+
+.nerv-hud-corner--br {
+  bottom: 4px;
+  right: 4px;
+  border-bottom: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
+  border-right: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
+  border-radius: 0 0 4px 0;
+  opacity: 0.3;
+}
+
+/* Breathing border glow animation */
+.nerv-hud-panel--breathing {
+  animation: nerv-hud-breathe 6s ease-in-out infinite;
+}
+
+@keyframes nerv-hud-breathe {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 4px 30px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow:
+      0 4px 30px rgba(0, 0, 0, 0.3),
+      0 0 20px color-mix(in oklch, var(--panel-accent, var(--accent-base, #FF6D29)) 6%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+}
+
 /* ═══ IDENTITY PANEL SCROLLBAR ═══ */
 .identity-scrollbar {
   scrollbar-width: thin;
@@ -929,4 +1182,326 @@ time,
   background-color: var(--accent-base, #FF6D29);
   border-radius: 9999px;
   opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════
+   FLOATING DOCK NAVIGATION SYSTEM
+   ═══════════════════════════════════════════════════ */
+
+/* ─── App Shell: Full-viewport container ─── */
+.nerv-app-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Top-Left Brand ─── */
+.nerv-top-left {
+  position: fixed;
+  top: 14px;
+  left: 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── Top-Right User Menu ─── */
+.nerv-top-right {
+  position: fixed;
+  top: 10px;
+  right: 17px;
+  z-index: 25;
+}
+
+.nerv-avatar-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  background: none;
+  color: var(--accent-base);
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.nerv-avatar-btn:hover {
+  color: var(--foreground);
+  transform: scale(1.1);
+}
+
+.nerv-user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-elevated);
+  overflow: hidden;
+  z-index: 50;
+  animation: nerv-dropdown-in 150ms ease;
+}
+
+@keyframes nerv-dropdown-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.nerv-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 120ms ease;
+  text-align: left;
+}
+
+.nerv-dropdown-item:hover {
+  background: var(--accent-subtle);
+  color: var(--foreground);
+}
+
+/* ─── Shell Frame: SVG arch border wrapper ─── */
+.nerv-shell-frame {
+  position: relative;
+  flex: 1;
+  margin: 10px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.nerv-shell-frame__svg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.nerv-shell-frame__fill {
+  fill: var(--bg-base);
+}
+
+.nerv-shell-frame__path {
+  stroke: rgba(255, 140, 50, 0.15);
+}
+
+.dark .nerv-shell-frame__path {
+  stroke: rgba(255, 140, 50, 0.15);
+}
+
+:root:not(.dark) .nerv-shell-frame__path {
+  stroke: rgba(69, 48, 39, 0.18);
+}
+
+:root:not(.dark) .nerv-shell-frame__fill {
+  fill: var(--bg-base);
+}
+
+.nerv-shell-frame__content {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── Top Rail: Contextual sub-navigation ─── */
+.nerv-top-rail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.nerv-rail-items {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 20px;
+  background: transparent;
+  border: none;
+}
+
+.nerv-rail-item {
+  position: relative;
+  padding: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: 14px;
+  text-decoration: none;
+  transition: all 150ms ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.nerv-rail-label {
+  overflow: hidden;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.nerv-rail-item:hover {
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dark .nerv-rail-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root:not(.dark) .nerv-rail-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.nerv-rail-item--active {
+  color: var(--accent-base);
+  background: transparent;
+  font-weight: 600;
+}
+
+.nerv-rail-item--active:hover {
+  background: transparent;
+}
+
+/* ─── Content Viewport ─── */
+.nerv-content-viewport {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 20px 8px;
+  min-height: 0;
+  position: relative;
+}
+
+/* ─── Bottom Dock: Sits inside the notch at the bottom ─── */
+.nerv-bottom-dock {
+  display: flex;
+  justify-content: center;
+}
+
+.nerv-dock-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 50px;
+  background: transparent;
+  border: none;
+}
+
+.nerv-dock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: all 200ms ease;
+  position: relative;
+}
+
+:root:not(.dark) .nerv-dock-btn {
+  color: rgba(26, 20, 18, 0.4);
+}
+
+.nerv-dock-btn:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.08);
+}
+
+:root:not(.dark) .nerv-dock-btn:hover {
+  color: rgba(26, 20, 18, 0.85);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.nerv-dock-btn--active {
+  color: var(--accent-base) !important;
+  background: transparent;
+  box-shadow: none;
+}
+
+.nerv-dock-btn--active:hover {
+  background: transparent;
+  transform: scale(1.08);
+}
+
+/* ─── Responsive Adjustments ─── */
+@media (max-width: 768px) {
+  .nerv-shell-frame {
+    margin: 4px 8px 0;
+  }
+
+  .nerv-dock-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .nerv-dock-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .nerv-dock-pill {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .nerv-rail-items {
+    overflow-x: auto;
+    max-width: calc(100vw - 160px);
+    scrollbar-width: none;
+  }
+
+  .nerv-rail-items::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nerv-rail-item {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+
+  .nerv-content-viewport {
+    padding: 8px 12px;
+  }
+
+  .nerv-top-left {
+    top: 10px;
+    left: 12px;
+  }
+
+  .nerv-top-right {
+    top: 8px;
+    right: 12px;
+  }
+
+  .nerv-bottom-dock {
+    padding: 0 0 8px;
+  }
 }

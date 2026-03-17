@@ -7,6 +7,7 @@ import { AgentAvatar } from '@/components/agents/AgentAvatar';
 import { Shield, Zap, Target, Wrench, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAgentStore } from '@/store/useAgentStore';
+import { useAgentSettingsStore } from '@/store/useAgentSettingsStore';
 
 const RANK_COLORS: Record<string, string> = {
     'INITIATE': 'var(--text-muted)',
@@ -27,11 +28,14 @@ const AGENT_SPECIALTIES: Record<string, string[]> = {
 export function FleetStatusCards() {
     const { agentXPData, streak, metrics } = useOverviewData();
     const { agents } = useAgentStore();
+    const { hiddenAgentIds } = useAgentSettingsStore();
 
-    // Sort array of agents to map over
-    const agentKeys = Object.keys(agents).filter(k => k !== 'zero' && k !== 'system');
-    // optionally include zero
-    agentKeys.push('zero');
+    // Sort array of agents to map over, filtering hidden ones
+    const agentKeys = Object.keys(agents).filter(k => k !== 'zero' && k !== 'system' && !hiddenAgentIds.includes(k));
+    // optionally include zero if not hidden
+    if (!hiddenAgentIds.includes('zero')) {
+        agentKeys.push('zero');
+    }
 
     return (
         <div className="flex flex-col gap-4">

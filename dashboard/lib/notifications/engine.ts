@@ -4,13 +4,15 @@ import { db } from '@/lib/db';
 import type { Notification, AlertRule, NotificationType, AlertCondition, AlertSeverity, NotificationChannel } from './types';
 
 export async function createNotification(
+    userId: string,
     type: NotificationType,
     title: string,
     message: string,
     agentId?: string,
     actionUrl?: string
 ): Promise<void> {
-    await db.from('notifications').insert({
+    const { error } = await db.from('notifications').insert({
+        user_id: userId,
         type,
         title,
         message,
@@ -18,6 +20,11 @@ export async function createNotification(
         is_read: false,
         action_url: actionUrl || null,
     });
+    
+    if (error) {
+        console.error("[Notification Engine] Failed to insert notification:", error);
+        throw new Error(`DB Error: ${error.message}`);
+    }
 }
 
 export async function getNotifications(limit: number = 50, unreadOnly: boolean = false) {

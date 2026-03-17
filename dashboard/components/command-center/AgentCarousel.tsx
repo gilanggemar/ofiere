@@ -32,22 +32,16 @@ function CarouselItem({
     return (
         <motion.div
             onClick={onSelect}
-            className={`relative flex flex-col items-center cursor-pointer transition-all duration-300 group ${isActive ? 'scale-110' : 'scale-90 opacity-60 hover:opacity-100 hover:scale-100'}`}
+            className={`relative flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group ${isActive ? 'scale-110 z-10' : 'scale-90 opacity-60 hover:opacity-100 hover:scale-100 z-0'}`}
             title={agent.name}
         >
             <div
-                className="w-11 h-11 rounded-full bg-cover bg-center border-2 transition-all duration-300"
+                className="w-[54px] h-[72px] rounded-xl bg-cover bg-center border-2 transition-all duration-300 flex items-center justify-center font-bold text-sm text-white/70"
                 style={{
                     backgroundImage: avatarUri ? `url(${avatarUri})` : 'none',
                     backgroundColor: avatarUri ? 'transparent' : '#222',
                     borderColor: isActive ? badgeColor : 'transparent',
                     boxShadow: isActive ? `0 0 14px ${badgeColor}60` : '0 0 10px rgba(0,0,0,0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    color: 'rgba(255,255,255,0.7)',
                 }}
             >
                 {!avatarUri && agent.name.substring(0, 2).toUpperCase()}
@@ -62,9 +56,7 @@ export function AgentCarousel({ activeAgentId, availableAgents, onSelectAgent }:
     }
 
     return (
-        <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-white/10"
-            style={{ background: '#151311' }}
-        >
+        <div className="grid grid-cols-4 gap-3 pt-6 pb-4">
             {availableAgents.map((agent) => (
                 <CarouselItem
                     key={agent.id}

@@ -156,7 +156,11 @@ export const useSchedulerStore = create<SchedulerState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(event),
             });
-            if (!res.ok) throw new Error('Failed to create');
+            if (!res.ok) {
+                const errBody = await res.json().catch(() => ({}));
+                console.error('createEvent API error:', res.status, errBody);
+                throw new Error(errBody.details || errBody.error || 'Failed to create');
+            }
             // Refetch
             const { viewStartDate, viewRangeWeeks, fetchEvents } = get();
             const { start, end } = computeDateRange(viewStartDate, viewRangeWeeks);

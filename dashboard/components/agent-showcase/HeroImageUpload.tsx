@@ -18,6 +18,7 @@ interface HeroImageUploadProps {
     activeIndex: number;
     onSelectImage: (index: number) => void;
     onGalleryChanged: () => void;
+    onBackgroundChanged?: () => void;
     className?: string;
 }
 
@@ -25,6 +26,7 @@ export function HeroImageUpload({
     agentId, agentName, agentColor,
     images, activeIndex,
     onSelectImage, onGalleryChanged,
+    onBackgroundChanged,
     className = '',
 }: HeroImageUploadProps) {
     const [showGallery, setShowGallery] = useState(false);
@@ -53,6 +55,7 @@ export function HeroImageUpload({
                     onSelectImage={onSelectImage}
                     onImageAdded={onGalleryChanged}
                     onImageDeleted={onGalleryChanged}
+                    onBackgroundChanged={onBackgroundChanged}
                     onClose={() => setShowGallery(false)}
                 />
             )}

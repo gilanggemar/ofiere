@@ -7,6 +7,7 @@ export interface AgentZeroMessage {
     role: 'user' | 'agent';
     content: string;
     timestamp: number;
+    attachments?: any[];
 }
 
 export interface AgentZeroState {
@@ -36,7 +37,7 @@ export interface AgentZeroState {
 
     checkConnection: () => Promise<void>;
     checkVpsHealth: () => Promise<boolean>;
-    sendMessage: (message: string) => Promise<void>;
+    sendMessage: (message: string, attachments?: any[]) => Promise<void>;
     getLogs: () => Promise<void>;
     resetChat: () => Promise<void>;
     terminateChat: () => Promise<void>;
@@ -113,14 +114,15 @@ export const useAgentZeroStore = create<AgentZeroState>()((set, get) => ({
         }
     },
 
-    sendMessage: async (message: string) => {
+    sendMessage: async (message: string, attachments?: any[]) => {
         set({ isResponding: true });
 
         const userMsg: AgentZeroMessage = {
             id: genId(),
             role: 'user',
             content: message,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            attachments
         };
 
         set((state) => ({ messages: [...state.messages, userMsg] }));
@@ -133,8 +135,15 @@ export const useAgentZeroStore = create<AgentZeroState>()((set, get) => ({
                 agentZeroService.startLogPolling(contextId, 1000);
             }
 
+            // Map attachments for A0 API
+            const mappedAttachments = attachments?.map(a => ({
+                filename: a.name || 'file',
+                base64: typeof a.url === 'string' && a.url.includes('base64,') ? a.url.split('base64,')[1] : a.url
+            }));
+
             const res = await agentZeroService.sendMessage({
                 message,
+                attachments: mappedAttachments && mappedAttachments.length > 0 ? mappedAttachments : undefined,
                 context_id: contextId || undefined,
             });
 

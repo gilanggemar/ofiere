@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSocket, useSocketStore } from "@/lib/useSocket";
+import { useAgentSettingsStore } from "@/store/useAgentSettingsStore";
 import { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -36,7 +37,14 @@ const NAV_ITEMS = [
 export function AppSidebar() {
     const pathname = usePathname();
     const { isConnected, agents, lastPing } = useSocketStore();
+    const { hiddenAgentIds } = useAgentSettingsStore();
     useSocket(); // Initialize socket connection
+    
+    // Filter agents by hidden status
+    const visibleAgentsCount = agents.filter((a: any) => {
+        const id = a.accountId || a.name || a.id;
+        return !hiddenAgentIds.includes(id);
+    }).length;
 
     return (
         <aside className="w-72 h-screen bg-background border-r border-border flex flex-col text-sm tracking-wide">
@@ -108,7 +116,7 @@ export function AppSidebar() {
                     <Card className="bg-accent/50 border-border rounded-xl py-0 gap-0 shadow-none">
                         <CardContent className="p-2.5 px-3">
                             <span className="text-muted-foreground block mb-0.5 text-[10px]">Agents</span>
-                            <span className="text-foreground font-semibold text-lg">{agents.length}</span>
+                            <span className="text-foreground font-semibold text-lg">{visibleAgentsCount}</span>
                         </CardContent>
                     </Card>
                     <Card className="bg-accent/50 border-border rounded-xl py-0 gap-0 shadow-none">

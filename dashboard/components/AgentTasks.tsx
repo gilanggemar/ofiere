@@ -137,7 +137,7 @@ function TaskSettingsPopover({ item, task, updateTask, setItems, open, setOpen }
     )
 }
 
-export function AgentTasks({ agentId }: { agentId: string }) {
+export function AgentTasks({ agentId, onPopoverChange }: { agentId: string; onPopoverChange?: (isOpen: boolean) => void }) {
     const { tasks, addTask, updateTask, updateTaskStatus, removeTask } = useTaskStore();
     const { sendChatMessage } = useSocket();
     const { sessions } = useSocketStore();
@@ -158,6 +158,11 @@ export function AgentTasks({ agentId }: { agentId: string }) {
     }, [tasks, agentId]);
 
     const [openItemId, setOpenItemId] = useState<string | number | null>(null);
+
+    // Notify parent when popover open state changes
+    useEffect(() => {
+        onPopoverChange?.(openItemId !== null);
+    }, [openItemId, onPopoverChange]);
     const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
     const [isDeleteMode, setIsDeleteMode] = useState(false);
 
@@ -279,7 +284,7 @@ export function AgentTasks({ agentId }: { agentId: string }) {
 
                 {items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-[60px] opacity-70">
-                        <p className="text-xs font-mono text-zinc-600">No agent workflows active</p>
+                        <p className="text-xs font-mono text-zinc-600">No agent task</p>
                     </div>
                 ) : (
                     <div className="relative space-y-2 mt-4 pr-1 mb-2">
