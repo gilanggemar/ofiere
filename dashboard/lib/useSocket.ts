@@ -998,9 +998,11 @@ export function useSocket() {
 
         // Format for OpenClaw native attachment ingest (per Ivy's schema)
         const gatewayAttachments = attachments?.length ? attachments.map(a => {
-            // Extract raw base64 string from the data URL format "data:image/png;base64,iVBO..."
-            const match = a.url?.match(/^data:[^;]+;base64,(.+)$/);
-            const rawBase64 = match ? match[1] : a.url;
+            let rawBase64 = a.url;
+            if (a.url && a.url.startsWith('data:')) {
+                // Robustly split off the base64 content regardless of MIME type params like charset=utf-8
+                rawBase64 = a.url.split(',')[1] || a.url;
+            }
 
             return {
                 name: a.name,

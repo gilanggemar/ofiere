@@ -675,7 +675,7 @@ export default function SummitPage() {
         sendSummitMessage([first], buildContextMessage(userText, first));
     }, [sendSummitMessage, buildContextMessage]);
 
-    const handleSend = useCallback((e?: React.FormEvent) => {
+    const handleSend = useCallback(async (e?: React.FormEvent) => {
         e?.preventDefault();
         if (!message.trim() || !summitActive || !isConnected || summitParticipants.length === 0) return;
         if (roundInFlight) return;
@@ -698,15 +698,27 @@ export default function SummitPage() {
         };
 
         // Build attachment metadata
-        const localAttachments: any[] = pendingFiles.map(pf => ({
-            name: pf.file.name, type: pf.file.type, size: pf.file.size, url: pf.previewUrl || undefined,
+        const base64Attachments = await Promise.all(pendingFiles.map(async pf => {
+            return new Promise<any>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve({
+                        name: pf.file.name,
+                        type: pf.file.type,
+                        size: pf.file.size,
+                        url: reader.result as string,
+                    });
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(pf.file);
+            });
         }));
 
         // Build injected text for agents
         let injectedText = userText;
         if (capturedQuotedReply) injectedText = `> ${capturedQuotedReply.text}\n\n${injectedText}`;
-        if (localAttachments.length > 0) {
-            const fileList = localAttachments.map(a => a.name).join(', ');
+        if (base64Attachments.length > 0) {
+            const fileList = base64Attachments.map(a => a.name).join(', ');
             injectedText = `[Attached files: ${fileList}]\n\n${injectedText}`;
         }
 
@@ -718,7 +730,7 @@ export default function SummitPage() {
             agentId: 'operator',
             roundNumber: summitRound + 1,
             modeIndicators,
-            attachments: localAttachments.length > 0 ? localAttachments : undefined,
+            attachments: base64Attachments.length > 0 ? base64Attachments : undefined,
         } as any);
 
         // Clear UI state immediately

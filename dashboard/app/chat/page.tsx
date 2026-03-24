@@ -594,14 +594,21 @@ export default function ChatPage() {
             strategyMode: capturedStrategyMode !== 'off' ? capturedStrategyMode : undefined,
         };
 
-        // ── Build base64 previews synchronously from existing preview URLs ──
-        // For images we already have blob preview URLs from pendingFiles; for non-images we show file icons.
-        // This avoids any FileReader await before displaying the message.
-        const localAttachments: any[] = capturedPendingFiles.map(pf => ({
-            name: pf.file.name,
-            type: pf.file.type,
-            size: pf.file.size,
-            url: pf.previewUrl || undefined, // blob URL for images, undefined for non-images
+        // ── Convert to base64 Data URLs for dispatch and store ──
+        const base64Attachments = await Promise.all(capturedPendingFiles.map(async pf => {
+            return new Promise<any>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve({
+                        name: pf.file.name,
+                        type: pf.file.type,
+                        size: pf.file.size,
+                        url: reader.result as string,
+                    });
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(pf.file);
+            });
         }));
 
         // ── INSTANTLY add user message to the store (optimistic) ──
@@ -615,15 +622,15 @@ export default function ChatPage() {
                 agentId: capturedAgentId,
                 sessionKey: sessionKey,
                 streaming: false,
-                attachments: localAttachments.length > 0 ? localAttachments : undefined,
+                attachments: base64Attachments.length > 0 ? base64Attachments : undefined,
                 modeIndicators,
                 _sortTime: Date.now(),
             } as any);
             // ── INSTANTLY dispatch to agent (don't wait for uploads or DB) ──
-            dispatchMessage(capturedAgentId, finalMessage, sessionKey, localAttachments.length > 0 ? localAttachments : undefined, true);
+            dispatchMessage(capturedAgentId, finalMessage, sessionKey, base64Attachments.length > 0 ? base64Attachments : undefined, true);
         } else {
             a0ModeIndicatorsRef.current.set(finalMessage, modeIndicators);
-            dispatchMessage(capturedAgentId, finalMessage, sessionKey, localAttachments.length > 0 ? localAttachments : undefined);
+            dispatchMessage(capturedAgentId, finalMessage, sessionKey, base64Attachments.length > 0 ? base64Attachments : undefined);
         }
 
         // ── BACKGROUND: file upload, conversation creation, DB persistence ──
@@ -632,22 +639,7 @@ export default function ChatPage() {
             try {
                 // 1. Read files to base64 + upload to Supabase Storage (background)
                 let publicAttachments: any[] | undefined = undefined;
-                if (capturedPendingFiles.length > 0) {
-                    const base64Attachments = await Promise.all(capturedPendingFiles.map(async pf => {
-                        return new Promise<any>((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                                resolve({
-                                    name: pf.file.name,
-                                    type: pf.file.type,
-                                    size: pf.file.size,
-                                    url: reader.result as string,
-                                });
-                            };
-                            reader.onerror = reject;
-                            reader.readAsDataURL(pf.file);
-                        });
-                    }));
+                if (base64Attachments.length > 0) {
 
                     publicAttachments = await Promise.all(base64Attachments.map(async (att) => {
                         try {
