@@ -35,7 +35,7 @@ export interface GameEvent {
   round: number;
   text: string;
   playerId?: string;
-  type: "move" | "buy" | "rent" | "card" | "build" | "system" | "victory";
+  type: "move" | "buy" | "rent" | "card" | "build" | "system" | "victory" | "auction";
 }
 
 export interface GameAnnouncement {

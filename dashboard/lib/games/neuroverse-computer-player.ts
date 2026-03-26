@@ -148,7 +148,7 @@ export function computeOptimalMove(
           // Estimate rent danger
           const rentInfo = RENT_TABLE[landPos];
           if (rentInfo) {
-            const baseRent = rentInfo.base || 0;
+            const baseRent = rentInfo[0] || 0;
             score -= baseRent * 2; // Avoid high-rent spaces
             if (prop.hasMegaframe) score -= 200;
             else if (prop.hasTower) score -= 100;
@@ -269,9 +269,9 @@ export function computeOptimalMove(
           if (!costs) continue;
 
           let cost = 0;
-          if (!prop?.hasTower && prop?.nodes === 3) cost = costs.tower;
-          else if (prop?.hasTower) cost = costs.megaframe;
-          else cost = costs.node;
+          if (!prop?.hasTower && prop?.nodes === 3) cost = costs[1];
+          else if (prop?.hasTower) cost = costs[2];
+          else cost = costs[0];
 
           if (me.cred - cost < 80) continue; // Keep reserve
 

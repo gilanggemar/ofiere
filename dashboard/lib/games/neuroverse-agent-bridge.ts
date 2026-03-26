@@ -203,7 +203,7 @@ export function buildNeuroversePrompt(
 export interface NeuroverseAgentResult {
   action: GameAction;
   commentary: string | null;
-  source: "agent" | "fallback";
+  source: "agent" | "fallback" | "computer";
 }
 
 /**
