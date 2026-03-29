@@ -79,12 +79,17 @@ export const useAgentZeroStore = create<AgentZeroState>()((set, get) => ({
         try {
             const res = await agentZeroService.checkHealth();
             const isOnline = res.status === 'online';
+            const isAuthFailed = (res as any).status === 'auth_failed';
+            // Treat auth_failed as "online" — server IS reachable, just needs correct key
+            const isReachable = isOnline || isAuthFailed;
             set({
-                vpsConnected: isOnline,
+                vpsConnected: isReachable,
                 vpsLastHealthCheck: Date.now(),
-                status: isOnline ? 'online' : (res.status === 'unconfigured' ? 'unconfigured' : 'offline'),
+                status: isReachable
+                    ? 'online'
+                    : (res.status === 'unconfigured' ? 'unconfigured' : 'offline'),
             });
-            return isOnline;
+            return isReachable;
         } catch {
             set({
                 vpsConnected: false,
@@ -99,7 +104,10 @@ export const useAgentZeroStore = create<AgentZeroState>()((set, get) => ({
         set({ status: 'connecting' });
         try {
             const res = await agentZeroService.checkHealth();
-            if (res.status === 'online') {
+            // Treat both 'online' and 'auth_failed' as reachable
+            // auth_failed means the server IS running, just the API key is wrong
+            const isReachable = res.status === 'online' || (res as any).status === 'auth_failed';
+            if (isReachable) {
                 set({ status: 'online' });
                 // If we already have a context, start polling it slowly
                 const ctx = get().contextId;

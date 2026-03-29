@@ -128,6 +128,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
                 body: JSON.stringify(data),
             });
             if (!res.ok) throw new Error('Failed to update profile');
+            // Clear cached Agent Zero endpoint paths so fresh discovery happens
+            await fetch('/api/agent-zero/csrf', { method: 'POST' }).catch(() => {});
             await get().fetchProfiles();
             await get().fetchActiveProfile(); // Force syncing active profile too
         } catch (err: any) {
@@ -152,6 +154,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         try {
             const res = await fetch(`/api/connection-profiles/${id}/activate`, { method: 'POST' });
             if (!res.ok) throw new Error('Failed to activate profile');
+            // Clear cached Agent Zero endpoint paths for the new profile
+            await fetch('/api/agent-zero/csrf', { method: 'POST' }).catch(() => {});
             await get().fetchProfiles();
             await get().fetchActiveProfile();
         } catch (err: any) {

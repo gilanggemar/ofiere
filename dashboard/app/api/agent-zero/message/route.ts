@@ -3,11 +3,11 @@ import { resolveActiveConnection } from '@/lib/resolveActiveConnection';
 import { logTelemetry } from '@/lib/telemetry/logger';
 import { createTelemetryEntry } from '@/lib/telemetry/costs';
 import { getAuthUserId } from '@/lib/auth';
+import { fetchAgentZero, normalizeBaseUrl } from '@/lib/agentZeroProxy';
 
 export async function POST(request: Request) {
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
 
     try {
         const body = await request.json();
@@ -26,15 +26,12 @@ export async function POST(request: Request) {
 
         if (!agentZero.enabled || !AGENT_ZERO_URL || !AGENT_ZERO_API_KEY) {
             return NextResponse.json(
-                { error: 'Agent Zero is not configured' },
+                { error: 'Agent Zero is not configured. Go to Settings → Connection Profiles to set up your Agent Zero connection.' },
                 { status: 503, headers: { 'Access-Control-Allow-Origin': '*' } }
             );
         }
 
         const { attachments, lifetime_hours = 24, project } = body;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 min — A0 can take a while
 
         const requestBody: Record<string, any> = {
             message,
@@ -45,22 +42,20 @@ export async function POST(request: Request) {
         if (project) requestBody.project = project;
 
         const startTime = Date.now();
-        const fwResponse = await fetch(`${AGENT_ZERO_URL}/api_message`, {
+
+        const result = await fetchAgentZero({
+            baseUrl: AGENT_ZERO_URL,
+            apiKey: AGENT_ZERO_API_KEY,
+            endpoint: 'message',
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-KEY': AGENT_ZERO_API_KEY,
-            },
-            body: JSON.stringify(requestBody),
-            signal: controller.signal,
+            body: requestBody,
+            timeoutMs: 300000, // 5 min — A0 can take a while
         });
+
         const latencyMs = Date.now() - startTime;
 
-        clearTimeout(timeoutId);
-
-        if (!fwResponse.ok) {
-            const errorText = await fwResponse.text().catch(() => 'Unknown error text');
-            console.error(`[Agent Zero Proxy] Message route returned error status ${fwResponse.status}:`, errorText);
+        if (!result.ok) {
+            console.error(`[Agent Zero Proxy] Message failed:`, result.errorText);
 
             // Log error telemetry
             try {
@@ -72,19 +67,27 @@ export async function POST(request: Request) {
                     outputTokens: 0,
                     latencyMs,
                     status: 'error',
-                    errorMessage: errorText,
+                    errorMessage: result.errorText || 'Unknown error',
                 }));
             } catch (e) { /* ignore telemetry errors */ }
 
+            // Provide actionable error messages
+            let userError = result.errorText || 'Unknown error';
+            if (result.status === 401 || result.status === 403) {
+                userError = 'API key is invalid or expired. Go to Settings → Connection Profiles and update your Agent Zero API key.';
+            } else if (result.status === 0) {
+                userError = 'Agent Zero is not reachable. Check that the Base URL in Settings → Connection Profiles is correct and Agent Zero is running.';
+            }
+
             return NextResponse.json(
-                { error: `Agent Zero returned status ${fwResponse.status}`, details: errorText },
-                { status: fwResponse.status, headers: { 'Access-Control-Allow-Origin': '*' } }
+                { error: userError, details: result.errorText },
+                { status: result.status || 503, headers: { 'Access-Control-Allow-Origin': '*' } }
             );
         }
 
-        const fwData = await fwResponse.json();
+        const fwData = result.data;
 
-        // Log success telemetry with token usage if available from Agent Zero response
+        // Log success telemetry
         try {
             const inputTokens = fwData.usage?.input_tokens || fwData.tokens_in || 0;
             const outputTokens = fwData.usage?.output_tokens || fwData.tokens_out || 0;
@@ -99,6 +102,10 @@ export async function POST(request: Request) {
             }));
         } catch (e) { /* ignore telemetry errors */ }
 
+        if (result.discoveredPath) {
+            console.log(`[Agent Zero Proxy] Using message endpoint: ${result.discoveredPath}`);
+        }
+
         return NextResponse.json(
             { response: fwData.response, context_id: fwData.context_id },
             { status: 200, headers: { 'Access-Control-Allow-Origin': '*' } }
@@ -106,10 +113,9 @@ export async function POST(request: Request) {
 
     } catch (error: any) {
         console.error('[Agent Zero Proxy] Message proxy error:', error);
-        const isTimeout = error.name === 'AbortError';
 
         return NextResponse.json(
-            { error: "Agent Zero is not reachable", details: isTimeout ? 'Request timed out after 300s' : error.message },
+            { error: "Agent Zero is not reachable. Check your connection settings.", details: error.message },
             { status: 503, headers: { 'Access-Control-Allow-Origin': '*' } }
         );
     }

@@ -11,6 +11,7 @@
 import { db } from './db';
 import { decrypt } from './encryption';
 import { getAuthUserId } from './auth';
+import { normalizeBaseUrl } from './agentZeroProxy';
 
 export interface ResolvedOpenClaw {
     enabled: boolean;
@@ -45,7 +46,7 @@ function envFallback(): ResolvedConnection {
         },
         agentZero: {
             enabled: !!process.env.AGENT_ZERO_URL,
-            baseUrl: process.env.AGENT_ZERO_URL || process.env.NEXT_PUBLIC_AGENT_ZERO_BASE_URL || 'http://127.0.0.1:80',
+            baseUrl: normalizeBaseUrl(process.env.AGENT_ZERO_URL || process.env.NEXT_PUBLIC_AGENT_ZERO_BASE_URL || 'http://127.0.0.1:80'),
             apiKey: process.env.AGENT_ZERO_API_KEY || '',
             transport: 'rest',
         },
@@ -94,7 +95,7 @@ export async function resolveActiveConnection(providedUserId?: string): Promise<
             },
             agentZero: {
                 enabled: p.agent_zero_enabled,
-                baseUrl: p.agent_zero_base_url || fallback.agentZero.baseUrl,
+                baseUrl: normalizeBaseUrl(p.agent_zero_base_url || fallback.agentZero.baseUrl),
                 apiKey: decrypt(p.agent_zero_api_key) || fallback.agentZero.apiKey,
                 transport: p.agent_zero_transport || 'rest',
             },

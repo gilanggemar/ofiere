@@ -225,6 +225,11 @@ function TestResultsPanel({ result }: { result: ConnectionTestResult | null }) {
         </div>
     );
 
+    // Extract diagnostics from the extended result type
+    const azResult = result.agentZero as any;
+    const diagnostics = azResult?.diagnostics as string | null;
+    const detectedEndpoint = azResult?.detectedEndpoint as string | null;
+
     return (
         <div className="space-y-2 mt-4">
             <h4 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -236,7 +241,15 @@ function TestResultsPanel({ result }: { result: ConnectionTestResult | null }) {
             />
             <ResultRow label="Agent Zero" tested={result.agentZero.tested} reachable={result.agentZero.reachable}
                 latencyMs={result.agentZero.latencyMs} error={result.agentZero.error}
-                extra={result.agentZero.apiKeyValid && <p className="text-[10px] text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-2.5 h-2.5" /> API key valid</p>}
+                extra={<>
+                    {result.agentZero.apiKeyValid && <p className="text-[10px] text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-2.5 h-2.5" /> API key valid</p>}
+                    {detectedEndpoint && <p className="text-[10px] text-blue-400 flex items-center gap-1"><Activity className="w-2.5 h-2.5" /> Endpoint: <span className="font-mono">{detectedEndpoint}</span></p>}
+                    {diagnostics && (
+                        <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                            💡 {diagnostics}
+                        </p>
+                    )}
+                </>}
             />
         </div>
     );

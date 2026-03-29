@@ -202,7 +202,8 @@ function parseAgentsFromHealth(payload: any): any[] {
 
     if (payload?.agents && Array.isArray(payload.agents)) {
         for (const agent of payload.agents) {
-            const rawId = agent.agentId;
+            const rawId = agent.agentId ?? agent.id ?? agent.name ?? 'unknown';
+            if (!rawId || typeof rawId !== 'string') continue;
             const profile = getAgentProfile(rawId);
             agents.push({
                 id: rawId,

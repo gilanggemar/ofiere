@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { decrypt } from '@/lib/encryption';
 import { getAuthUserId } from '@/lib/auth';
+import { probeAgentZeroHealth, normalizeBaseUrl, clearPathCache } from '@/lib/agentZeroProxy';
 
 interface TestResult {
     openclaw: {
@@ -17,6 +18,8 @@ interface TestResult {
         latencyMs: number | null;
         error: string | null;
         apiKeyValid: boolean;
+        detectedEndpoint: string | null;
+        diagnostics: string | null;
     };
 }
 
@@ -27,7 +30,6 @@ export async function POST(
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-
     const { id } = await params;
     const { data: profile, error } = await db.from('connection_profiles').select('*').eq('user_id', userId).eq('id', id).single();
     if (error || !profile) {
@@ -36,7 +38,7 @@ export async function POST(
 
     const result: TestResult = {
         openclaw: { tested: false, reachable: false, latencyMs: null, error: null, wsHandshake: false },
-        agentZero: { tested: false, reachable: false, latencyMs: null, error: null, apiKeyValid: false },
+        agentZero: { tested: false, reachable: false, latencyMs: null, error: null, apiKeyValid: false, detectedEndpoint: null, diagnostics: null },
     };
 
     // --- Test OpenClaw ---
@@ -72,40 +74,35 @@ export async function POST(
         }
     }
 
-    // --- Test Agent Zero ---
+    // --- Test Agent Zero (comprehensive probe) ---
     if (profile.agent_zero_enabled) {
         result.agentZero.tested = true;
-        const startAZ = Date.now();
-        try {
-            const baseUrl = profile.agent_zero_base_url;
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 8000);
+        const baseUrl = normalizeBaseUrl(profile.agent_zero_base_url || '');
+        const apiKey = decrypt(profile.agent_zero_api_key) || '';
 
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            const apiKey = decrypt(profile.agent_zero_api_key);
-            if (apiKey && profile.agent_zero_auth_mode === 'api_key') {
-                headers['X-API-KEY'] = apiKey;
+        // Clear any cached paths so we do a fresh probe
+        clearPathCache(baseUrl);
+
+        if (!baseUrl) {
+            result.agentZero.error = 'Base URL is empty. Enter your Agent Zero URL.';
+        } else {
+            const probe = await probeAgentZeroHealth(baseUrl, apiKey);
+            result.agentZero.latencyMs = probe.latencyMs;
+            result.agentZero.reachable = probe.reachable;
+            result.agentZero.apiKeyValid = probe.authenticated;
+            result.agentZero.detectedEndpoint = probe.workingMessagePath || null;
+
+            if (!probe.reachable) {
+                result.agentZero.error = probe.error || 'Cannot reach Agent Zero server.';
+                result.agentZero.diagnostics = 'Check that the Base URL is correct and Agent Zero is running. Common issues: wrong port, firewall blocking, or Agent Zero not started.';
+            } else if (!probe.authenticated) {
+                result.agentZero.error = probe.error || 'Authentication failed.';
+                result.agentZero.diagnostics = 'Server is reachable but API key validation failed. Get a fresh API key from Agent Zero → Settings → External Services, then paste it here.';
+            } else {
+                if (probe.workingMessagePath) {
+                    result.agentZero.diagnostics = `Connected successfully. API endpoint: ${probe.workingMessagePath}`;
+                }
             }
-
-            const resp = await fetch(`${baseUrl}/api_message`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ message: 'ping', context_id: 'nerv-health-check' }),
-                signal: controller.signal,
-            });
-            clearTimeout(timeout);
-
-            result.agentZero.latencyMs = Date.now() - startAZ;
-            result.agentZero.reachable = resp.ok;
-            result.agentZero.apiKeyValid = resp.ok;
-            if (!resp.ok) {
-                result.agentZero.error = `HTTP ${resp.status}: ${resp.statusText}`;
-            }
-        } catch (err: any) {
-            result.agentZero.latencyMs = Date.now() - startAZ;
-            result.agentZero.error = err.name === 'AbortError'
-                ? 'Connection timed out after 8 seconds.'
-                : `Connection failed: ${err.message}`;
         }
     }
 

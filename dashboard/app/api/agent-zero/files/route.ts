@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { resolveActiveConnection } from '@/lib/resolveActiveConnection';
 import { getAuthUserId } from '@/lib/auth';
+import { fetchAgentZero } from '@/lib/agentZeroProxy';
 
 export async function POST(request: Request) {
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
 
     try {
         const body = await request.json();
@@ -19,53 +19,38 @@ export async function POST(request: Request) {
         }
 
         const { agentZero } = await resolveActiveConnection();
-        const AGENT_ZERO_URL = agentZero.baseUrl;
-        const AGENT_ZERO_API_KEY = agentZero.apiKey;
 
-        if (!agentZero.enabled || !AGENT_ZERO_URL || !AGENT_ZERO_API_KEY) {
+        if (!agentZero.enabled || !agentZero.baseUrl || !agentZero.apiKey) {
             return NextResponse.json(
                 { error: 'Agent Zero is not configured' },
                 { status: 503, headers: { 'Access-Control-Allow-Origin': '*' } }
             );
         }
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const fwResponse = await fetch(`${AGENT_ZERO_URL}/api_files_get`, {
+        const result = await fetchAgentZero({
+            baseUrl: agentZero.baseUrl,
+            apiKey: agentZero.apiKey,
+            endpoint: 'files',
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-KEY': AGENT_ZERO_API_KEY,
-            },
-            body: JSON.stringify({ paths }),
-            signal: controller.signal,
+            body: { paths },
+            timeoutMs: 30000,
         });
 
-        clearTimeout(timeoutId);
-
-        if (!fwResponse.ok) {
-            const errorText = await fwResponse.text().catch(() => 'Unknown error text');
-            console.error(`[Agent Zero Proxy] Files route returned error status ${fwResponse.status}:`, errorText);
+        if (!result.ok) {
             return NextResponse.json(
-                { error: `Agent Zero returned status ${fwResponse.status}`, details: errorText },
-                { status: fwResponse.status, headers: { 'Access-Control-Allow-Origin': '*' } }
+                { error: result.errorText || `Agent Zero returned status ${result.status}` },
+                { status: result.status || 503, headers: { 'Access-Control-Allow-Origin': '*' } }
             );
         }
 
-        const fwData = await fwResponse.json();
-
-        return NextResponse.json(fwData, {
+        return NextResponse.json(result.data, {
             status: 200,
-            headers: { 'Access-Control-Allow-Origin': '*' }
+            headers: { 'Access-Control-Allow-Origin': '*' },
         });
-
     } catch (error: any) {
         console.error('[Agent Zero Proxy] Files proxy error:', error);
-        const isTimeout = error.name === 'AbortError';
-
         return NextResponse.json(
-            { error: "Agent Zero is not reachable", details: isTimeout ? 'Request timed out' : error.message },
+            { error: 'Agent Zero is not reachable', details: error.message },
             { status: 503, headers: { 'Access-Control-Allow-Origin': '*' } }
         );
     }
