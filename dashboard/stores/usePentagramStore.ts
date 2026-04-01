@@ -4,7 +4,7 @@
 // ============================================================
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { PentagramState, SceneId, HeroTransform, DialogTransform } from '@/lib/games/pentagram/types';
+import { PentagramState, SceneId, HeroTransform, DialogTransform, InteractSceneConfig, ImageSequenceMapping } from '@/lib/games/pentagram/types';
 import { PENTAGRAM_SCENES } from '@/lib/games/pentagram/scenarioData';
 
 // Generate default state exactly matching the design doc
@@ -83,6 +83,18 @@ export interface PentagramStore {
     deleteCustomChoice: (choiceId: string, parentSceneId: string) => Promise<void>;
     editScene: (sceneId: string, sceneText: string, speakerName?: string, sceneTitle?: string) => Promise<void>;
     editChoice: (choiceId: string, parentSceneId: string, choiceText: string) => Promise<void>;
+
+    // Interact Scene Customization
+    customInteractConfigs: Record<string, InteractSceneConfig>;
+    imageSequences: (ImageSequenceMapping & { id: string })[];
+    isInteractEditorOpen: boolean;
+    setInteractEditorOpen: (open: boolean) => void;
+    loadInteractConfigs: () => Promise<void>;
+    saveInteractConfig: (sceneId: string, config: InteractSceneConfig) => Promise<void>;
+    deleteInteractConfig: (sceneId: string) => Promise<void>;
+    loadImageSequences: () => Promise<void>;
+    saveImageSequence: (seq: { id?: string; name: string; description?: string; frame_count: number; frame_width?: number; frame_height?: number; frame_urls: string[]; thumbnail_url?: string }) => Promise<void>;
+    deleteImageSequence: (id: string) => Promise<void>;
 }
 
 export const usePentagramStore = create<PentagramStore>()(
@@ -112,6 +124,12 @@ export const usePentagramStore = create<PentagramStore>()(
             
             saveId: null,
             isSaving: false,
+
+            // Interact Scene Customization
+            customInteractConfigs: {},
+            imageSequences: [],
+            isInteractEditorOpen: false,
+            setInteractEditorOpen: (open: boolean) => set({ isInteractEditorOpen: open }),
 
             makeChoice: (choiceId: string) => {
                 const { currentSceneId, gameState, history, customScenes, customChoices } = get();
@@ -577,7 +595,125 @@ export const usePentagramStore = create<PentagramStore>()(
                 } finally {
                     set({ isSyncing: false });
                 }
-            }
+            },
+
+            // ── INTERACT SCENE CUSTOMIZATION ──
+
+            loadInteractConfigs: async () => {
+                try {
+                    const res = await fetch('/api/games/pentagram/interact-config');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (!Array.isArray(data)) return;
+
+                    const configs: Record<string, any> = {};
+                    for (const row of data) {
+                        if (row.scene_id && row.interact_config) {
+                            configs[row.scene_id] = row.interact_config;
+                        }
+                    }
+                    set({ customInteractConfigs: configs });
+                } catch (e) {
+                    console.error('[Pentagram] Failed to load interact configs:', e);
+                }
+            },
+
+            saveInteractConfig: async (sceneId: string, config: any) => {
+                try {
+                    set({ isSyncing: true });
+                    const res = await fetch('/api/games/pentagram/interact-config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scene_id: sceneId, interact_config: config }),
+                    });
+                    if (res.ok) {
+                        set((state) => ({
+                            customInteractConfigs: {
+                                ...state.customInteractConfigs,
+                                [sceneId]: config,
+                            },
+                        }));
+                    }
+                } catch (e) {
+                    console.error('[Pentagram] Failed to save interact config:', e);
+                } finally {
+                    set({ isSyncing: false });
+                }
+            },
+
+            deleteInteractConfig: async (sceneId: string) => {
+                try {
+                    set({ isSyncing: true });
+                    await fetch(`/api/games/pentagram/interact-config?scene_id=${encodeURIComponent(sceneId)}`, {
+                        method: 'DELETE',
+                    });
+                    set((state) => {
+                        const { [sceneId]: _, ...rest } = state.customInteractConfigs;
+                        return { customInteractConfigs: rest };
+                    });
+                } catch (e) {
+                    console.error('[Pentagram] Failed to delete interact config:', e);
+                } finally {
+                    set({ isSyncing: false });
+                }
+            },
+
+            loadImageSequences: async () => {
+                try {
+                    const res = await fetch('/api/games/pentagram/image-sequences');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (!Array.isArray(data)) return;
+
+                    const sequences = data.map((row: any) => ({
+                        id: row.id,
+                        name: row.name,
+                        frameUrls: row.frame_urls || [],
+                        frameCount: row.frame_count || 0,
+                        frameDuration: 100,
+                        frameWidth: row.frame_width,
+                        frameHeight: row.frame_height,
+                    }));
+                    set({ imageSequences: sequences });
+                } catch (e) {
+                    console.error('[Pentagram] Failed to load image sequences:', e);
+                }
+            },
+
+            saveImageSequence: async (seq) => {
+                try {
+                    set({ isSyncing: true });
+                    const res = await fetch('/api/games/pentagram/image-sequences', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(seq),
+                    });
+                    if (res.ok) {
+                        // Reload all sequences to get the server-generated ID
+                        await get().loadImageSequences();
+                    }
+                } catch (e) {
+                    console.error('[Pentagram] Failed to save image sequence:', e);
+                } finally {
+                    set({ isSyncing: false });
+                }
+            },
+
+            deleteImageSequence: async (id: string) => {
+                try {
+                    set({ isSyncing: true });
+                    await fetch(`/api/games/pentagram/image-sequences?id=${encodeURIComponent(id)}`, {
+                        method: 'DELETE',
+                    });
+                    set((state) => ({
+                        imageSequences: state.imageSequences.filter((s) => s.id !== id),
+                    }));
+                } catch (e) {
+                    console.error('[Pentagram] Failed to delete image sequence:', e);
+                } finally {
+                    set({ isSyncing: false });
+                }
+            },
         }),
         {
             name: 'pentagram-storage', // Key for localStorage

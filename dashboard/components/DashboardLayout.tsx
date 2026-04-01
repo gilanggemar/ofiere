@@ -10,6 +10,8 @@ import { BottomDock } from "@/components/navigation/BottomDock";
 import { PageLoadingIndicator } from "@/components/PageLoadingIndicator";
 import { useTaskStore } from "@/lib/useTaskStore";
 import { useNavigationStore } from "@/store/useNavigationStore";
+import { useConnectionStore } from "@/store/useConnectionStore";
+import { useAssemblyStore } from "@/store/useAssemblyStore";
 
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +19,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const hasFetched = useTaskStore((s) => s.hasFetched);
     const syncFromPath = useNavigationStore((s) => s.syncFromPath);
     const pathname = usePathname();
+    const profileFetched = useConnectionStore((s) => s.profileFetched);
+    const markReady = useAssemblyStore((s) => s.markReady);
 
+    // When profile data is fetched, signal the global assembly to dismiss
+    useEffect(() => {
+        if (profileFetched) {
+            markReady();
+        }
+    }, [profileFetched, markReady]);
 
     useEffect(() => {
         if (!hasFetched) fetchTasks();

@@ -228,7 +228,7 @@ export default function ChatPage() {
     }, [selectedAgentId, integratedAgents, isOpenClawConnected, sendToolsHandshake]);
 
     const [showSidebar, setShowSidebar] = useState(true);
-    const [processSidebarWidth, setProcessSidebarWidth] = useState(350);
+    const [processSidebarWidth, setProcessSidebarWidth] = useState(280);
     const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
     const [missionConfig, setMissionConfig] = useState<MissionConfig>({
         goalText: '',
@@ -494,9 +494,18 @@ export default function ChatPage() {
             return true;
         });
 
-        const merged = [...hydratedDb];
-        const dbIds = new Set(hydratedDb.map(m => String(m.id)));
-        const dbContents = new Set(hydratedDb.map(m => (m.content || '').trim().toLowerCase()).filter(Boolean));
+        // Deduplicate DB messages themselves: same role + same content = keep first only
+        const seenDbContent = new Set<string>();
+        const dedupedDb = hydratedDb.filter((m: any) => {
+            const key = `${m.role}::${(m.content || '').trim().toLowerCase()}`;
+            if (seenDbContent.has(key)) return false;
+            seenDbContent.add(key);
+            return true;
+        });
+
+        const merged = [...dedupedDb];
+        const dbIds = new Set(dedupedDb.map((m: any) => String(m.id)));
+        const dbContents = new Set(dedupedDb.map((m: any) => (m.content || '').trim().toLowerCase()).filter(Boolean));
 
         for (const m of filteredMessages) {
              let rawContent = (m.content || '').trim();
@@ -838,7 +847,7 @@ export default function ChatPage() {
             </div>
 
             {/* ═══ CENTER: Main Chat Area ═══ */}
-            <div className="flex flex-col flex-1 h-full gap-4 min-w-0">
+            <div className="flex flex-col flex-1 h-full gap-3 min-w-0">
 
                 {/* ─── Top Bar: Sidebar Toggle | Agent Tabs | Session | Escalate ─── */}
                 <div className="flex items-center justify-between pb-2">
@@ -890,7 +899,7 @@ export default function ChatPage() {
                 </div>
 
                 {/* ─── Main Content (Chat + Process Hierarchy) ─── */}
-                <div className="flex-1 min-h-0 bg-transparent flex w-full gap-2">
+                <div className="flex-1 min-h-0 bg-transparent flex w-full">
 
                     {/* Chat column */}
                     <div 
@@ -1423,29 +1432,31 @@ export default function ChatPage() {
                         </div>
                     </div>
 
-                    {/* ═══ RIGHT: Process Hierarchy Sidebar — UNCHANGED ═══ */}
-                    {selectedAgentId && (
-                        <div className="flex h-full shrink-0 group relative" style={{ width: processSidebarWidth }}>
-                            {/* Resize Handle */}
-                            <div
-                                className="absolute -left-1.5 top-0 bottom-0 w-3 cursor-col-resize z-10 flex items-center justify-center"
-                                onMouseDown={() => setIsDraggingSidebar(true)}
-                            >
-                                <div className="w-0.5 h-12 bg-zinc-700/0 group-hover:bg-zinc-700/50 rounded-full transition-colors duration-300" />
-                            </div>
 
-                            <div className="w-full h-full border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/30">
-                                <UnifiedProcessTree
-                                    agentId={selectedAgentId}
-                                    provider={activeAgent?.provider || 'openclaw'}
-                                    className="h-full"
-                                    messages={allConversationMessages}
-                                />
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
+
+            {/* ═══ RIGHT: Process Hierarchy Sidebar (full-height) ═══ */}
+            {selectedAgentId && (
+                <div className="flex h-full shrink-0 group relative -mt-1" style={{ width: processSidebarWidth, marginLeft: 8 }}>
+                    {/* Resize Handle */}
+                    <div
+                        className="absolute -left-1.5 top-0 bottom-0 w-3 cursor-col-resize z-10 flex items-center justify-center"
+                        onMouseDown={() => setIsDraggingSidebar(true)}
+                    >
+                        <div className="w-0.5 h-12 bg-zinc-700/0 group-hover:bg-zinc-700/50 rounded-full transition-colors duration-300" />
+                    </div>
+
+                    <div className="w-full h-full border border-white/[0.06] rounded-xl overflow-hidden" style={{ background: 'rgba(8,7,6,0.5)' }}>
+                        <UnifiedProcessTree
+                            agentId={selectedAgentId}
+                            provider={activeAgent?.provider || 'openclaw'}
+                            className="h-full"
+                            messages={allConversationMessages}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* ═══ FLOATING TEXT SELECTION QUOTE ICON ═══ */}
             {selectionPopup && (

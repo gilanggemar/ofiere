@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback, useRef, createContext, useContext } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     ChevronRight,
@@ -13,6 +13,9 @@ import {
     Wrench,
     Brain,
     Zap,
+    Trash2,
+    ChevronsDownUp,
+    ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useAgentZeroStore from "@/store/useAgentZeroStore";
@@ -33,6 +36,16 @@ interface ProcessNode {
     thoughts?: string[];
     timestamp?: string;
 }
+
+// ─── Expand/Collapse Context ───
+// A generation counter that forces all TreeNodeViews to re-evaluate their expanded state.
+interface TreeControlCtx {
+    /** Incremented on "collapse all" */
+    collapseGen: number;
+    /** Incremented on "expand all" */
+    expandGen: number;
+}
+const TreeControlContext = createContext<TreeControlCtx>({ collapseGen: 0, expandGen: 0 });
 
 // ─── Agent Zero Parser ───
 
@@ -66,7 +79,19 @@ function parseAgentZeroData(content: any): {
 // ─── Tree Node Renderer ───
 
 const TreeNodeView = ({ node, level = 0 }: { node: ProcessNode; level?: number }) => {
-    const [expanded, setExpanded] = React.useState(level === 0);
+    const { collapseGen, expandGen } = useContext(TreeControlContext);
+    // Default: collapsed for all levels (requirement #2)
+    const [expanded, setExpanded] = React.useState(false);
+
+    // React to collapse-all / expand-all signals
+    React.useEffect(() => {
+        if (collapseGen > 0) setExpanded(false);
+    }, [collapseGen]);
+
+    React.useEffect(() => {
+        if (expandGen > 0) setExpanded(true);
+    }, [expandGen]);
+
     if (!node) return null;
 
     const hasChildren = node.children.length > 0 || !!node.detail || !!node.toolArgs || !!node.output;
@@ -480,44 +505,114 @@ export const UnifiedProcessTree = ({
     const storeChatMessages = useSocketStore((s) => s.chatMessages);
     const chatMessagesSource = messages ?? storeChatMessages;
 
+    // ─── Local UI state ───
+    const [collapseGen, setCollapseGen] = useState(0);
+    const [expandGen, setExpandGen] = useState(0);
+    const clearedIdsRef = useRef<Set<string>>(new Set());
+    const [clearTrigger, setClearTrigger] = useState(0);
+
     const treeData = useMemo(() => {
         if (provider === "agent-zero" || provider === "external") {
-            // Agent Zero path — completely untouched
             return buildAgentZeroTree(a0Logs, a0IsResponding);
         }
-        // OpenClaw path — uses active runs for live thinking + tool calls
         return buildOpenClawTree(agentId, openClawActiveRuns, chatMessagesSource);
     }, [provider, agentId, a0Logs, a0IsResponding, openClawActiveRuns, chatMessagesSource]);
 
-    return (
-        <div className={cn("flex flex-col h-full overflow-hidden bg-black/20 rounded-md border border-white/5", className)}>
-            <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/5 bg-white/[0.02]">
-                <span className="text-xs font-medium opacity-80 uppercase tracking-widest text-[10px]">
-                    Process Hierarchy
-                </span>
-                {treeData.length > 0 && (
-                    <span className="text-[9px] text-muted-foreground/40">
-                        {treeData.filter((n) => n.status === "running").length > 0 && (
-                            <span className="text-cyan-400 animate-pulse mr-1">●</span>
-                        )}
-                        {treeData.length} process{treeData.length !== 1 ? "es" : ""}
-                    </span>
-                )}
-            </div>
+    // Filter out cleared processes
+    const displayData = useMemo(() => {
+        if (clearedIdsRef.current.size === 0) return treeData;
+        return treeData.filter(n => !clearedIdsRef.current.has(n.id));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [treeData, clearTrigger]);
 
-            <ScrollArea className="flex-1 min-h-0 p-2">
-                {treeData.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-xs text-muted-foreground/50 p-4 text-center">
-                        No active processes
+    const handleClear = useCallback(() => {
+        // Mark all current process IDs as cleared
+        treeData.forEach(n => clearedIdsRef.current.add(n.id));
+        // For OpenClaw: also clear active runs
+        const sk = `agent:${agentId}:nchat`;
+        useOpenClawStore.getState().clearRunsForSession(sk);
+        // For Agent Zero: clear logs
+        if (provider === "agent-zero" || provider === "external") {
+            useAgentZeroStore.getState().setLogs([]);
+        }
+        setClearTrigger(t => t + 1);
+    }, [agentId, provider, treeData]);
+
+    const handleCollapseAll = useCallback(() => {
+        setCollapseGen(g => g + 1);
+    }, []);
+
+    const handleExpandAll = useCallback(() => {
+        setExpandGen(g => g + 1);
+    }, []);
+    const ctxValue = useMemo(() => ({ collapseGen, expandGen }), [collapseGen, expandGen]);
+
+    return (
+        <TreeControlContext.Provider value={ctxValue}>
+            <div className={cn("flex flex-col overflow-hidden rounded-md border border-white/[0.06] h-full", className)}
+                style={{ background: 'linear-gradient(180deg, rgba(12,11,10,0.75) 0%, rgba(8,7,6,0.65) 100%)' }}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/[0.06] shrink-0" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    <span className="text-xs font-medium opacity-80 uppercase tracking-widest text-[10px]">
+                        Process Hierarchy
+                    </span>
+
+                    <div className="flex items-center gap-0.5">
+                        {/* Process count */}
+                        {displayData.length > 0 && (
+                            <span className="text-[9px] text-muted-foreground/40 mr-1.5">
+                                {displayData.filter((n) => n.status === "running").length > 0 && (
+                                    <span className="text-cyan-400 animate-pulse mr-1">●</span>
+                                )}
+                                {displayData.length}
+                            </span>
+                        )}
+
+                        {/* Collapse All */}
+                        <button
+                            onClick={handleCollapseAll}
+                            className="p-1 rounded hover:bg-white/10 transition-colors text-muted-foreground/50 hover:text-muted-foreground"
+                            title="Collapse all"
+                        >
+                            <ChevronsDownUp size={13} />
+                        </button>
+
+                        {/* Expand All */}
+                        <button
+                            onClick={handleExpandAll}
+                            className="p-1 rounded hover:bg-white/10 transition-colors text-muted-foreground/50 hover:text-muted-foreground"
+                            title="Expand all"
+                        >
+                            <ChevronsUpDown size={13} />
+                        </button>
+
+                        {/* Clear / Delete */}
+                        <button
+                            onClick={handleClear}
+                            className="p-1 rounded hover:bg-red-500/15 transition-colors text-muted-foreground/50 hover:text-red-400"
+                            title="Clear processes"
+                        >
+                            <Trash2 size={13} />
+                        </button>
                     </div>
-                ) : (
-                    <div className="flex flex-col gap-0.5 pb-4">
-                        {treeData.map((rootNode) => (
-                            <TreeNodeView key={rootNode.id} node={rootNode} />
-                        ))}
-                    </div>
-                )}
-            </ScrollArea>
-        </div>
+                </div>
+
+                {/* Body */}
+                <ScrollArea className="flex-1 min-h-0 p-2">
+                        {displayData.length === 0 ? (
+                            <div className="flex items-center justify-center h-full text-xs text-muted-foreground/50 p-4 text-center">
+                                No active processes
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-0.5 pb-4">
+                                {displayData.map((rootNode) => (
+                                    <TreeNodeView key={rootNode.id} node={rootNode} />
+                                ))}
+                            </div>
+                        )}
+                </ScrollArea>
+            </div>
+        </TreeControlContext.Provider>
     );
 };

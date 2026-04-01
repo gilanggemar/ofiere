@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useThemeStore } from "@/store/useThemeStore";
-import { Sun, Moon, LogOut, User, ChevronDown } from "lucide-react";
+import { Sun, Moon, LogOut, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLayoutStore } from "@/store/useLayoutStore";
 
@@ -39,44 +39,38 @@ export function TopRightUserMenu() {
 
     return (
         <div 
-            className="fixed top-0 right-[9px] w-[48px] z-30 flex flex-col items-center pt-[10px] pb-6 px-2" 
+            className="fixed bottom-0 right-[9px] w-[48px] z-30 flex flex-col items-center pb-[10px] pt-6 px-2" 
             ref={ref}
             onMouseEnter={() => setExpanded(true)}
-            onMouseLeave={() => setExpanded(false)}
+            onMouseLeave={() => { if (!open) setExpanded(false); }}
         >
-            <AnimatePresence mode="popLayout">
-                {isExpanded ? (
-                    <motion.div
-                        key="avatar-content"
-                        initial={{ opacity: 0, y: -48 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -48 }}
-                        transition={{ duration: 0.25, ease: [0.25, 1, 0.5, 1] }}
+            {/* Avatar button — only visible when notch is expanded */}
+            {isExpanded ? (
+                <motion.div
+                    key="avatar-content"
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
+                >
+                    <button
+                        onClick={() => setOpen(!open)}
+                        className="nerv-avatar-btn"
+                        title={user?.email || "Account"}
                     >
-                        <button
-                            onClick={() => setOpen(!open)}
-                            className="nerv-avatar-btn"
-                            title={user?.email || "Account"}
-                        >
-                            {initial}
-                        </button>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="avatar-chevron"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute top-[10px] h-4 w-4 flex items-center justify-center text-muted-foreground/40 hover:text-muted-foreground cursor-pointer"
-                    >
-                        <ChevronDown className="w-4 h-4" />
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        {initial}
+                    </button>
+                </motion.div>
+            ) : (
+                <div
+                    className="absolute bottom-[10px] h-4 w-4 flex items-center justify-center cursor-pointer"
+                    style={{ color: 'var(--accent-base, #FF6D29)', filter: 'drop-shadow(0 0 4px rgba(255,109,41,0.5))' }}
+                >
+                    <ChevronDown className="w-4 h-4 rotate-180" />
+                </div>
+            )}
 
             {open && (
-                <div className="nerv-user-dropdown">
+                <div className="nerv-user-dropdown" style={{ position: 'absolute', bottom: '100%', top: 'auto', right: 0, marginBottom: 4 }}>
                     {/* User email */}
                     {user?.email && (
                         <div className="px-3 py-2 border-b border-border/50">

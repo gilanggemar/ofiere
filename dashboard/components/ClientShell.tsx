@@ -29,8 +29,20 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
     const resolveApproval = useOpenClawStore((s) => s.resolveApproval);
 
     useEffect(() => {
+        // Initial fetch — may fail on fresh login if auth cookies aren't ready yet
         fetchAll();
-        fetchActiveProfile();
+        fetchActiveProfile().then(() => {
+            // If profile wasn't found on first try, retry after a short delay
+            // (common after login redirect when auth cookies are still settling)
+            const state = useConnectionStore.getState();
+            if (!state.activeProfile && state.profileFetched) {
+                setTimeout(() => {
+                    useConnectionStore.getState().fetchActiveProfile();
+                    useGamificationStore.getState().fetchAll();
+                }, 1500);
+            }
+        });
+
         const interval = setInterval(() => {
             useGamificationStore.getState().checkStreak();
         }, 1000 * 60 * 60 * 2);

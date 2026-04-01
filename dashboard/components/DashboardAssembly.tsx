@@ -1,8 +1,15 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Settings } from 'lucide-react'
+
+interface DashboardAssemblyProps {
+    /** When true, the dashboard data is loaded and the animation should complete */
+    isReady?: boolean;
+    /** Called after the exit animation finishes */
+    onComplete?: () => void;
+}
 
 /**
  * DashboardAssembly — Animated loading screen shown after sign-in.
@@ -134,10 +141,13 @@ function WorkerCursor() {
     )
 }
 
-export function DashboardAssembly() {
+export function DashboardAssembly({ isReady, onComplete }: DashboardAssemblyProps = {}) {
     const [phase, setPhase] = useState(0)
     const [showSparks, setShowSparks] = useState(false)
     const [cyclingIndex, setCyclingIndex] = useState(0)
+    const [dismissed, setDismissed] = useState(false)
+    const mountTime = useRef(Date.now())
+    const MIN_DISPLAY_MS = 2800 // minimum time to show the assembly animation
 
     useEffect(() => {
         const timers = [
@@ -149,13 +159,27 @@ export function DashboardAssembly() {
         return () => timers.forEach(clearTimeout)
     }, [])
 
+    // When isReady, wait for minimum display time then dismiss
+    useEffect(() => {
+        if (!isReady) return
+        const elapsed = Date.now() - mountTime.current
+        const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed)
+        const timer = setTimeout(() => {
+            setDismissed(true)
+            // Give exit animation time to play
+            setTimeout(() => onComplete?.(), 800)
+        }, remaining + 400) // +400ms for the progress bar to fill
+        return () => clearTimeout(timer)
+    }, [isReady, onComplete])
+
     // Cycling messages that fade in/out continuously
     useEffect(() => {
+        if (dismissed) return
         const interval = setInterval(() => {
             setCyclingIndex((prev) => (prev + 1) % CYCLING_MESSAGES.length)
         }, 2200)
         return () => clearInterval(interval)
-    }, [])
+    }, [dismissed])
 
     // Skeleton piece shared styles
     const skeletonBorder = '1px solid rgba(255,255,255,0.08)'
@@ -166,9 +190,9 @@ export function DashboardAssembly() {
         <motion.div
             className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
             style={{ background: '#080706' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: dismissed ? 0 : 1 }}
+            transition={{ duration: dismissed ? 0.7 : 0.3, ease: 'easeInOut' }}
         >
             {/* Ambient radial glow */}
             <div
@@ -512,13 +536,18 @@ export function DashboardAssembly() {
                         }}
                         initial={{ width: '2%' }}
                         animate={{
-                            width: ['2%', '15%', '28%', '40%', '52%', '60%'],
+                            width: isReady
+                                ? '100%'
+                                : ['2%', '15%', '28%', '40%', '52%', '60%'],
                         }}
-                        transition={{
-                            duration: 18,
-                            ease: 'easeOut',
-                            times: [0, 0.15, 0.35, 0.55, 0.75, 1],
-                        }}
+                        transition={isReady
+                            ? { duration: 0.5, ease: 'easeOut' }
+                            : {
+                                duration: 18,
+                                ease: 'easeOut',
+                                times: [0, 0.15, 0.35, 0.55, 0.75, 1],
+                            }
+                        }
                     />
                 </div>
             </div>

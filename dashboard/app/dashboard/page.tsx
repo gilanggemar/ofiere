@@ -35,7 +35,8 @@ export default function OverviewPage() {
         fleetPowerScore,
         currentStreak,
         setActiveAgentId,
-        availableAgents
+        availableAgents,
+        profileFetched
     } = useCommandCenter();
 
     const agentId = activeAgent?.id || '';
@@ -137,6 +138,9 @@ export default function OverviewPage() {
                             dynamicColors={dynamicColors}
                         />
                     </>
+                ) : !profileFetched ? (
+                    /* While profile is still loading, show nothing (assembly overlay covers this) */
+                    null
                 ) : (
                     <div className="flex flex-col items-center justify-center w-full h-full pb-20 pointer-events-auto">
                         <div className="text-6xl mb-6 opacity-60">👻</div>

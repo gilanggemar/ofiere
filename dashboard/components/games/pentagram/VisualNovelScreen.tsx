@@ -5,7 +5,8 @@ import { PENTAGRAM_SCENES } from "@/lib/games/pentagram/scenarioData";
 import { cn } from "@/lib/utils";
 import { ChevronRight, RefreshCcw, Plus, Trash2, X, Save, Loader2, Edit2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { InteractScene } from "./InteractScene";
 
 export function VisualNovelScreen() {
     const { 
@@ -14,12 +15,14 @@ export function VisualNovelScreen() {
         globalDialogTransform, customSceneDialogTransforms,
         customScenes, customChoices, isSyncing, loadCustomScenarioData,
         addCustomSceneNode, addCustomChoice, deleteCustomScene, deleteCustomChoice,
-        editScene, editChoice
+        editScene, editChoice,
+        customInteractConfigs, loadInteractConfigs
     } = usePentagramStore();
 
     useEffect(() => {
         loadCustomScenarioData();
-    }, [loadCustomScenarioData]);
+        loadInteractConfigs();
+    }, [loadCustomScenarioData, loadInteractConfigs]);
 
     const [isAddingMode, setIsAddingMode] = useState(false);
     const [newChoiceText, setNewChoiceText] = useState("");
@@ -71,6 +74,52 @@ export function VisualNovelScreen() {
             <div className="w-full h-full flex items-center justify-center bg-black text-red-500 font-mono">
                 [CRITICAL ERROR] SCENE NODE {currentSceneId} NOT FOUND.
             </div>
+        );
+    }
+
+    // ── INTERACT SCENE SWITCHOVER ──
+    // If the scene is an interact scene, render the InteractScene component instead
+    const handleInteractTransition = useCallback((nextSceneId: string) => {
+        // Apply any onEnter effects for the next scene
+        const nextScene: any = PENTAGRAM_SCENES[nextSceneId] || customScenes[nextSceneId];
+        if (nextScene?.onEnter) {
+            const newState = nextScene.onEnter(gameState);
+            // We can't directly set gameState here, so we use jumpToScene
+            // The onEnter will be handled by the store's makeChoice or jumpToScene
+        }
+        usePentagramStore.getState().jumpToScene(nextSceneId);
+    }, [gameState, customScenes]);
+
+    if (scene.type === 'interact' && scene.interactConfig) {
+        // Merge custom interact config from Supabase on top of hardcoded config
+        const baseConfig = scene.interactConfig;
+        const customConfig = customInteractConfigs[currentSceneId];
+        const mergedConfig = customConfig ? { ...baseConfig, ...customConfig, mechanic: { ...baseConfig.mechanic, ...(customConfig.mechanic || {}) } } : baseConfig;
+
+        const activeBgUrl = customBackgroundUrl || customSceneBackgrounds[currentSceneId] || scene.backgroundUrl || undefined;
+        return (
+            <InteractScene
+                config={mergedConfig}
+                backgroundUrl={activeBgUrl}
+                sceneTitle={scene.sceneTitle}
+                narrativeOverride={typeof scene.text === 'function' ? scene.text(gameState) : scene.text}
+                onSceneTransition={handleInteractTransition}
+            />
+        );
+    }
+
+    // Also check if there's a custom interact config that CREATES a new interact scene from a normal scene
+    if (customInteractConfigs[currentSceneId]) {
+        const customConfig = customInteractConfigs[currentSceneId];
+        const activeBgUrl = customBackgroundUrl || customSceneBackgrounds[currentSceneId] || scene.backgroundUrl || undefined;
+        return (
+            <InteractScene
+                config={customConfig}
+                backgroundUrl={activeBgUrl}
+                sceneTitle={scene.sceneTitle}
+                narrativeOverride={typeof scene.text === 'function' ? scene.text(gameState) : scene.text}
+                onSceneTransition={handleInteractTransition}
+            />
         );
     }
 

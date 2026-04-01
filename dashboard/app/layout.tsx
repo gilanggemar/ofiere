@@ -3,6 +3,7 @@ import { Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthInitializer } from "@/components/AuthInitializer";
+import { GlobalAssemblyOverlay } from "@/components/GlobalAssemblyOverlay";
 
 const outfit = Outfit({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
           <AuthInitializer>
             {children}
           </AuthInitializer>
+          <GlobalAssemblyOverlay />
         </ThemeProvider>
       </body>
     </html>

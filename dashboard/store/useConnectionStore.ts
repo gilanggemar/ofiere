@@ -49,6 +49,8 @@ interface ConnectionState {
     profiles: ConnectionProfileClient[];
     activeProfile: ConnectionProfileClient | null;
     isLoading: boolean;
+    profileLoading: boolean;
+    profileFetched: boolean;
     error: string | null;
     testResults: Record<string, ConnectionTestResult>; // keyed by profile id
     testingIds: Set<string>;
@@ -68,6 +70,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     profiles: [],
     activeProfile: null,
     isLoading: false,
+    profileLoading: true,
+    profileFetched: false,
     error: null,
     testResults: {},
     testingIds: new Set(),
@@ -87,16 +91,17 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     },
 
     fetchActiveProfile: async () => {
+        set({ profileLoading: true });
         try {
             const res = await fetch('/api/connection-profiles/active/client');
             if (!res.ok) {
-                set({ activeProfile: null });
+                set({ activeProfile: null, profileLoading: false, profileFetched: true });
                 return;
             }
             const data = await res.json();
-            set({ activeProfile: data });
+            set({ activeProfile: data, profileLoading: false, profileFetched: true });
         } catch {
-            set({ activeProfile: null });
+            set({ activeProfile: null, profileLoading: false, profileFetched: true });
         }
     },
 

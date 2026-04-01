@@ -58,6 +58,7 @@ export function BottomDock() {
         setActiveGroup(group);
         const firstRoute = NAV_GROUPS[group][0];
         if (firstRoute) router.push(firstRoute.link);
+        clearAll();
     };
 
     const openBloom = useCallback((group: NavGroup) => {
@@ -135,8 +136,8 @@ export function BottomDock() {
                                                             e.preventDefault();
                                                             setActiveGroup(bloomGroup!);
                                                             setActiveSubPage(route.id);
-                                                            setBloomGroup(null);
                                                             router.push(route.link);
+                                                            clearAll();
                                                         }}
                                                         className={cn(
                                                             "nerv-bloom-tile",
@@ -196,7 +197,8 @@ export function BottomDock() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute bottom-[8px] h-4 w-16 flex items-center justify-center text-muted-foreground/40 hover:text-muted-foreground cursor-pointer"
+                            className="absolute bottom-[8px] h-4 w-16 flex items-center justify-center cursor-pointer"
+                            style={{ color: 'var(--accent-base, #FF6D29)', filter: 'drop-shadow(0 0 4px rgba(255,109,41,0.5))' }}
                         >
                             <ChevronUp className="w-4 h-4" />
                         </motion.div>

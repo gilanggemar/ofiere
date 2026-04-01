@@ -76,24 +76,25 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
             const fetchJson = async (url: string, init?: RequestInit) => {
                 const res = await fetch(url, init);
                 if (!res.ok) {
+                    // 401/404 are expected on first load (auth not ready, or no data yet)
+                    if (res.status === 401 || res.status === 404) {
+                        return {};
+                    }
                     throw new Error(`Failed to fetch ${url}: ${res.statusText}`);
                 }
                 const contentType = res.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
                     return res.json();
                 }
-                throw new Error(`Expected JSON from ${url}, but got ${contentType}`);
+                return {};
             };
 
             const [xpRes, missionsRes, achRes, streakRes] = await Promise.all([
                 fetchJson('/api/gamification/xp'),
                 fetchJson('/api/gamification/missions'),
                 fetchJson('/api/gamification/achievements'),
-                fetchJson('/api/gamification/streak/check', { method: 'POST' }).catch(() => ({})) // Don't fail everything if streak check fails
-            ].map(p => p.catch(e => {
-                console.error(e);
-                return {};
-            })));
+                fetchJson('/api/gamification/streak/check', { method: 'POST' }).catch(() => ({}))
+            ].map(p => p.catch(() => ({}))));
 
             const xpMap: Record<string, AgentXPData> = {};
             if (xpRes.agents) {

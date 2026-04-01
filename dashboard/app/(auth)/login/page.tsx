@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useAssemblyStore } from '@/store/useAssemblyStore'
 import { Logo } from '@/components/logo'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
-import { DashboardAssembly } from '@/components/DashboardAssembly'
+import { motion } from 'framer-motion'
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
@@ -18,13 +18,15 @@ export default function LoginPage() {
     const loading = useAuthStore((s) => s.loading)
     const user = useAuthStore((s) => s.user)
     const initialized = useAuthStore((s) => s.initialized)
+    const showAssembly = useAssemblyStore((s) => s.show)
 
     useEffect(() => {
         if (initialized && user) {
             setNavigating(true)
+            showAssembly()
             router.push('/dashboard')
         }
-    }, [initialized, user, router])
+    }, [initialized, user, router, showAssembly])
 
     const handleLogin = async () => {
         setError(null)
@@ -32,12 +34,18 @@ export default function LoginPage() {
             setError('Please enter your email and password.')
             return
         }
+        // Fire assembly animation IMMEDIATELY — before auth even starts
+        showAssembly()
+        setNavigating(true)
+
         const result = await signIn(email, password)
         if (result.error) {
+            // Auth failed — hide assembly and show error
+            useAssemblyStore.getState().reset()
+            setNavigating(false)
             setError(result.error)
         } else {
-            // Show the assembly animation while dashboard compiles
-            setNavigating(true)
+            // Auth succeeded — navigate while assembly is already playing
             router.push('/dashboard')
         }
     }
@@ -52,11 +60,6 @@ export default function LoginPage() {
 
     return (
         <>
-            {/* ═══ DASHBOARD ASSEMBLY OVERLAY ═══ */}
-            <AnimatePresence>
-                {navigating && <DashboardAssembly />}
-            </AnimatePresence>
-
             <motion.div
                 initial={{ opacity: 0, y: 16, scale: 0.97 }}
                 animate={navigating

@@ -40,28 +40,37 @@ export function ShellFrame({ children }: { children: React.ReactNode }) {
     const dockRight = cx + dockW / 2;
     const dockTop = bottom - dockH;
 
-    // ─── Avatar notch (U-shape merging into right edge) ───
+    // ─── Avatar notch (bottom-right) ───
     const isAvExpanded = useLayoutStore((s) => s.isTopRightExpanded);
     const avNotchLeft = vw - 61;
-    const avNotchBottom = top + (isAvExpanded ? 42 : 18);
-    const avCr = isAvExpanded ? 18 : 9;
+    const avNotchTop = bottom - (isAvExpanded ? 42 : 18);
+    
+    // Tuning radii carefully so expanded/collapsed states are perfectly smooth.
+    // In collapsed (h=18): avCr(6) + avBottomCr(12) == 18. The curves meet at a perfect continuous vertical tangent.
+    const avCr = isAvExpanded ? 18 : 6;
+    const avOuterCr = isAvExpanded ? 18 : 12;
+    const avBottomCr = isAvExpanded ? 18 : 12;
 
+    // A single unified path for both states ensuring flawless CSS shape morphing
+    const notchSegments = [
+        `L ${right} ${avNotchTop - avOuterCr}`,
+        `Q ${right} ${avNotchTop} ${right - avOuterCr} ${avNotchTop}`,
+        `L ${avNotchLeft + avCr} ${avNotchTop}`,
+        `Q ${avNotchLeft} ${avNotchTop} ${avNotchLeft} ${avNotchTop + avCr}`,
+        `L ${avNotchLeft} ${bottom - avBottomCr}`,
+        `Q ${avNotchLeft} ${bottom} ${avNotchLeft - avBottomCr} ${bottom}`,
+    ];
     // ─── Build SVG path (clockwise) ───
     const framePath = vw > 0 ? [
         // ═══ TOP-LEFT CORNER ═══
         `M ${left + r} ${top}`,
 
-        // ═══ TOP EDGE → straight to AVATAR NOTCH ═══
-        `L ${avNotchLeft - avCr} ${top}`,
-        `Q ${avNotchLeft} ${top} ${avNotchLeft} ${top + avCr}`,
-        `L ${avNotchLeft} ${avNotchBottom - avCr}`,
-        `Q ${avNotchLeft} ${avNotchBottom} ${avNotchLeft + avCr} ${avNotchBottom}`,
-        `L ${right - avCr} ${avNotchBottom}`,
-        `Q ${right} ${avNotchBottom} ${right} ${avNotchBottom + avCr}`,
+        // ═══ TOP EDGE → straight to TOP-RIGHT CORNER ═══
+        `L ${right - r} ${top}`,
+        `Q ${right} ${top} ${right} ${top + r}`,
 
-        // ═══ RIGHT EDGE ═══
-        `L ${right} ${bottom - r}`,
-        `Q ${right} ${bottom} ${right - r} ${bottom}`,
+        // ═══ RIGHT EDGE → AVATAR NOTCH (bottom-right) ═══
+        ...notchSegments,
 
         // ═══ BOTTOM EDGE → DOCK NOTCH ═══
         `L ${dockRight + dockCr} ${bottom}`,

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { usePentagramStore } from "@/stores/usePentagramStore";
 import { VisualNovelScreen } from "./VisualNovelScreen";
 import { DevToolsPanel } from "./DevToolsPanel";
-import { ChevronRight, ArrowLeft } from "lucide-react";
+import { InteractSceneEditor } from "./InteractSceneEditor";
+import { ChevronRight, ArrowLeft, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PentagramArenaPanelProps {
@@ -13,6 +14,8 @@ interface PentagramArenaPanelProps {
 
 export function PentagramArenaPanel({ onExit }: PentagramArenaPanelProps) {
     const restartGame = usePentagramStore((s) => s.restartGame);
+    const isInteractEditorOpen = usePentagramStore((s) => s.isInteractEditorOpen);
+    const setInteractEditorOpen = usePentagramStore((s) => s.setInteractEditorOpen);
     const [devToolsOpen, setDevToolsOpen] = useState(true);
 
     useEffect(() => {
@@ -38,12 +41,26 @@ export function PentagramArenaPanel({ onExit }: PentagramArenaPanelProps) {
                     <h2 className="text-lg font-black uppercase tracking-tight text-white/80 pointer-events-none">
                         PENTAGRAM <span className="text-orange-500">PROTOCOL</span>
                     </h2>
+                    <button
+                        onClick={() => setInteractEditorOpen(!isInteractEditorOpen)}
+                        className={cn(
+                            "pointer-events-auto flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-widest backdrop-blur-md border rounded-lg transition-all ml-auto",
+                            isInteractEditorOpen
+                                ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
+                                : "bg-black/60 border-white/10 text-neutral-400 hover:text-white hover:border-white/30"
+                        )}
+                    >
+                        <Settings2 className="w-3.5 h-3.5" /> Interact Editor
+                    </button>
                 </div>
 
                 {/* VN fills entire area */}
                 <div className="absolute inset-0">
                     <VisualNovelScreen />
                 </div>
+
+                {/* Interact Scene Editor (Floating) */}
+                <InteractSceneEditor />
             </div>
 
             {/* Dev Tools Panel (Floating Overlay) */}

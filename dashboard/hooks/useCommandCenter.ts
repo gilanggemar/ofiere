@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { useSocketStore } from '@/lib/useSocket';
 import { useGamificationStore } from '@/store/useGamificationStore';
 import { useAvailableAgents } from '@/hooks/useAvailableAgents';
+import { useConnectionStore } from '@/store/useConnectionStore';
 
 export function useCommandCenter() {
     const availableAgents = useAvailableAgents();
     const [activeAgentId, setActiveAgentId] = useState<string>('');
     const [isMounted, setIsMounted] = useState(false);
+    const profileLoading = useConnectionStore((s) => s.profileLoading);
+    const profileFetched = useConnectionStore((s) => s.profileFetched);
 
     const {
         agentXP,
@@ -72,6 +75,8 @@ export function useCommandCenter() {
         fleetPowerScore,
         currentStreak,
         setActiveAgentId,
-        availableAgents
+        availableAgents,
+        profileLoading,
+        profileFetched
     };
 }

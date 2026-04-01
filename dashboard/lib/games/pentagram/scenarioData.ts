@@ -345,7 +345,7 @@ Tomorrow, the real work begins. And Thalia is arriving from the New York office.
     ),
 
     // ==========================================
-    // ACT II (STUB)
+    // ACT II (STUB) — Now with demo interact scenes
     // ==========================================
 
     "A2_STUB": s(
@@ -354,10 +354,174 @@ Tomorrow, the real work begins. And Thalia is arriving from the New York office.
         
 Act II of the Pentagram Protocol focuses on the arrival of Thalia, the escalation of the Sentinel gap, and the deep, branching emotional manipulation defined in the design document.
 
-(Content will be expanded in future updates. Full state tracking is active.)`,
+(Content will be expanded in future updates. Full state tracking is active.)
+
+— INTERACT SCENE DEMOS AVAILABLE BELOW —`,
         "System", "⚙️", "gilang", undefined,
         [
-            { id: "end_demo", text: "End Current Demo", nextSceneId: "P_START", effect: state => ({ ...state, CORRUPTION: state.CORRUPTION + 1 }) }
+            { id: "end_demo", text: "End Current Demo", nextSceneId: "P_START", effect: state => ({ ...state, CORRUPTION: state.CORRUPTION + 1 }) },
+            { id: "demo_resistance", text: "⚡ [DEV] Test: Resistance Mechanic (Hold to Pin)", nextSceneId: "INTERACT_RESISTANCE_DEMO" },
+            { id: "demo_obstacle", text: "🔨 [DEV] Test: Obstacle Mechanic (Force to Open)", nextSceneId: "INTERACT_OBSTACLE_DEMO" },
+            { id: "demo_pain", text: "💎 [DEV] Test: Pain Threshold (Don't Break)", nextSceneId: "INTERACT_PAIN_DEMO" }
         ]
+    ),
+
+    // ==========================================
+    // INTERACT SCENE DEMOS
+    // ==========================================
+
+    "INTERACT_RESISTANCE_DEMO": {
+        id: "INTERACT_RESISTANCE_DEMO",
+        arcTitle: "INTERACT DEMO",
+        chapterTitle: "DEV TEST",
+        sceneTitle: "RESISTANCE — HOLD TO PIN",
+        text: "The orb pulses with unstable energy, resisting your grip. Hold it down to subdue it. Release and it fights back.",
+        characterFocus: "gilang",
+        choices: [],
+        type: 'interact' as const,
+        interactConfig: {
+            mechanic: {
+                type: 'resistance' as const,
+                pinButtonLabel: "⚡ HOLD TO PIN",
+                victoryFillRate: 12,           // fills ~8 seconds of holding
+                resistanceDrainRate: 8,         // drains ~12 seconds to break free
+                breakFreeThreshold: 20,         // configurable threshold!
+                onBreakFreeSceneId: "INTERACT_RESISTANCE_FAIL",
+                onVictorySceneId: "INTERACT_RESISTANCE_WIN",
+                enableHitPhase: true,
+                hitPhaseTarget: 8,
+                onHitCompleteSceneId: "INTERACT_RESISTANCE_WIN",
+            },
+            narrativeText: "The orb pulses with unstable energy. Hold it down — don't let go.",
+            showBars: { victory: true, resistance: true },
+        }
+    } as SceneNode,
+
+    "INTERACT_RESISTANCE_FAIL": s(
+        "INTERACT_RESISTANCE_FAIL", "INTERACT DEMO", "DEV TEST", "ORB ESCAPED",
+        `The orb bursts free from your grip, sending a shockwave through the room. The energy dissipates into the walls. You'll need to try again.`,
+        undefined, undefined, "gilang", undefined,
+        [
+            { id: "retry", text: "Try Again", nextSceneId: "INTERACT_RESISTANCE_DEMO" },
+            { id: "back", text: "Return to Hub", nextSceneId: "A2_STUB" }
+        ]
+    ),
+
+    "INTERACT_RESISTANCE_WIN": s(
+        "INTERACT_RESISTANCE_WIN", "INTERACT DEMO", "DEV TEST", "ORB CAPTURED",
+        `The orb's light dims as you pin it down. Its energy now flows through you. The room hums with a new frequency.`,
+        undefined, undefined, "gilang", undefined,
+        [
+            { id: "back", text: "Return to Hub", nextSceneId: "A2_STUB" }
+        ],
+        state => ({ ...state, GILANG_control: state.GILANG_control + 10 })
+    ),
+
+    "INTERACT_OBSTACLE_DEMO": {
+        id: "INTERACT_OBSTACLE_DEMO",
+        arcTitle: "INTERACT DEMO",
+        chapterTitle: "DEV TEST",
+        sceneTitle: "OBSTACLE — FORCE TO OPEN",
+        text: "A reinforced containment chamber blocks access to the core. The door resists. Slam it open — but not too fast or you'll break the mechanism.",
+        characterFocus: "celia",
+        choices: [],
+        type: 'interact' as const,
+        interactConfig: {
+            mechanic: {
+                type: 'obstacle' as const,
+                forceButtonLabel: "🔨 FORCE OPEN",
+                obstacleStartValue: 100,
+                forcePerPress: 5,
+                maxSpamRate: 12,                // pressing more than 12x/sec breaks it
+                onBreakSceneId: "INTERACT_OBSTACLE_BROKEN",
+                onObstacleClearedSceneId: "INTERACT_OBSTACLE_WIN",
+                enableHitPhase: true,
+                hitPhaseTarget: 6,
+                onHitCompleteSceneId: "INTERACT_OBSTACLE_WIN",
+                forceButtonFlickerInterval: 0,  // 0 = always visible. set >0 to flicker.
+                forceButtonFlickerDuration: 1500,
+            },
+            narrativeText: "The containment door groans under pressure. Force it open — but careful, too fast and the mechanism shatters.",
+            showBars: { obstacle: true },
+        }
+    } as SceneNode,
+
+    "INTERACT_OBSTACLE_BROKEN": s(
+        "INTERACT_OBSTACLE_BROKEN", "INTERACT DEMO", "DEV TEST", "MECHANISM SHATTERED",
+        `The containment mechanism shatters. Sparks fly. The core seals itself permanently. It's over.`,
+        "Celia", "⚡", "celia", undefined,
+        [
+            { id: "retry", text: "Try Again", nextSceneId: "INTERACT_OBSTACLE_DEMO" },
+            { id: "back", text: "Return to Hub", nextSceneId: "A2_STUB" }
+        ]
+    ),
+
+    "INTERACT_OBSTACLE_WIN": s(
+        "INTERACT_OBSTACLE_WIN", "INTERACT DEMO", "DEV TEST", "ACCESS GRANTED",
+        `The door gives way with a grinding shriek. Beyond it, the core pulses — exposed, vulnerable.`,
+        "Celia", "⚡", "celia", undefined,
+        [
+            { id: "back", text: "Return to Hub", nextSceneId: "A2_STUB" }
+        ],
+        state => ({ ...state, COMPANY_health: state.COMPANY_health - 5 })
+    ),
+
+    "INTERACT_PAIN_DEMO": {
+        id: "INTERACT_PAIN_DEMO",
+        arcTitle: "INTERACT DEMO",
+        chapterTitle: "DEV TEST",
+        sceneTitle: "PAIN THRESHOLD — DON'T BREAK THE ORB",
+        text: "The orb is fragile. Strike it to extract its energy, but hit too hard and it shatters. Find the rhythm.",
+        characterFocus: "daisy",
+        choices: [],
+        type: 'interact' as const,
+        interactConfig: {
+            mechanic: {
+                type: 'pain_threshold' as const,
+                hitButtonLabel: "💎 STRIKE",
+                intensityPerPress: 3,           // need ~34 careful hits
+                painPerPress: 5,                // builds pain faster than intensity
+                painDrainRate: 8,               // pain drains ~12.5 per second when idle
+                intensityTarget: 100,
+                painCrackThreshold: 100,
+                onCrackSceneId: "INTERACT_PAIN_CRACKED",
+                onSuccessSceneId: "INTERACT_PAIN_WIN",
+                onHiddenCrackSceneId: "INTERACT_PAIN_HIDDEN",  // intentional crack = hidden path
+            },
+            narrativeText: "The orb flickers. Strike precisely — fill the intensity bar without exceeding the pain threshold. Or... maybe break it on purpose?",
+            showBars: { intensity: true, pain: true },
+        }
+    } as SceneNode,
+
+    "INTERACT_PAIN_CRACKED": s(
+        "INTERACT_PAIN_CRACKED", "INTERACT DEMO", "DEV TEST", "ORB SHATTERED",
+        `The orb fractures, sending prismatic shards across the floor. Its energy scatters... but wait. Something hidden fell out.`,
+        "Daisy", "✧", "daisy", undefined,
+        [
+            { id: "retry", text: "Try Again", nextSceneId: "INTERACT_PAIN_DEMO" },
+            { id: "back", text: "Return to Hub", nextSceneId: "A2_STUB" }
+        ]
+    ),
+
+    "INTERACT_PAIN_WIN": s(
+        "INTERACT_PAIN_WIN", "INTERACT DEMO", "DEV TEST", "ENERGY EXTRACTED",
+        `The orb dims peacefully. Its energy now sits in your palm — contained, controlled. Daisy nods approvingly from across the room.`,
+        "Daisy", "✧", "daisy", undefined,
+        [
+            { id: "back", text: "Return to Hub", nextSceneId: "A2_STUB" }
+        ],
+        state => ({ ...state, DAISY_trust: state.DAISY_trust + 10 })
+    ),
+
+    "INTERACT_PAIN_HIDDEN": s(
+        "INTERACT_PAIN_HIDDEN", "INTERACT DEMO", "DEV TEST", "HIDDEN PATH UNLOCKED",
+        `You broke it on purpose. The shards rearrange themselves into a pattern you've never seen before. A hidden data stream opens...
+
+[SECRET SCENE UNLOCKED]`,
+        "Daisy", "✧", "daisy", undefined,
+        [
+            { id: "back", text: "Return to Hub", nextSceneId: "A2_STUB" }
+        ],
+        state => ({ ...state, SENTINEL_gap: state.SENTINEL_gap + 15, CORRUPTION: state.CORRUPTION + 5 })
     )
 };
