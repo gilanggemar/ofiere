@@ -73,11 +73,16 @@ export interface ImageSequenceMapping {
     triggerFrame?: number;
     /** Hold this frame while button is held down */
     holdFrame?: number;
+    /** Per-frame durations (overrides frameDuration when present) */
+    frameDurations?: number[];
 }
 
 // ============================================================
 // INTERACT BUTTON ACTION SYSTEM
 // ============================================================
+
+/** Speed curve presets for sequence playback */
+export type PlaybackSpeedPreset = 'linear' | 'ease_in' | 'ease_out' | 'ease_in_out' | 'ramp_up' | 'ramp_down';
 
 /** How an override/fail transition behaves */
 export type OverrideTransitionMode =
@@ -93,7 +98,7 @@ export type InteractButtonAction =
     | { type: 'proceed_to_scene'; sceneId: SceneId; transitionMode?: OverrideTransitionMode }
     | { type: 'override_to_scene'; sceneId: SceneId; transitionMode?: OverrideTransitionMode; briefDurationMs?: number }
     | { type: 'trigger_interact_button'; buttonId: string }
-    | { type: 'play_sequence'; sequenceId: string; startFrame?: number; endFrame?: number }
+    | { type: 'play_sequence'; sequenceId: string; startFrame?: number; endFrame?: number; pingPong?: boolean; showFirstFrame?: boolean; speedPreset?: PlaybackSpeedPreset; seqSpeed?: number; seqPosX?: number; seqPosY?: number; seqScale?: number }
     | { type: 'custom_effect'; effectKey: string };
 
 // ============================================================

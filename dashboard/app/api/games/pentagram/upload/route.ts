@@ -64,6 +64,11 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: "No files provided" }, { status: 400 });
             }
 
+            // Sort files by filename (natural numeric sort) to ensure correct frame order
+            files.sort((a, b) => {
+                return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
             // Validate ALL files are webp
             for (const file of files) {
                 const ext = file.name.split('.').pop()?.toLowerCase();

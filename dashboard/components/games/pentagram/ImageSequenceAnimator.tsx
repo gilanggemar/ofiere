@@ -40,7 +40,9 @@ export const ImageSequenceAnimator = forwardRef<ImageSequenceAnimatorHandle, Ima
         const prevTriggerRef = useRef(triggerKey);
         const canvasRef = useRef<HTMLCanvasElement>(null);
 
-        // Preload all frames
+        // Stable key for frame URLs — only re-preload when actual URLs change
+        const frameUrlsKey = (animation.frameUrls || []).join('|');
+
         useEffect(() => {
             if (!animation.frameUrls || animation.frameUrls.length === 0) {
                 setIsLoading(false);
@@ -71,7 +73,6 @@ export const ImageSequenceAnimator = forwardRef<ImageSequenceAnimatorHandle, Ima
                     if (cancelled) return;
                     loaded++;
                     setLoadProgress(Math.round((loaded / animation.frameUrls.length) * 100));
-                    // Still mark as loaded even if failed (will show blank frame)
                     if (loaded === animation.frameUrls.length) {
                         setLoadedFrames([...images]);
                         setIsLoading(false);
@@ -83,7 +84,8 @@ export const ImageSequenceAnimator = forwardRef<ImageSequenceAnimatorHandle, Ima
             return () => {
                 cancelled = true;
             };
-        }, [animation.frameUrls]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [frameUrlsKey]);
 
         // Draw current frame to canvas
         useEffect(() => {
@@ -108,6 +110,7 @@ export const ImageSequenceAnimator = forwardRef<ImageSequenceAnimatorHandle, Ima
         }, [currentFrame, loadedFrames, overrideFrame]);
 
         // Animation loop
+        const frameRef = useRef(0);
         useEffect(() => {
             if (!isPlaying || isLoading || loadedFrames.length === 0) return;
             if (overrideFrame !== undefined) return; // Manual frame control
@@ -118,8 +121,9 @@ export const ImageSequenceAnimator = forwardRef<ImageSequenceAnimatorHandle, Ima
             const tick = (now: number) => {
                 if (!lastTickRef.current) lastTickRef.current = now;
                 const elapsed = now - lastTickRef.current;
+                const dur = animation.frameDurations?.[frameRef.current] ?? animation.frameDuration;
 
-                if (elapsed >= animation.frameDuration) {
+                if (elapsed >= dur) {
                     lastTickRef.current = now;
 
                     setCurrentFrame((prev) => {
@@ -148,6 +152,7 @@ export const ImageSequenceAnimator = forwardRef<ImageSequenceAnimatorHandle, Ima
                             }
                         }
 
+                        frameRef.current = next;
                         return next;
                     });
                 }
@@ -156,6 +161,7 @@ export const ImageSequenceAnimator = forwardRef<ImageSequenceAnimatorHandle, Ima
             };
 
             lastTickRef.current = 0;
+            frameRef.current = currentFrame;
             rafRef.current = requestAnimationFrame(tick);
             return () => cancelAnimationFrame(rafRef.current);
         }, [isPlaying, isLoading, loadedFrames, animation]);
@@ -188,7 +194,7 @@ export const ImageSequenceAnimator = forwardRef<ImageSequenceAnimatorHandle, Ima
         // Loading state
         if (isLoading) {
             return (
-                <div className={cn("flex items-center justify-center bg-black/30 rounded-lg", className)}>
+                <div className={cn("flex items-center justify-center", className)}>
                     <div className="flex flex-col items-center gap-2">
                         <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
                         <span className="text-[10px] text-white/40 font-mono">

@@ -64,13 +64,13 @@ function NumberInput({
     value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; className?: string;
 }) {
     return (
-        <div className={cn("flex items-center gap-2", className)}>
+        <div className={cn("flex items-center gap-2 min-w-0", className)}>
             <input
                 type="range"
                 min={min} max={max} step={step}
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
-                className="flex-1 h-1 accent-orange-500 bg-white/10 rounded-full appearance-none cursor-pointer"
+                className="flex-1 min-w-0 h-1 accent-orange-500 bg-white/10 rounded-full appearance-none cursor-pointer"
             />
             <input
                 type="number"
@@ -402,7 +402,7 @@ function ButtonEditor({
             </div>
 
             {expanded && (
-                <div className="space-y-2 pt-2 border-t border-white/5">
+                <div className="space-y-2 pt-2 border-t border-white/5 overflow-hidden">
                     <FieldRow label="Label">
                         <TextInput value={button.label} onChange={(v) => onChange({ ...button, label: v })} placeholder="Button text" />
                     </FieldRow>
@@ -460,6 +460,20 @@ function ButtonEditor({
     );
 }
 
+function SequenceSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    const { imageSequences } = usePentagramStore();
+    return (
+        <SelectInput
+            value={value}
+            onChange={onChange}
+            options={[
+                { value: '', label: '— Select Sequence —' },
+                ...imageSequences.map((s) => ({ value: s.id, label: `${s.name || 'Unnamed'} (${s.frameCount}f)` })),
+            ]}
+        />
+    );
+}
+
 function ActionEditor({
     action, onChange, onDelete
 }: {
@@ -469,11 +483,10 @@ function ActionEditor({
 }) {
     return (
         <div className="flex items-start gap-2 p-2 bg-white/[0.03] rounded border border-white/5">
-            <div className="flex-1 space-y-1.5">
+            <div className="flex-1 min-w-0 space-y-1.5 overflow-hidden">
                 <SelectInput
                     value={action.type}
                     onChange={(v) => {
-                        // Reset action when type changes
                         if (v === 'proceed_to_scene') onChange({ type: 'proceed_to_scene', sceneId: '' });
                         else if (v === 'override_to_scene') onChange({ type: 'override_to_scene', sceneId: '', transitionMode: 'immediate' });
                         else if (v === 'change_background') onChange({ type: 'change_background', backgroundUrl: '' });
@@ -529,7 +542,48 @@ function ActionEditor({
                 )}
 
                 {action.type === 'play_sequence' && (
-                    <TextInput value={action.sequenceId} onChange={(v) => onChange({ type: 'play_sequence', sequenceId: v })} placeholder="Sequence ID..." />
+                    <>
+                        <SequenceSelect value={action.sequenceId} onChange={(v) => onChange({ ...action, sequenceId: v } as any)} />
+                        <div>
+                            <label className="text-[9px] text-white/40 font-mono">Start Frame</label>
+                            <NumberInput value={action.startFrame ?? 0} onChange={(v) => onChange({ ...action, startFrame: v } as any)} min={0} max={999} />
+                        </div>
+                        <div>
+                            <label className="text-[9px] text-white/40 font-mono">End Frame</label>
+                            <NumberInput value={action.endFrame ?? 0} onChange={(v) => onChange({ ...action, endFrame: v || undefined } as any)} min={0} max={999} />
+                        </div>
+                        <div className="text-[9px] text-white/20 font-mono">0 = auto (use all frames)</div>
+                        <div className="space-y-1.5 mt-1">
+                            <Toggle value={action.pingPong || false} onChange={(v) => onChange({ ...action, pingPong: v } as any)} label="Ping-Pong (play → reverse)" />
+                            <Toggle value={action.showFirstFrame || false} onChange={(v) => onChange({ ...action, showFirstFrame: v } as any)} label="Show First Frame" />
+                        </div>
+                        <div className="mt-1.5">
+                            <label className="text-[9px] text-white/40 font-mono">Speed Preset</label>
+                            <SelectInput value={action.speedPreset || 'linear'} onChange={(v) => onChange({ ...action, speedPreset: v } as any)} options={[
+                                { value: 'linear', label: 'Linear' },
+                                { value: 'ease_in', label: 'Ease In (slow→fast)' },
+                                { value: 'ease_out', label: 'Ease Out (fast→slow)' },
+                                { value: 'ease_in_out', label: 'Ease In/Out' },
+                                { value: 'ramp_up', label: 'Ramp Up' },
+                                { value: 'ramp_down', label: 'Ramp Down' },
+                            ]} />
+                        </div>
+                        <div className="mt-1.5">
+                            <label className="text-[9px] text-white/40 font-mono">Speed (ms per frame)</label>
+                            <NumberInput value={action.seqSpeed ?? 100} onChange={(v) => onChange({ ...action, seqSpeed: v } as any)} min={16} max={1000} />
+                        </div>
+                        <div className="mt-1.5">
+                            <label className="text-[9px] text-white/40 font-mono block mb-1">Position (%)</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div><label className="text-[8px] text-white/30 font-mono">X</label><NumberInput value={action.seqPosX ?? 50} onChange={(v) => onChange({ ...action, seqPosX: v } as any)} min={0} max={100} /></div>
+                                <div><label className="text-[8px] text-white/30 font-mono">Y</label><NumberInput value={action.seqPosY ?? 50} onChange={(v) => onChange({ ...action, seqPosY: v } as any)} min={0} max={100} /></div>
+                            </div>
+                        </div>
+                        <div className="mt-1.5">
+                            <label className="text-[9px] text-white/40 font-mono">Scale (%)</label>
+                            <NumberInput value={action.seqScale ?? 100} onChange={(v) => onChange({ ...action, seqScale: v } as any)} min={5} max={500} />
+                        </div>
+                    </>
                 )}
 
                 {action.type === 'custom_effect' && (
@@ -716,6 +770,85 @@ function VisualsTab({
 
             <SectionLabel>Sequence Library</SectionLabel>
             <SequenceLibrary />
+
+            <SectionLabel>Mechanic Animations</SectionLabel>
+            <div className="text-[9px] text-white/30 font-mono mb-2">Assign uploaded sequences to mechanic animation slots</div>
+            <MechanicAnimationAssigner config={config} onChange={onChange} />
+        </div>
+    );
+}
+
+function MechanicAnimationAssigner({
+    config, onChange
+}: {
+    config: InteractSceneConfig;
+    onChange: (config: InteractSceneConfig) => void;
+}) {
+    const { imageSequences } = usePentagramStore();
+    const mechanic = config.mechanic;
+    const slots = ['idleAnimation', 'actionAnimation', 'victoryAnimation', 'failAnimation'] as const;
+    const slotLabels: Record<string, string> = { idleAnimation: 'Idle', actionAnimation: 'Action/Press', victoryAnimation: 'Victory', failAnimation: 'Fail' };
+
+    const assignSequence = (slot: string, seqId: string) => {
+        const seq = imageSequences.find((s) => s.id === seqId);
+        const mapping: ImageSequenceMapping | undefined = seq ? {
+            frameUrls: seq.frameUrls, frameCount: seq.frameCount, frameDuration: 100, loop: slot === 'idleAnimation',
+        } : undefined;
+        onChange({ ...config, mechanic: { ...mechanic, [slot]: mapping } as any });
+    };
+
+    const findSeqId = (mapping?: ImageSequenceMapping) => {
+        if (!mapping?.frameUrls?.length) return '';
+        return imageSequences.find((s) => s.frameUrls?.[0] === mapping.frameUrls[0])?.id || '';
+    };
+
+    return (
+        <div className="space-y-2">
+            {slots.map((slot) => (
+                <FieldRow key={slot} label={slotLabels[slot]}>
+                    <div className="flex gap-1.5">
+                        <div className="flex-1">
+                            <SequenceSelect value={findSeqId((mechanic as any)[slot])} onChange={(v) => assignSequence(slot, v)} />
+                        </div>
+                        {(mechanic as any)[slot] && (
+                            <button onClick={() => onChange({ ...config, mechanic: { ...mechanic, [slot]: undefined } as any })} className="p-1 text-rose-400 hover:text-rose-300 shrink-0">
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                    </div>
+                </FieldRow>
+            ))}
+            <SectionLabel>Scene-Level Animations</SectionLabel>
+            <FieldRow label="Hero Anim">
+                <div className="flex gap-1.5">
+                    <div className="flex-1">
+                        <SequenceSelect value={findSeqId(config.heroAnimation)} onChange={(v) => {
+                            const seq = imageSequences.find((s) => s.id === v);
+                            onChange({ ...config, heroAnimation: seq ? { frameUrls: seq.frameUrls, frameCount: seq.frameCount, frameDuration: 100, loop: true } : undefined });
+                        }} />
+                    </div>
+                    {config.heroAnimation && (
+                        <button onClick={() => onChange({ ...config, heroAnimation: undefined })} className="p-1 text-rose-400 hover:text-rose-300 shrink-0">
+                            <X className="w-3 h-3" />
+                        </button>
+                    )}
+                </div>
+            </FieldRow>
+            <FieldRow label="BG Anim">
+                <div className="flex gap-1.5">
+                    <div className="flex-1">
+                        <SequenceSelect value={findSeqId(config.backgroundAnimation)} onChange={(v) => {
+                            const seq = imageSequences.find((s) => s.id === v);
+                            onChange({ ...config, backgroundAnimation: seq ? { frameUrls: seq.frameUrls, frameCount: seq.frameCount, frameDuration: 100, loop: true } : undefined });
+                        }} />
+                    </div>
+                    {config.backgroundAnimation && (
+                        <button onClick={() => onChange({ ...config, backgroundAnimation: undefined })} className="p-1 text-rose-400 hover:text-rose-300 shrink-0">
+                            <X className="w-3 h-3" />
+                        </button>
+                    )}
+                </div>
+            </FieldRow>
         </div>
     );
 }
@@ -760,55 +893,56 @@ function EventsTab({
     onChange: (config: InteractSceneConfig) => void;
 }) {
     const mechanic = config.mechanic;
+    const updateMechanic = (patch: Record<string, any>) => {
+        onChange({ ...config, mechanic: { ...mechanic, ...patch } as any });
+    };
 
     return (
         <div className="space-y-1">
-            <SectionLabel>Event Wiring Overview</SectionLabel>
+            <SectionLabel>Event Wiring</SectionLabel>
             <div className="text-[10px] text-white/40 font-mono mb-3">
-                View and modify what happens when mechanic events trigger.
+                Set which scene to go to when mechanic events fire.
             </div>
 
             <div className="space-y-2">
                 {mechanic.type === "resistance" && (
                     <>
-                        <EventRow label="Victory" target={mechanic.onVictorySceneId} />
-                        <EventRow label="Break Free (Fail)" target={mechanic.onBreakFreeSceneId} />
+                        <EditableEventRow label="On Victory →" value={mechanic.onVictorySceneId} onChange={(v) => updateMechanic({ onVictorySceneId: v })} />
+                        <EditableEventRow label="On Break Free →" value={mechanic.onBreakFreeSceneId} onChange={(v) => updateMechanic({ onBreakFreeSceneId: v })} />
                         {mechanic.enableHitPhase && (
-                            <EventRow label="Hit Complete" target={mechanic.onHitCompleteSceneId || ""} />
+                            <EditableEventRow label="On Hit Done →" value={mechanic.onHitCompleteSceneId || ''} onChange={(v) => updateMechanic({ onHitCompleteSceneId: v })} />
                         )}
                     </>
                 )}
                 {mechanic.type === "obstacle" && (
                     <>
-                        <EventRow label="Obstacle Cleared" target={mechanic.onObstacleClearedSceneId || ""} />
-                        <EventRow label="Break (Spam)" target={mechanic.onBreakSceneId || ""} />
+                        <EditableEventRow label="On Cleared →" value={mechanic.onObstacleClearedSceneId || ''} onChange={(v) => updateMechanic({ onObstacleClearedSceneId: v })} />
+                        <EditableEventRow label="On Break →" value={mechanic.onBreakSceneId || ''} onChange={(v) => updateMechanic({ onBreakSceneId: v })} />
                         {mechanic.enableHitPhase && (
-                            <EventRow label="Hit Complete" target={mechanic.onHitCompleteSceneId || ""} />
+                            <EditableEventRow label="On Hit Done →" value={mechanic.onHitCompleteSceneId || ''} onChange={(v) => updateMechanic({ onHitCompleteSceneId: v })} />
                         )}
                     </>
                 )}
                 {mechanic.type === "pain_threshold" && (
                     <>
-                        <EventRow label="Success" target={mechanic.onSuccessSceneId} />
-                        <EventRow label="Crack (Fail)" target={mechanic.onCrackSceneId} />
-                        {mechanic.onHiddenCrackSceneId && (
-                            <EventRow label="Hidden Crack" target={mechanic.onHiddenCrackSceneId} />
-                        )}
+                        <EditableEventRow label="On Success →" value={mechanic.onSuccessSceneId} onChange={(v) => updateMechanic({ onSuccessSceneId: v })} />
+                        <EditableEventRow label="On Crack →" value={mechanic.onCrackSceneId} onChange={(v) => updateMechanic({ onCrackSceneId: v })} />
+                        <EditableEventRow label="Hidden Crack →" value={mechanic.onHiddenCrackSceneId || ''} onChange={(v) => updateMechanic({ onHiddenCrackSceneId: v || undefined })} />
                     </>
                 )}
             </div>
 
             {config.customButtons && config.customButtons.length > 0 && (
                 <>
-                    <SectionLabel>Button Events</SectionLabel>
+                    <SectionLabel>Button Actions Summary</SectionLabel>
                     {config.customButtons.map((btn) => (
                         <div key={btn.id} className="p-2 bg-white/[0.02] rounded border border-white/5 mb-2">
                             <div className="text-[10px] text-white/50 font-mono mb-1">
-                                🔘 {btn.label} ({btn.actions?.length || 0} actions)
+                                🔘 {btn.label} · pos ({btn.posX ?? 50}%, {btn.posY ?? 85}%) · {btn.actions?.length || 0} actions
                             </div>
                             {(btn.actions || []).map((action, i) => (
                                 <div key={i} className="text-[9px] text-white/30 font-mono pl-3">
-                                    → {action.type}: {(action as any).sceneId || (action as any).buttonId || (action as any).backgroundUrl || (action as any).heroUrl || "..."}
+                                    → {action.type}: {(action as any).sceneId || (action as any).sequenceId || (action as any).buttonId || (action as any).backgroundUrl || (action as any).heroUrl || (action as any).effectKey || '...'}
                                 </div>
                             ))}
                         </div>
@@ -819,16 +953,12 @@ function EventsTab({
     );
 }
 
-function EventRow({ label, target }: { label: string; target: string }) {
+function EditableEventRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
     return (
-        <div className="flex items-center justify-between p-2 bg-white/[0.02] rounded border border-white/5">
-            <span className="text-[10px] text-white/50 font-mono">{label}</span>
-            <span className={cn(
-                "text-[10px] font-mono",
-                target ? "text-emerald-400" : "text-rose-400/60"
-            )}>
-                {target || "⚠ Not Set"}
-            </span>
+        <div className="p-2 bg-white/[0.02] rounded border border-white/5">
+            <div className="text-[10px] text-white/50 font-mono mb-1.5">{label}</div>
+            <SceneSelect value={value} onChange={onChange} />
+            {!value && <div className="text-[9px] text-rose-400/60 font-mono mt-1">⚠ Not wired — scene will dead-end</div>}
         </div>
     );
 }
@@ -949,11 +1079,11 @@ export function InteractSceneEditor() {
             style={{
                 left: position.x,
                 top: position.y,
-                width: 380,
-                maxHeight: "calc(100vh - 120px)",
+                width: 420,
+                maxHeight: "calc(100vh - 80px)",
             }}
         >
-            <div className="w-full h-full bg-neutral-950/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl shadow-black/60 flex flex-col overflow-hidden">
+            <div className="w-full bg-neutral-950/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl shadow-black/60 flex flex-col overflow-hidden" style={{ maxHeight: "calc(100vh - 80px)" }}>
                 
                 {/* Header — drag handle */}
                 <div
@@ -1008,7 +1138,7 @@ export function InteractSceneEditor() {
                 </div>
 
                 {/* Tab content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0" style={{ maxHeight: "calc(100vh - 340px)" }}>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3">
                     {tab === "mechanic" && <MechanicTab config={localConfig} onChange={updateConfig} />}
                     {tab === "buttons" && <ButtonsTab config={localConfig} onChange={updateConfig} />}
                     {tab === "visuals" && <VisualsTab config={localConfig} onChange={updateConfig} />}

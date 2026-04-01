@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -9,9 +9,12 @@ import {
     ObstacleMechanicConfig,
     PainThresholdMechanicConfig,
     ImageSequenceMapping,
+    InteractButton,
+    InteractButtonAction,
     SceneId,
 } from "@/lib/games/pentagram/types";
 import { ImageSequenceAnimator } from "./ImageSequenceAnimator";
+import { usePentagramStore } from "@/stores/usePentagramStore";
 
 // ============================================================
 // INTERACT SCENE — Full interactive gameplay scene
@@ -705,6 +708,39 @@ function PainThresholdMechanic({
 }
 
 // ============================================================
+// Helper: resolve a sequence ID to an ImageSequenceMapping
+// ============================================================
+function resolveSequence(sequenceId: string, imageSequences: (ImageSequenceMapping & { id: string })[]): ImageSequenceMapping | null {
+    const seq = imageSequences.find((s) => s.id === sequenceId);
+    if (!seq) return null;
+    return {
+        frameUrls: seq.frameUrls,
+        frameCount: seq.frameCount,
+        frameDuration: seq.frameDuration || 100,
+        loop: false,
+    };
+}
+
+// Speed preset → per-frame duration array
+function computeFrameDurations(preset: string | undefined, frameCount: number, baseDuration: number): number[] | undefined {
+    if (!preset || preset === 'linear' || frameCount <= 1) return undefined;
+    const durations: number[] = [];
+    for (let i = 0; i < frameCount; i++) {
+        const t = i / (frameCount - 1); // 0..1
+        let multiplier = 1;
+        switch (preset) {
+            case 'ease_in': multiplier = 2 - t * 1.5; break; // slow start, fast end
+            case 'ease_out': multiplier = 0.5 + t * 1.5; break; // fast start, slow end
+            case 'ease_in_out': multiplier = 1 + 0.8 * Math.cos(t * Math.PI); break; // slow-fast-slow
+            case 'ramp_up': multiplier = 2 - t * 1.8; break; // very slow start, very fast end
+            case 'ramp_down': multiplier = 0.2 + t * 1.8; break; // very fast start, very slow end
+        }
+        durations.push(Math.round(baseDuration * Math.max(0.15, multiplier)));
+    }
+    return durations;
+}
+
+// ============================================================
 // MAIN INTERACT SCENE COMPONENT
 // ============================================================
 
@@ -717,27 +753,173 @@ export function InteractScene({
 }: InteractSceneProps) {
     const narrative = narrativeOverride || config.narrativeText;
     const [customTriggers, setCustomTriggers] = useState<Record<string, number>>({});
+    const [activeSequence, setActiveSequence] = useState<ImageSequenceMapping | null>(null);
+    const [sequenceTrigger, setSequenceTrigger] = useState(0);
+    const [seqVisible, setSeqVisible] = useState(false);
+    const sequenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [activeSeqStyle, setActiveSeqStyle] = useState<React.CSSProperties>({});
+    const [firstFrameData, setFirstFrameData] = useState<{ url: string; style: React.CSSProperties } | null>(null);
+    const [dynamicBg, setDynamicBg] = useState<string | null>(null);
+    const [dynamicHero, setDynamicHero] = useState<string | null>(null);
+    const imageSequences = usePentagramStore((s) => s.imageSequences);
 
-    const handleCustomButtonPress = useCallback((buttonId: string) => {
+    const effectiveBg = dynamicBg || backgroundUrl;
+
+    // Collect first-frame previews from all play_sequence actions with showFirstFrame
+    const firstFramePreviews = React.useMemo(() => {
+        const previews: { url: string; style: React.CSSProperties }[] = [];
+        for (const btn of config.customButtons || []) {
+            for (const action of btn.actions || []) {
+                if (action.type === 'play_sequence' && action.showFirstFrame && action.sequenceId) {
+                    const seq = imageSequences.find((s) => s.id === action.sequenceId);
+                    if (seq?.frameUrls?.length) {
+                        const frameIdx = action.startFrame ?? 0;
+                        const url = seq.frameUrls[Math.min(frameIdx, seq.frameUrls.length - 1)];
+                        const scale = (action.seqScale ?? 100) / 100;
+                        if (url) {
+                            previews.push({
+                                url,
+                                style: {
+                                    position: 'absolute' as const,
+                                    left: `${action.seqPosX ?? 50}%`,
+                                    top: `${action.seqPosY ?? 50}%`,
+                                    width: '100%',
+                                    height: '100%',
+                                    transform: `translate(-50%, -50%) scale(${scale})`,
+                                    objectFit: 'contain' as const,
+                                },
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        return previews;
+    }, [config.customButtons, imageSequences]);
+
+    // Execute all actions for a custom button press
+    const handleCustomButtonPress = useCallback((btn: InteractButton) => {
+        // Increment trigger for animation
         setCustomTriggers((prev) => ({
             ...prev,
-            [buttonId]: (prev[buttonId] || 0) + 1,
+            [btn.id]: (prev[btn.id] || 0) + 1,
         }));
-    }, []);
+
+        if (!btn.actions || btn.actions.length === 0) return;
+
+        for (const action of btn.actions) {
+            switch (action.type) {
+                case "proceed_to_scene":
+                    if (action.sceneId) {
+                        onSceneTransition(action.sceneId);
+                    }
+                    break;
+                case "override_to_scene":
+                    if (action.sceneId) {
+                        if (action.transitionMode === "brief_animation" || action.transitionMode === "brief_scene") {
+                            const delay = action.briefDurationMs || 1500;
+                            setTimeout(() => onSceneTransition(action.sceneId), delay);
+                        } else {
+                            onSceneTransition(action.sceneId);
+                        }
+                    }
+                    break;
+                case "change_background":
+                    if (action.backgroundUrl) {
+                        setDynamicBg(action.backgroundUrl);
+                    }
+                    break;
+                case "change_hero":
+                    if (action.heroUrl) {
+                        setDynamicHero(action.heroUrl);
+                    }
+                    break;
+                case "trigger_interact_button": {
+                    // Find the target button and fire its actions too
+                    const targetBtn = config.customButtons?.find((b) => b.id === action.buttonId);
+                    if (targetBtn) {
+                        handleCustomButtonPress(targetBtn);
+                    }
+                    break;
+                }
+                case "trigger_animation": {
+                    // Trigger animation on another button
+                    setCustomTriggers((prev) => ({
+                        ...prev,
+                        [action.targetButtonId]: (prev[action.targetButtonId] || 0) + 1,
+                    }));
+                    break;
+                }
+                case "play_sequence": {
+                    if (action.sequenceId) {
+                        const seq = resolveSequence(action.sequenceId, imageSequences);
+                        if (seq) {
+                            const startFrame = action.startFrame ?? 0;
+                            const endFrame = (action.endFrame && action.endFrame > 0) ? action.endFrame : seq.frameCount;
+                            let slicedUrls = seq.frameUrls.slice(startFrame, endFrame);
+
+                            if (action.pingPong && slicedUrls.length > 1) {
+                                const reversed = [...slicedUrls].reverse().slice(1);
+                                slicedUrls = [...slicedUrls, ...reversed];
+                            }
+
+                            const frameDur = action.seqSpeed || seq.frameDuration || 100;
+                            const frameDurations = computeFrameDurations(action.speedPreset, slicedUrls.length, frameDur);
+
+                            if (sequenceTimerRef.current) clearTimeout(sequenceTimerRef.current);
+
+                            // Positioning & sizing
+                            const scale = (action.seqScale ?? 100) / 100;
+                            setActiveSeqStyle({
+                                position: 'absolute',
+                                left: `${action.seqPosX ?? 50}%`,
+                                top: `${action.seqPosY ?? 50}%`,
+                                width: '100%',
+                                height: '100%',
+                                transform: `translate(-50%, -50%) scale(${scale})`,
+                            });
+
+                            setActiveSequence({
+                                frameUrls: slicedUrls,
+                                frameCount: slicedUrls.length,
+                                frameDuration: frameDur,
+                                frameDurations,
+                                loop: false,
+                            });
+                            setSeqVisible(true);
+                            setSequenceTrigger((k) => k + 1);
+
+                            const totalDuration = frameDurations
+                                ? frameDurations.reduce((a, b) => a + b, 0) + 200
+                                : slicedUrls.length * frameDur + 200;
+                            sequenceTimerRef.current = setTimeout(() => {
+                                setSeqVisible(false);
+                            }, totalDuration);
+                        }
+                    }
+                    break;
+                }
+                case "custom_effect":
+                    // Custom effects — extensible hook point
+                    console.log(`[InteractScene] Custom effect: ${action.effectKey}`);
+                    break;
+            }
+        }
+    }, [config.customButtons, imageSequences, onSceneTransition]);
 
     return (
         <div className="w-full h-full relative bg-black overflow-hidden flex flex-col font-mono text-sm selection:bg-emerald-500/30">
             {/* Background */}
             <AnimatePresence mode="wait">
-                {backgroundUrl && (
+                {effectiveBg && (
                     <motion.div
-                        key={backgroundUrl}
+                        key={effectiveBg}
                         initial={{ opacity: 0, scale: 1.05 }}
                         animate={{ opacity: 0.6, scale: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 1 }}
                         className="absolute inset-0 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${backgroundUrl})` }}
+                        style={{ backgroundImage: `url(${effectiveBg})` }}
                     />
                 )}
             </AnimatePresence>
@@ -749,6 +931,29 @@ export function InteractScene({
                         animation={{ ...config.backgroundAnimation, loop: true }}
                         className="w-full h-full object-cover"
                     />
+                </div>
+            )}
+
+            {/* First frame previews (static, always visible when toggled) */}
+            {firstFramePreviews.map((fp, i) => (
+                <img key={`firstframe-${i}`} src={fp.url} alt="" className="pointer-events-none z-15" style={fp.style} />
+            ))}
+
+            {/* Active sequence overlay (from play_sequence action) */}
+            {activeSequence && (
+                <div className="z-30 pointer-events-none" style={{ ...activeSeqStyle, opacity: seqVisible ? 1 : 0 }}>
+                    <ImageSequenceAnimator
+                        animation={activeSequence}
+                        triggerKey={sequenceTrigger}
+                        className="w-full h-full object-contain"
+                    />
+                </div>
+            )}
+
+            {/* Dynamic hero image */}
+            {dynamicHero && (
+                <div className="absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
+                    <img src={dynamicHero} alt="" className="max-w-full max-h-full object-contain" />
                 </div>
             )}
 
@@ -819,21 +1024,25 @@ export function InteractScene({
                 )}
             </div>
 
-            {/* Custom Buttons (positioned at bottom) */}
+            {/* Custom Buttons — FREE POSITIONED using posX/posY */}
             {config.customButtons && config.customButtons.length > 0 && (
-                <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-4 px-8">
+                <>
                     {config.customButtons
                         .filter((b) => b.visible !== false)
                         .map((btn) => {
-                            const posClass =
-                                btn.position === "bottom-left"
-                                    ? "mr-auto"
-                                    : btn.position === "bottom-right"
-                                    ? "ml-auto"
-                                    : "";
+                            const posX = btn.posX ?? 50;
+                            const posY = btn.posY ?? 85;
 
                             return (
-                                <div key={btn.id} className={cn("flex flex-col items-center gap-2", posClass)}>
+                                <div
+                                    key={btn.id}
+                                    className="absolute z-20 flex flex-col items-center gap-2"
+                                    style={{
+                                        left: `${posX}%`,
+                                        top: `${posY}%`,
+                                        transform: "translate(-50%, -50%)",
+                                    }}
+                                >
                                     {/* Button-mapped animation */}
                                     {btn.animation && (
                                         <div className="w-20 h-20">
@@ -846,14 +1055,15 @@ export function InteractScene({
                                     )}
                                     <ActionButton
                                         label={btn.label}
-                                        onPress={() => handleCustomButtonPress(btn.id)}
+                                        onPress={() => handleCustomButtonPress(btn)}
                                         color={btn.color || "#8b5cf6"}
                                         scale={btn.scale || 0.9}
+                                        holdMode={btn.holdMode}
                                     />
                                 </div>
                             );
                         })}
-                </div>
+                </>
             )}
         </div>
     );
