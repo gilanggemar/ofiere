@@ -279,6 +279,18 @@ export function useOpenClawGateway() {
             })
         );
 
+        // Session-scoped tool events — gateway sends tool events here for
+        // connections that subscribed via subscribeSessionEvents.
+        // These have the same payload shape as agent events with stream='tool'.
+        unsubs.push(
+            gw.on("session.tool", (payload) => {
+                console.log('[OpenClaw] session.tool event received:', JSON.stringify(payload).slice(0, 200));
+                // Inject stream:'tool' if not present so handleAgentEvent processes it correctly
+                const normalized = { ...payload, stream: payload.stream || 'tool' };
+                useOpenClawStore.getState().handleAgentEvent(normalized);
+            })
+        );
+
         // Chat events (messages sent/received on channels)
         unsubs.push(
             gw.on("chat", (payload) => {
@@ -359,6 +371,9 @@ export function useOpenClawGateway() {
                         }
                     }
                 }).catch(() => {});
+
+                // 3) Tool events are received via caps: ["tool-events"] in the handshake.
+                // No additional RPC subscription needed.
             })
         );
 

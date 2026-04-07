@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { usePentagramStore } from "@/stores/usePentagramStore";
+import { usePentagramChatStore } from "@/stores/usePentagramChatStore";
 import { PentagramState } from "@/lib/games/pentagram/types";
 import { 
     Activity, ShieldAlert, Heart, BrainCircuit, Users, Database, Sliders, Image as ImageIcon,
-    UploadCloud, Loader2, Map, Trash2
+    UploadCloud, Loader2, Map, Trash2, User
 } from "lucide-react";
 import { PENTAGRAM_SCENES } from "@/lib/games/pentagram/scenarioData";
 import { PentagramCropModal } from "./PentagramCropModal";
@@ -54,6 +55,14 @@ export function DevToolsPanel() {
     const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
     const [activeCropType, setActiveCropType] = useState<'background' | 'hero' | null>(null);
     const [dynamicAspectRatio, setDynamicAspectRatio] = useState<number | undefined>(undefined);
+
+    // Character asset binding from chat store
+    const activeCharacterId = usePentagramChatStore(s => s.activeCharacterId);
+    const characters = usePentagramChatStore(s => s.characters);
+    const characterAssets = usePentagramChatStore(s => s.characterAssets);
+    const setCharacterAsset = usePentagramChatStore(s => s.setCharacterAsset);
+    const clearCharacterAsset = usePentagramChatStore(s => s.clearCharacterAsset);
+    const activeChar = characters.find(c => c.id === activeCharacterId);
 
     // Asset Gallery state
     const [assets, setAssets] = useState<{name: string, url: string}[]>([]);
@@ -347,15 +356,33 @@ export function DevToolsPanel() {
                         )}
 
                         {customBackgroundUrl && (
-                            <button 
-                                onClick={() => {
-                                    bindBackgroundToScene(currentSceneId, customBackgroundUrl);
-                                    setCustomBackgroundUrl(null); // Clear global once bound
-                                }}
-                                className="text-[10px] text-emerald-400 hover:text-emerald-300 font-mono w-full text-center mt-2 border border-emerald-500/20 bg-emerald-500/5 p-1 rounded"
-                            >
-                                [BIND UPLOADED BG TO CURRENT SCENE]
-                            </button>
+                            <div className="flex gap-1.5 mt-2">
+                                <button 
+                                    onClick={() => {
+                                        bindBackgroundToScene(currentSceneId, customBackgroundUrl);
+                                        setCustomBackgroundUrl(null);
+                                    }}
+                                    className="flex-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-mono text-center border border-emerald-500/20 bg-emerald-500/5 p-1 rounded"
+                                >
+                                    [BIND BG → SCENE]
+                                </button>
+                                {activeCharacterId && activeChar && (
+                                    <button 
+                                        onClick={() => {
+                                            setCharacterAsset(activeCharacterId, { backgroundUrl: customBackgroundUrl });
+                                            setCustomBackgroundUrl(null);
+                                        }}
+                                        className="flex-1 text-[10px] font-mono text-center border p-1 rounded hover:brightness-125 transition-all"
+                                        style={{ 
+                                            color: activeChar.colorHex, 
+                                            borderColor: `${activeChar.colorHex}33`,
+                                            backgroundColor: `${activeChar.colorHex}0D`
+                                        }}
+                                    >
+                                        [BG → {activeChar.name.toUpperCase()}]
+                                    </button>
+                                )}
+                            </div>
                         )}
                         
                         {customBackgroundUrl && assets.find(a => a.url === customBackgroundUrl) && (
@@ -377,15 +404,36 @@ export function DevToolsPanel() {
                         )}
                         
                         {customHeroUrl && (
-                            <button 
-                                onClick={() => {
-                                    bindHeroToScene(currentSceneId, customHeroUrl, globalHeroTransform);
-                                    setCustomHeroUrl(null);
-                                }}
-                                className="text-[10px] text-emerald-400 hover:text-emerald-300 font-mono w-full text-center mt-2 border border-emerald-500/20 bg-emerald-500/5 p-1 rounded"
-                            >
-                                [BIND UPLOADED HERO TO CURRENT SCENE]
-                            </button>
+                            <div className="flex gap-1.5 mt-2">
+                                <button 
+                                    onClick={() => {
+                                        bindHeroToScene(currentSceneId, customHeroUrl, globalHeroTransform);
+                                        setCustomHeroUrl(null);
+                                    }}
+                                    className="flex-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-mono text-center border border-emerald-500/20 bg-emerald-500/5 p-1 rounded"
+                                >
+                                    [HERO → SCENE]
+                                </button>
+                                {activeCharacterId && activeChar && (
+                                    <button 
+                                        onClick={() => {
+                                            setCharacterAsset(activeCharacterId, { 
+                                                heroUrl: customHeroUrl,
+                                                heroTransform: globalHeroTransform 
+                                            });
+                                            setCustomHeroUrl(null);
+                                        }}
+                                        className="flex-1 text-[10px] font-mono text-center border p-1 rounded hover:brightness-125 transition-all"
+                                        style={{ 
+                                            color: activeChar.colorHex, 
+                                            borderColor: `${activeChar.colorHex}33`,
+                                            backgroundColor: `${activeChar.colorHex}0D`
+                                        }}
+                                    >
+                                        [HERO → {activeChar.name.toUpperCase()}]
+                                    </button>
+                                )}
+                            </div>
                         )}
 
                         {/* HERO TRANSFORM OVERRIDES UI */}
@@ -465,6 +513,36 @@ export function DevToolsPanel() {
                                 </button>
                             </div>
                         )}
+
+                        {/* Character-Bound Assets Display */}
+                        {activeCharacterId && activeChar && (() => {
+                            const ca = characterAssets[activeCharacterId] || {};
+                            const hasAny = ca.heroUrl || ca.backgroundUrl;
+                            if (!hasAny) return null;
+                            return (
+                                <div className="mt-3 p-2.5 rounded-md border space-y-2" style={{ borderColor: `${activeChar.colorHex}25`, backgroundColor: `${activeChar.colorHex}08` }}>
+                                    <h4 className="text-[9px] uppercase font-mono tracking-widest flex items-center gap-1.5">
+                                        <User className="w-3 h-3" style={{ color: activeChar.colorHex }} />
+                                        <span style={{ color: activeChar.colorHex }}>{activeChar.name}</span>
+                                        <span className="text-white/30">BINDINGS</span>
+                                    </h4>
+                                    {ca.heroUrl && (
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-6 h-8 rounded bg-cover bg-center border border-white/10 flex-shrink-0" style={{ backgroundImage: `url(${ca.heroUrl})` }} />
+                                            <span className="text-[9px] text-white/40 font-mono flex-1 truncate">Hero</span>
+                                            <button onClick={() => clearCharacterAsset(activeCharacterId, 'heroUrl')} className="text-[9px] text-rose-400/60 hover:text-rose-400 font-mono">✕</button>
+                                        </div>
+                                    )}
+                                    {ca.backgroundUrl && (
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-6 h-4 rounded bg-cover bg-center border border-white/10 flex-shrink-0" style={{ backgroundImage: `url(${ca.backgroundUrl})` }} />
+                                            <span className="text-[9px] text-white/40 font-mono flex-1 truncate">Background</span>
+                                            <button onClick={() => clearCharacterAsset(activeCharacterId, 'backgroundUrl')} className="text-[9px] text-rose-400/60 hover:text-rose-400 font-mono">✕</button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
                         
                         {/* DIALOG TRANSFORM OVERRIDES UI */}
                         <div className="bg-white/5 border border-white/10 rounded-md p-3 mt-4 space-y-3">

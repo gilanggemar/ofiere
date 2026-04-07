@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthUserId } from '@/lib/auth';
 import { decryptApiKey } from '@/lib/providers/crypto';
-import { compileMemoryBlock, compileWorldMemoryBlock, type CompanionMemory, type WorldMemory } from '@/lib/companion/memoryManager';
+import { compileMemoryBlock, compileWorldMemoryBlock, compileCompanionModeBlock, type CompanionMemory, type WorldMemory } from '@/lib/companion/memoryManager';
 
 /**
  * POST /api/pentagram-chat
@@ -23,6 +23,7 @@ export async function POST(request: Request) {
             messages,
             game_context,
             gossip_frequency = 0.4, // 0-1, default 40%
+            sampling_params,
         } = body;
 
         if (!messages) {
@@ -223,8 +224,28 @@ export async function POST(request: Request) {
         // ─── Build messages array ───────────────────────────────────────
         const chatMessages = [];
 
+        // Anti-repetition and output format instructions
+        const formatInstructions = [
+            '# Response Format Guidelines',
+            '',
+            'Write your responses as flowing, natural prose paragraphs. Combine related thoughts into cohesive paragraphs rather than putting each sentence on a separate line.',
+            'Use *italics* for actions and internal thoughts, weaving them naturally into your dialogue.',
+            'Example of GOOD formatting:',
+            '"I\'ve been thinking about that..." *she leans forward, eyes searching yours* "What if we tried something different? I know it sounds crazy, but hear me out."',
+            '',
+            'Do NOT write each short phrase on its own line. Do NOT repeat the same actions, gestures, or phrases within a response.',
+            'Vary your expressions and body language. Each response should feel fresh and alive.',
+            '---',
+            '',
+        ].join('\n');
+
+        // Companion mode behavior block (always active in Pentagram Protocol)
+        const companionBlock = compileCompanionModeBlock(agent_name);
+
         const fullSystemPrompt = [
             system_prompt || '',
+            companionBlock,
+            formatInstructions,
             memoryBlock,
             worldBlock,
             gameContextBlock,
@@ -239,25 +260,39 @@ export async function POST(request: Request) {
         }
 
         // ─── Call LLM (streaming) ───────────────────────────────────────
+        // Build LLM request body with sampling parameters
+        const sp = sampling_params || {};
+        const llmRequestBody: Record<string, any> = {
+            model: modelId,
+            messages: chatMessages,
+            stream: true,
+            max_tokens: sp.max_tokens ?? 2048,
+            temperature: sp.temperature ?? 0.82,
+        };
+
+        // Featherless AI / vLLM compatible parameters
+        if (sp.top_p !== undefined && sp.top_p < 1) llmRequestBody.top_p = sp.top_p;
+        if (sp.top_k !== undefined && sp.top_k > 0) llmRequestBody.top_k = sp.top_k;
+        if (sp.repetition_penalty !== undefined && sp.repetition_penalty !== 1) llmRequestBody.repetition_penalty = sp.repetition_penalty;
+        if (sp.frequency_penalty !== undefined && sp.frequency_penalty !== 0) llmRequestBody.frequency_penalty = sp.frequency_penalty;
+        if (sp.presence_penalty !== undefined && sp.presence_penalty !== 0) llmRequestBody.presence_penalty = sp.presence_penalty;
+        if (sp.min_p !== undefined && sp.min_p > 0) llmRequestBody.min_p = sp.min_p;
+
         const llmRes = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${apiKey}`,
             },
-            body: JSON.stringify({
-                model: modelId,
-                messages: chatMessages,
-                stream: true,
-                max_tokens: 2048,
-                temperature: 0.85,
-            }),
+            body: JSON.stringify(llmRequestBody),
         });
 
         if (!llmRes.ok) {
             const errorText = await llmRes.text();
             console.error('[pentagram-chat] LLM error:', errorText);
-            return NextResponse.json({ error: `LLM error: ${llmRes.status}` }, { status: 502 });
+            // Propagate the actual status code so client can decide to retry
+            const statusCode = llmRes.status === 429 ? 429 : llmRes.status === 503 ? 503 : 502;
+            return NextResponse.json({ error: `LLM error: ${llmRes.status}` }, { status: statusCode });
         }
 
         // Stream response through

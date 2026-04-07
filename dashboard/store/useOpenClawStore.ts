@@ -55,6 +55,7 @@ export interface ToolCallEvent {
     toolName: string;
     input: any;
     output?: string;
+    meta?: string;               // brief description from gateway (e.g., command summary)
     status: "running" | "completed" | "error";
     startedAt: number;
     completedAt?: number;
@@ -189,16 +190,27 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
 
     // --- Agent Event Handler (THE CORE LOGIC) ---
     handleAgentEvent: (payload) => {
-        const { runId, sessionKey, stream } = payload;
+        // The gateway may nest fields under payload.data — normalize
+        const d = payload.data || payload;
+        const runId = payload.runId || d.runId;
+        const stream = payload.stream || d.stream;
+        const sessionKey = payload.sessionKey || d.sessionKey;
+        const agentId = payload.agentId || d.agentId;
 
         if (!runId || !stream) {
-            console.warn("[OpenClawStore] Agent event missing runId or stream:", payload);
+            // Still no runId/stream after normalization — skip
             return;
         }
 
-        // The gateway wraps field-level data under payload.data
-        // Flatten it so we can access fields like text, phase, toolName directly
-        const d = payload.data || payload;
+        // Only log tool/lifecycle events to keep console clean
+        if (stream === 'tool' || stream === 'lifecycle') {
+            console.log(`[OpenClawStore] Agent event: stream=${stream} runId=${runId} sessionKey=${sessionKey || 'none'}`);
+        }
+
+        // Resolve a usable session key — fall back to agent ID or 'default'
+        const resolvedSessionKey = sessionKey 
+            || (agentId ? `agent:${agentId}:main` : null)
+            || 'agent:default:main';
 
         set((state) => {
             const runs = new Map(state.activeRuns);
@@ -208,46 +220,77 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
             if (!run) {
                 run = {
                     runId,
-                    sessionKey: sessionKey || "unknown",
+                    sessionKey: resolvedSessionKey,
                     status: "running",
                     startedAt: Date.now(),
                     assistantText: "",
                     thinkingText: "",
                     toolCalls: [],
                 };
+            } else if (run.sessionKey === 'unknown' && resolvedSessionKey !== 'agent:default:main') {
+                // Upgrade from 'unknown' if we now have a real session key
+                run = { ...run, sessionKey: resolvedSessionKey };
             }
 
             // Branch on stream type
             switch (stream) {
                 case "assistant": {
-                    // Text delta — append to accumulated text
-                    const text = d.text || d.content || d.delta || payload.text || payload.content || payload.delta || "";
-                    run = { ...run, assistantText: run.assistantText + text };
+                    // Text delta — prefer incremental delta, fall back to full text replacement
+                    const delta = d.delta || payload.delta;
+                    if (delta) {
+                        run = { ...run, assistantText: run.assistantText + delta };
+                    } else {
+                        const fullText = d.text || d.content || payload.text || payload.content || "";
+                        if (fullText) {
+                            run = { ...run, assistantText: fullText };
+                        }
+                    }
                     break;
                 }
 
                 case "tool": {
-                    // Tool call event
-                    const toolCallId = d.toolCallId || d.id || d.callId || payload.toolCallId || payload.id || `tc-${Date.now()}`;
-                    const toolName = d.toolName || d.tool || d.name || payload.toolName || payload.tool || payload.name || "unknown";
-                    const input = d.input || d.args || d.parameters || payload.input || payload.args || payload.parameters || {};
-                    const output = d.output || d.result || payload.output || payload.result || undefined;
-                    const toolStatus = d.status || payload.status || (output ? "completed" : "running");
+                    // Tool call event — check many possible field names from gateway
+                    const toolCallId = d.toolCallId || d.callId || d.id || d.tool_call_id
+                        || payload.toolCallId || payload.callId || payload.tool_call_id 
+                        || `tc-${Date.now()}`;
+                    const toolName = d.toolName || d.tool || d.name || d.function?.name || d.functionName || d.tool_name
+                        || payload.toolName || payload.tool || payload.name || payload.functionName || payload.tool_name
+                        || "unknown";
+                    const input = d.input || d.args || d.arguments || d.parameters || d.function?.arguments
+                        || payload.input || payload.args || payload.arguments || payload.parameters || undefined;
+                    const output = d.output || d.result || d.response
+                        || payload.output || payload.result || undefined;
+                    const meta = d.meta || payload.meta || undefined;
+                    
+                    // Normalize phase → status
+                    const rawPhase = d.status || d.phase || payload.status || payload.phase || '';
+                    const isError = d.isError === true || payload.isError === true;
+                    const toolStatus = rawPhase === 'completed' || rawPhase === 'result' || rawPhase === 'done'
+                        ? (isError ? 'error' : 'completed')
+                        : rawPhase === 'error' || rawPhase === 'failed'
+                        ? 'error'
+                        : rawPhase === 'start' || rawPhase === 'update' || rawPhase === 'running'
+                        ? 'running'
+                        : output ? 'completed' : 'running';
 
                     // Find existing tool call or create new one
                     const existingIdx = run.toolCalls.findIndex(
                         (tc) => tc.id === toolCallId || (tc.toolName === toolName && tc.status === "running")
                     );
 
+                    // Preserve existing data when merging update/result events
+                    const existing = existingIdx >= 0 ? run.toolCalls[existingIdx] : null;
+
                     const toolCall: ToolCallEvent = {
                         id: toolCallId,
                         runId,
                         toolName,
-                        input,
-                        output,
+                        input: input || existing?.input || {},
+                        output: output ? (typeof output === 'string' ? output : JSON.stringify(output)) : existing?.output,
+                        meta: meta ? (typeof meta === 'string' ? meta : JSON.stringify(meta)) : existing?.meta,
                         status: toolStatus,
-                        startedAt: existingIdx >= 0 ? run.toolCalls[existingIdx].startedAt : Date.now(),
-                        completedAt: toolStatus !== "running" ? Date.now() : undefined,
+                        startedAt: existing?.startedAt || Date.now(),
+                        completedAt: toolStatus !== "running" ? Date.now() : existing?.completedAt,
                         sessionKey: run.sessionKey,
                     };
 

@@ -260,7 +260,10 @@ export class OpenClawGateway {
       return;
     }
 
-    // Dispatch to registered listeners
+    // Dispatch to registered listeners — only log tool events to keep console clean
+    if (frame.event === 'agent' && payload?.stream === 'tool') {
+      console.log('[OpenClaw Gateway] Tool event:', JSON.stringify(payload).slice(0, 300));
+    }
     this.emit(frame.event, payload);
   }
 
@@ -473,7 +476,7 @@ export class OpenClawGateway {
         },
         role: "operator",
         scopes,
-        caps: [],
+        caps: ["tool-events"],
         commands: [],
         permissions: {},
         auth: {

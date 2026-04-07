@@ -1233,7 +1233,7 @@ export default function SummitPage() {
                                                     isUser
                                                         ? "bg-accent text-foreground"
                                                         : "bg-orange-500/35 text-white border border-orange-500/40",
-                                                    isFirstInGroup ? "rounded-[12px]" : "rounded-tr-[12px] rounded-br-[12px] rounded-bl-[12px] rounded-tl-[4px]"
+                                                    isFirstInGroup ? "rounded-[6px]" : "rounded-tr-[6px] rounded-br-[6px] rounded-bl-[6px] rounded-tl-[2px]"
                                                 )}>
                                                     {/* Attachments */}
                                                     {(msg as any).attachments && (msg as any).attachments.length > 0 && (

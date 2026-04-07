@@ -1,6 +1,7 @@
 "use client";
 
 import { usePentagramStore } from "@/stores/usePentagramStore";
+import { usePentagramChatStore } from "@/stores/usePentagramChatStore";
 import { PENTAGRAM_SCENES } from "@/lib/games/pentagram/scenarioData";
 import { cn } from "@/lib/utils";
 import { ChevronRight, RefreshCcw, Plus, Trash2, X, Save, Loader2, Edit2 } from "lucide-react";
@@ -156,14 +157,27 @@ export function VisualNovelScreen() {
     const mergedChoices = Array.from(choiceMap.values());
 
     
-    // Resolve layered urls
-    const activeBgUrl = customBackgroundUrl || customSceneBackgrounds[currentSceneId] || scene.backgroundUrl || "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop";
-    const isSceneBoundHero = !!(customSceneHeroes[currentSceneId] && !customHeroUrl);
-    const activeHeroUrl = customHeroUrl || customSceneHeroes[currentSceneId] || scene.heroSprite;
+    // ── Per-character asset bindings ──
+    const activeCharacterId = usePentagramChatStore(s => s.activeCharacterId);
+    const characterAssets = usePentagramChatStore(s => s.characterAssets);
+    const charAsset = activeCharacterId ? (characterAssets[activeCharacterId] || {}) : {};
+
+    // Resolve layered urls — priority: manual override > character binding > scene binding > scene default
+    const activeBgUrl = customBackgroundUrl 
+        || charAsset.backgroundUrl 
+        || customSceneBackgrounds[currentSceneId] 
+        || scene.backgroundUrl 
+        || "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop";
     
-    const activeTransform = isSceneBoundHero 
-        ? (customSceneHeroTransforms[currentSceneId] || { scale: 100, x: 50, y: 0 }) 
-        : globalHeroTransform;
+    const isCharBoundHero = !!(charAsset.heroUrl && !customHeroUrl);
+    const isSceneBoundHero = !isCharBoundHero && !!(customSceneHeroes[currentSceneId] && !customHeroUrl);
+    const activeHeroUrl = customHeroUrl || charAsset.heroUrl || customSceneHeroes[currentSceneId] || scene.heroSprite;
+    
+    const activeTransform = isCharBoundHero
+        ? (charAsset.heroTransform || { scale: 100, x: 50, y: 0 })
+        : isSceneBoundHero 
+            ? (customSceneHeroTransforms[currentSceneId] || { scale: 100, x: 50, y: 0 }) 
+            : globalHeroTransform;
 
     const isSceneBoundDialog = !!customSceneDialogTransforms[currentSceneId];
     const activeDialogTransform = isSceneBoundDialog

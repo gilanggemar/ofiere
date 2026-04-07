@@ -117,7 +117,7 @@ export function ProjectPanel({ agentId, agentName, className }: ProjectPanelProp
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button
-                            className="flex items-center h-7 px-2.5 rounded-full text-xs gap-1.5 border border-border/50 hover:border-border transition-all"
+                            className="flex items-center h-7 px-2.5 rounded-sm text-xs gap-1.5 border border-border/50 hover:border-border transition-all"
                             style={{
                                 color: activeProjectId ? 'var(--nerv-violet)' : 'var(--nerv-text-tertiary)',
                                 borderColor: activeProjectId ? 'color-mix(in srgb, var(--nerv-violet) 30%, transparent)' : undefined,
@@ -132,14 +132,18 @@ export function ProjectPanel({ agentId, agentName, className }: ProjectPanelProp
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="top" sideOffset={8} align="start" className="rounded-md p-1.5 min-w-[200px]">
-                        <DropdownMenuItem
-                            className="rounded-[calc(1rem-6px)] text-xs"
-                            onClick={() => setActiveProject(null)}
-                        >
-                            <XIcon className="w-3.5 h-3.5 opacity-50 mr-2" />
-                            No Project
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                        {activeProjectId && (
+                            <>
+                                <DropdownMenuItem
+                                    className="rounded-[calc(1rem-6px)] text-xs"
+                                    onClick={() => setActiveProject(null)}
+                                >
+                                    <XIcon className="w-3.5 h-3.5 opacity-50 mr-2" />
+                                    No Project
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                            </>
+                        )}
                         {projects.map(p => (
                             <DropdownMenuItem
                                 key={p.id}
@@ -155,7 +159,7 @@ export function ProjectPanel({ agentId, agentName, className }: ProjectPanelProp
                                 )}
                             </DropdownMenuItem>
                         ))}
-                        <DropdownMenuSeparator />
+                        {projects.length > 0 && <DropdownMenuSeparator />}
                         <DropdownMenuItem
                             className="rounded-[calc(1rem-6px)] text-xs"
                             onClick={handleCreate}

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import {
     IconPlus, IconPaperclip, IconCode, IconWorld, IconHistory,
-    IconWand, IconSend, IconChevronDown
+    IconWand, IconSend, IconChevronDown, IconPlayerStop
 } from "@tabler/icons-react";
 import { MessageRenderer } from "@/components/chat/MessageRenderer";
 import { getGateway } from "@/lib/openclawGateway";
@@ -62,6 +62,8 @@ import { HandoffPacketModal } from "@/components/chat/HandoffPacketModal";
 import { ProjectPanel } from "@/components/chat/ProjectPanel";
 import { useProjectStore } from "@/store/useProjectStore";
 import { SessionConfigDropdowns } from "@/components/chat/SessionConfigDropdowns";
+import { SlashCommandMenu, SlashCommand } from "@/components/chat/SlashCommandMenu";
+import { useToolCallStream } from "@/hooks/useToolCallStream";
 
 /* ─── Message Content Renderer (Clean Text Only) ─── */
 const renderMessageContent = (content: string) => {
@@ -131,7 +133,10 @@ export default function ChatPage() {
     const { integratedAgents, getMessagesForAgent, dispatchMessage, isOpenClawConnected, sendToolsHandshake } = useChatRouter();
     const { sessions, setChatMessages } = useSocketStore();
     const router = useRouter();
+    useToolCallStream(); // Subscribe to tool-call webhook events for process hierarchy
     const [message, setMessage] = useState("");
+    const [showSlashMenu, setShowSlashMenu] = useState(false);
+    const [slashQuery, setSlashQuery] = useState("");
     const [selectedAgentId, setSelectedAgentId] = useState<string>(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('nerv_active_agent') || "";
@@ -609,6 +614,7 @@ export default function ChatPage() {
         }
     };
 
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         const activeAgent = integratedAgents.find(a => a.id === selectedAgentId);
@@ -989,6 +995,30 @@ export default function ChatPage() {
     const isGlobalOrAgentConnected = activeAgent?.isOnline ?? false;
     const isAgentZero = activeAgent?.provider === 'agent-zero' || activeAgent?.provider === 'external';
 
+    // Detect if the agent is currently processing (any active run in "running" state)
+    const openClawActiveRuns = useOpenClawStore((s) => s.activeRuns);
+    const { isAgentProcessing, activeRunId } = useMemo(() => {
+        if (!selectedAgentId) return { isAgentProcessing: false, activeRunId: undefined as string | undefined };
+        let processing = false;
+        let runId: string | undefined;
+        openClawActiveRuns.forEach((run) => {
+            const sk = run.sessionKey || '';
+            if ((sk.includes(selectedAgentId) || sk === 'unknown' || sk === 'agent:default:main') && run.status === 'running') {
+                processing = true;
+                runId = run.runId;
+            }
+        });
+        return { isAgentProcessing: processing, activeRunId: runId };
+    }, [openClawActiveRuns, selectedAgentId]);
+
+    // Scroll to bottom when thinking placeholder appears
+    useEffect(() => {
+        if (isAgentProcessing) {
+            const t = setTimeout(scrollToBottom, 80);
+            return () => clearTimeout(t);
+        }
+    }, [isAgentProcessing]);
+
     // Handle selecting a conversation from the sidebar — syncs companion mode toggle
     const handleSelectConversation = useCallback(async (conversationId: string | undefined) => {
         if (!conversationId || !selectedAgentId) {
@@ -1104,7 +1134,7 @@ export default function ChatPage() {
                                     className={cn(
                                         "relative flex items-center text-xs h-8 px-4 gap-2.5 transition-all flex-shrink-0 rounded-sm",
                                         isSelected
-                                            ? "bg-orange-500/15 text-orange-400 border-2 border-orange-500/50 ring-2 ring-orange-500/20"
+                                            ? "bg-orange-500/15 text-orange-400 border border-orange-500/60"
                                             : "bg-zinc-900/60 text-muted-foreground border border-zinc-800 hover:border-zinc-600 hover:text-foreground hover:bg-zinc-800/60"
                                     )}
                                 >
@@ -1179,6 +1209,9 @@ export default function ChatPage() {
                             ) : (
                                 <div className="flex flex-col mt-auto w-full justify-end">
                                     {visibleMessages.map((msg, idx) => {
+                                        // Hide empty assistant messages — the thinking placeholder covers this
+                                        if (msg.role === 'assistant' && (!msg.content || !msg.content.trim())) return null;
+
                                         const isFirstInGroup = idx === 0 || visibleMessages[idx - 1].role !== msg.role;
                                         const isUser = msg.role === 'user';
                                         const displayName = isUser ? 'You' : selectedAgentName;
@@ -1279,13 +1312,13 @@ export default function ChatPage() {
                                                             </div>
                                                         </div>
                                                     ) : (renderMessageContent(isUser ? stripInjectedPrefixes(msg.content) : msg.content) || (msg.attachments && msg.attachments.length > 0)) && (
-                                                        <div className="group/msg relative w-fit max-w-[85%]">
+                                                        <div className="group/msg relative w-fit" style={{ maxWidth: 'calc(100% - 3px)' }}>
                                                             <div className={cn(
                                                                 "px-[12px] py-[6px] text-[13px] leading-relaxed min-w-[80px] w-fit flex flex-col gap-2",
                                                                 isUser
                                                                     ? "bg-accent text-foreground"
                                                                     : "bg-orange-500/35 text-white border border-orange-500/40",
-                                                                isFirstInGroup ? "rounded-[12px]" : "rounded-tr-[12px] rounded-br-[12px] rounded-bl-[12px] rounded-tl-[4px]"
+                                                                isFirstInGroup ? "rounded-[6px]" : "rounded-tr-[6px] rounded-br-[6px] rounded-bl-[6px] rounded-tl-[2px]"
                                                             )}>
                                                                 {msg.attachments && msg.attachments.length > 0 && (
                                                                     <div className="flex flex-wrap gap-2">
@@ -1423,6 +1456,26 @@ export default function ChatPage() {
                                             </div>
                                         );
                                     })}
+                                    {/* ═══ THINKING PLACEHOLDER — shows while agent is processing ═══ */}
+                                    {isAgentProcessing && (
+                                        <div className="flex w-full justify-start nerv-chat-bubble-enter mt-[12px]">
+                                            <div className="flex-shrink-0 mr-[12px] w-[42px] flex flex-col justify-start items-center relative mt-[5px]">
+                                                <AgentAvatar agentId={selectedAgentId!} name={selectedAgentName} width={42} height={56} />
+                                            </div>
+                                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5 mb-[2px] px-1">
+                                                    <span className="text-[13px] font-semibold text-foreground">{selectedAgentName}</span>
+                                                </div>
+                                                <div className="px-1 flex items-center gap-1.5">
+                                                    <span
+                                                        className="nerv-shimmer-text text-[13px] italic"
+                                                    >
+                                                        thinking
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -1535,7 +1588,18 @@ export default function ChatPage() {
                                 />
                             )}
 
-                            <div className="bg-background border border-border shadow-sm rounded-md focus-within:ring-1 focus-within:ring-border/50 transition-all relative">
+                            <div
+                                className={cn(
+                                    "bg-background border shadow-sm rounded-md transition-all relative",
+                                    isAgentProcessing
+                                        ? "border-orange-500/60"
+                                        : "border-border"
+                                )}
+                                style={isAgentProcessing ? {
+                                    animation: 'nervProcessingGlow 2s ease-in-out infinite',
+                                    boxShadow: '0 0 15px rgba(249, 115, 22, 0.15), 0 0 30px rgba(249, 115, 22, 0.08), inset 0 0 8px rgba(249, 115, 22, 0.03)',
+                                } : undefined}
+                            >
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -1587,13 +1651,47 @@ export default function ChatPage() {
                                     </div>
                                 )}
 
-                                <div className="px-3 pt-3 pb-2 grow">
+                                <div className="px-3 pt-3 pb-2 grow relative">
+                                    {/* ─── Slash Command Menu ─── */}
+                                    <SlashCommandMenu
+                                        query={slashQuery}
+                                        visible={showSlashMenu}
+                                        onClose={() => setShowSlashMenu(false)}
+                                        onSelect={(cmd: SlashCommand) => {
+                                            setShowSlashMenu(false);
+                                            if (cmd.instant && !cmd.args) {
+                                                // Instant commands: dispatch directly to OpenClaw
+                                                const sessionKey = `agent:${selectedAgentId}:nchat`;
+                                                setMessage("");
+                                                dispatchMessage(selectedAgentId, cmd.command, sessionKey);
+                                            } else {
+                                                // Commands with args: insert into input, let user type args
+                                                setMessage(cmd.command + ' ');
+                                            }
+                                        }}
+                                    />
                                     <form onSubmit={handleSendMessage}>
                                         <ChatInputWithChunks
                                             value={message}
-                                            onChange={(e) => setMessage(e.target.value)}
-                                            onSend={handleSendMessage}
-                                            placeholder={activeAgent?.isOnline ? "Ask anything" : "Connection offline"}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setMessage(val);
+                                                // Detect slash command input
+                                                if (val.startsWith('/')) {
+                                                    setSlashQuery(val.slice(1));
+                                                    setShowSlashMenu(true);
+                                                } else {
+                                                    setShowSlashMenu(false);
+                                                }
+                                            }}
+                                            onSend={(e) => {
+                                                if (showSlashMenu) {
+                                                    // Don't send if slash menu is open — let slash menu handle it
+                                                    return;
+                                                }
+                                                handleSendMessage(e);
+                                            }}
+                                            placeholder={activeAgent?.isOnline ? "Ask anything — type / for commands" : "Connection offline"}
                                             disabled={!activeAgent?.isOnline || !selectedAgentId}
                                             className="w-full bg-transparent p-0 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder-muted-foreground resize-none border-none outline-none text-[13px] min-h-10 max-h-[25vh]"
                                             rows={2}
@@ -1613,7 +1711,7 @@ export default function ChatPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-8 w-8 p-0 rounded-sm border border-border hover:bg-accent"
+                                                    className="h-7 w-7 p-0 rounded-sm hover:bg-accent text-orange-500 hover:text-orange-400"
                                                 >
                                                     <IconPlus className="size-3" />
                                                 </Button>
@@ -1661,7 +1759,7 @@ export default function ChatPage() {
                                             </DropdownMenuContent>
                                         </DropdownMenu>
 
-                                        <div className="ml-1 w-px h-0" />
+
                                         <StrategyModeSwitcher
                                             activeMode={strategyMode}
                                             onModeChange={setStrategyMode}
@@ -1675,19 +1773,53 @@ export default function ChatPage() {
                                             onCloseConfig={(key) => setActiveSessionConfigs(prev => ({ ...prev, [key]: false }))}
                                             autoOpenConfig={autoOpenConfig}
                                         />
-                                        <div className="ml-[5px] w-px h-4 bg-border" />
+
                                         <PromptChunkTray />
                                     </div>
 
                                     <div>
-                                        <Button
-                                            type="submit"
-                                            disabled={!message.trim() || !activeAgent?.isOnline}
-                                            className="size-7 p-0 rounded-sm bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                                            onClick={handleSendMessage}
-                                        >
-                                            <IconSend className="size-3 text-primary-foreground" />
-                                        </Button>
+                                        {isAgentProcessing ? (
+                                            <Button
+                                                type="button"
+                                                className="size-7 p-0 rounded-sm bg-orange-500 hover:bg-orange-600 transition-colors"
+                                                style={{ animation: 'nervProcessingGlow 2s ease-in-out infinite' }}
+                                                onClick={async () => {
+                                                    if (!selectedAgentId) return;
+                                                    const sessionKey = `agent:${selectedAgentId}:nchat`;
+
+                                                    // 1. Try gateway interrupt RPC
+                                                    try {
+                                                        const gw = getGateway();
+                                                        if (gw.isConnected) {
+                                                            await gw.request('chat.interrupt', {
+                                                                sessionKey,
+                                                                ...(activeRunId ? { runId: activeRunId } : {}),
+                                                            });
+                                                            console.log('[NERV] Agent interrupted via chat.interrupt');
+                                                        }
+                                                    } catch {
+                                                        // chat.interrupt may not be supported — that's fine
+                                                        console.log('[NERV] chat.interrupt not available');
+                                                    }
+
+                                                    // 2. Always clear local processing state
+                                                    useOpenClawStore.getState().clearRunsForSession(sessionKey);
+                                                    console.log('[NERV] Cleared local runs for session:', sessionKey);
+                                                }}
+                                                title="Stop processing"
+                                            >
+                                                <IconPlayerStop className="size-3 text-white" />
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                type="submit"
+                                                disabled={!message.trim() || !activeAgent?.isOnline}
+                                                className="size-7 p-0 rounded-sm bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                                onClick={handleSendMessage}
+                                            >
+                                                <IconSend className="size-3 text-primary-foreground" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1700,7 +1832,7 @@ export default function ChatPage() {
 
             {/* ═══ RIGHT: Process Hierarchy Sidebar (full-height) ═══ */}
             {selectedAgentId && (
-                <div className="flex h-full shrink-0 group relative -mt-1" style={{ width: processSidebarWidth, marginLeft: 8 }}>
+                <div className="flex shrink-0 group relative -mt-1 -mb-1" style={{ width: processSidebarWidth, marginLeft: 8, height: 'calc(100% + 4px)' }}>
                     {/* Resize Handle */}
                     <div
                         className="absolute -left-1.5 top-0 bottom-0 w-3 cursor-col-resize z-10 flex items-center justify-center"

@@ -582,6 +582,61 @@ html {
   50% { opacity: 0.5; transform: scale(0.8); }
 }
 
+@keyframes nervProcessingGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 12px rgba(249, 115, 22, 0.12),
+      0 0 24px rgba(249, 115, 22, 0.06),
+      inset 0 0 6px rgba(249, 115, 22, 0.02);
+    border-color: rgba(249, 115, 22, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(249, 115, 22, 0.25),
+      0 0 40px rgba(249, 115, 22, 0.12),
+      inset 0 0 10px rgba(249, 115, 22, 0.05);
+    border-color: rgba(249, 115, 22, 0.65);
+  }
+}
+
+/* ── Thinking placeholder: shimmer text + blinking cursor ── */
+.nerv-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    rgba(249, 115, 22, 0.4) 0%,
+    rgba(251, 191, 36, 0.9) 25%,
+    rgba(249, 115, 22, 0.4) 50%,
+    rgba(251, 191, 36, 0.9) 75%,
+    rgba(249, 115, 22, 0.4) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: nervShimmerText 2s linear infinite;
+}
+
+@keyframes nervShimmerText {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes nervDot1 {
+  0%, 100% { opacity: 0; }
+  25%, 95% { opacity: 1; }
+}
+
+@keyframes nervDot2 {
+  0%, 25%, 100% { opacity: 0; }
+  50%, 95% { opacity: 1; }
+}
+
+@keyframes nervDot3 {
+  0%, 50%, 100% { opacity: 0; }
+  75%, 95% { opacity: 1; }
+}
+
+
 /* Custom Minimal Scrollbar (Global) */
 * {
   scrollbar-width: thin;
@@ -906,6 +961,24 @@ time,
   outline: 2px solid var(--accent-base);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Suppress focus outline on contenteditable chat input */
+[contenteditable]:focus-visible,
+[contenteditable]:focus,
+[contenteditable] *:focus-visible,
+[contenteditable] *:focus {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  ring: none !important;
+}
+
+/* Kill orange outline on chat input container when child is focused */
+div:has(> [contenteditable]):focus-within,
+div:has([contenteditable]):focus-within {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* ─── ReactFlow — Kill ALL default node chrome ─── */

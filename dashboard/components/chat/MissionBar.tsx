@@ -21,6 +21,7 @@ export interface Constraint {
 export interface MissionConfig {
     goalText: string;
     goalLocked: boolean;
+    goalType?: ConstraintType;
     constraints: Constraint[];
 }
 
@@ -46,15 +47,18 @@ export const MissionBar: React.FC<MissionBarProps> = ({
     onMissionChange,
     className,
 }) => {
-    const { goalText, goalLocked, constraints } = missionConfig;
+    const { goalText, goalLocked, goalType, constraints } = missionConfig;
 
-    const [isEditingGoal, setIsEditingGoal] = useState(false);
+    const [showGoalPopover, setShowGoalPopover] = useState(false);
     const [goalDraft, setGoalDraft] = useState(goalText);
+    const [goalTypeDraft, setGoalTypeDraft] = useState<ConstraintType>(goalType || 'custom');
     const [showConstraintPopover, setShowConstraintPopover] = useState(false);
     const [newConstraintLabel, setNewConstraintLabel] = useState('');
     const [newConstraintType, setNewConstraintType] = useState<ConstraintType>('custom');
 
     const goalInputRef = useRef<HTMLInputElement>(null);
+    const goalPopoverRef = useRef<HTMLDivElement>(null);
+    const goalBtnRef = useRef<HTMLButtonElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
     const addBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -76,11 +80,29 @@ export const MissionBar: React.FC<MissionBarProps> = ({
         }, 500);
     }, [conversationId]);
 
+    // Focus goal input when popover opens
     useEffect(() => {
-        if (isEditingGoal && goalInputRef.current) goalInputRef.current.focus();
-    }, [isEditingGoal]);
+        if (showGoalPopover && goalInputRef.current) {
+            setTimeout(() => goalInputRef.current?.focus(), 50);
+        }
+    }, [showGoalPopover]);
 
-    // Close popover on outside click
+    // Close goal popover on outside click
+    useEffect(() => {
+        if (!showGoalPopover) return;
+        const handler = (e: MouseEvent) => {
+            if (
+                goalPopoverRef.current && !goalPopoverRef.current.contains(e.target as Node) &&
+                goalBtnRef.current && !goalBtnRef.current.contains(e.target as Node)
+            ) {
+                setShowGoalPopover(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [showGoalPopover]);
+
+    // Close constraint popover on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (
@@ -101,13 +123,16 @@ export const MissionBar: React.FC<MissionBarProps> = ({
     };
 
     const handleGoalSubmit = () => {
-        updateConfig({ goalText: goalDraft.trim() });
-        setIsEditingGoal(false);
+        if (!goalDraft.trim()) return;
+        updateConfig({ goalText: goalDraft.trim(), goalType: goalTypeDraft });
+        setShowGoalPopover(false);
     };
 
     const toggleGoalLock = () => {
         if (!goalText) {
-            setIsEditingGoal(true);
+            setGoalDraft('');
+            setGoalTypeDraft('custom');
+            setShowGoalPopover(true);
             return;
         }
         updateConfig({ goalLocked: !goalLocked });
@@ -141,8 +166,88 @@ export const MissionBar: React.FC<MissionBarProps> = ({
     const getConstraintMeta = (type: ConstraintType) =>
         CONSTRAINT_TYPES.find(ct => ct.type === type) || CONSTRAINT_TYPES[4];
 
-    // Determine if mission bar should be in "collapsed" mode (no goal set, no constraints)
     const isEmpty = !goalText && constraints.length === 0;
+
+    /* ─── Shared popover renderer (used by both Goal and Constraint) ─── */
+    const renderPopover = (
+        ref: React.RefObject<HTMLDivElement | null>,
+        title: string,
+        inputValue: string,
+        onInputChange: (v: string) => void,
+        selectedType: ConstraintType,
+        onTypeChange: (t: ConstraintType) => void,
+        placeholder: string,
+        submitLabel: string,
+        onSubmit: () => void,
+        canSubmit: boolean,
+    ) => (
+        <div
+            ref={ref}
+            className="absolute bottom-full left-0 mb-2 z-50 rounded-md overflow-hidden shadow-md"
+            style={{
+                background: 'var(--popover)',
+                border: '1px solid var(--border)',
+                minWidth: 220,
+            }}
+        >
+            <div className="p-3 space-y-2.5">
+                <span
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: 'var(--nerv-text-tertiary)' }}
+                >
+                    {title}
+                </span>
+
+                {/* Type selector */}
+                <div className="flex gap-1">
+                    {CONSTRAINT_TYPES.map(ct => (
+                        <button
+                            key={ct.type}
+                            onClick={() => onTypeChange(ct.type)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors"
+                            style={{
+                                background: selectedType === ct.type
+                                    ? 'var(--accent)'
+                                    : 'transparent',
+                                color: selectedType === ct.type ? ct.color : 'var(--muted-foreground)',
+                                border: selectedType === ct.type
+                                    ? `1px solid color-mix(in srgb, ${ct.color} 30%, transparent)`
+                                    : '1px solid transparent',
+                            }}
+                        >
+                            {ct.icon}
+                            <span>{ct.label}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Label input */}
+                <div className="flex gap-1.5">
+                    <input
+                        ref={title.toLowerCase().includes('goal') ? goalInputRef : undefined}
+                        value={inputValue}
+                        onChange={e => onInputChange(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') onSubmit(); if (e.key === 'Escape') { setShowGoalPopover(false); setShowConstraintPopover(false); } }}
+                        placeholder={placeholder}
+                        className="flex-1 text-[11px] px-2 py-1.5 rounded-sm bg-transparent outline-none"
+                        style={{
+                            color: 'var(--popover-foreground)',
+                            border: '1px solid var(--border)',
+                        }}
+                        autoFocus
+                    />
+                    <Button
+                        size="sm"
+                        onClick={onSubmit}
+                        disabled={!canSubmit}
+                        className="h-7 px-2 rounded-md text-[10px]"
+                    >
+                        {submitLabel}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div
@@ -175,44 +280,95 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                     )}
                 </button>
 
-                {isEditingGoal ? (
-                    <input
-                        ref={goalInputRef}
-                        value={goalDraft}
-                        onChange={e => setGoalDraft(e.target.value)}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter') handleGoalSubmit();
-                            if (e.key === 'Escape') { setIsEditingGoal(false); setGoalDraft(goalText); }
-                        }}
-                        onBlur={handleGoalSubmit}
-                        placeholder="Define your mission goal…"
-                        className="flex-1 text-[11px] bg-transparent outline-none min-w-[120px] max-w-[300px]"
+                {/* Goal display — chip with lock/delete like constraints */}
+                {goalText ? (
+                    <div
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all duration-200 group"
                         style={{
-                            color: 'var(--nerv-text-primary)',
-                            borderBottom: '1px solid var(--nerv-cyan)',
+                            background: goalLocked
+                                ? `color-mix(in srgb, ${getConstraintMeta(goalType || 'custom').color} 12%, transparent)`
+                                : 'var(--nerv-surface-3)',
+                            border: `1px solid color-mix(in srgb, ${getConstraintMeta(goalType || 'custom').color} 25%, transparent)`,
+                            color: goalLocked ? getConstraintMeta(goalType || 'custom').color : 'var(--nerv-text-tertiary)',
                         }}
-                    />
-                ) : goalText ? (
-                    <button
-                        onClick={() => { if (!goalLocked) { setGoalDraft(goalText); setIsEditingGoal(true); } }}
-                        className="flex items-center gap-1 text-[11px] font-medium truncate max-w-[300px]"
-                        style={{
-                            color: goalLocked ? 'var(--nerv-success)' : 'var(--nerv-text-primary)',
-                            cursor: goalLocked ? 'default' : 'pointer',
-                        }}
-                        disabled={goalLocked}
                     >
-                        <span className="truncate">{goalText}</span>
-                        {!goalLocked && <Pencil className="w-2.5 h-2.5 shrink-0 opacity-30" />}
-                    </button>
+                        <span className="shrink-0">{getConstraintMeta(goalType || 'custom').icon}</span>
+                        <button
+                            ref={goalBtnRef}
+                            onClick={() => {
+                                if (!goalLocked) {
+                                    setGoalDraft(goalText);
+                                    setGoalTypeDraft(goalType || 'custom');
+                                    setShowGoalPopover(!showGoalPopover);
+                                }
+                            }}
+                            className="truncate max-w-[200px]"
+                            style={{ cursor: goalLocked ? 'default' : 'pointer' }}
+                            disabled={goalLocked}
+                        >
+                            {goalText}
+                        </button>
+                        <button
+                            onClick={() => toggleGoalLock()}
+                            className="p-0 transition-opacity opacity-50 hover:opacity-100"
+                            title={goalLocked ? 'Unlock goal' : 'Lock goal'}
+                        >
+                            {goalLocked ? <Lock className="w-2.5 h-2.5" /> : <Unlock className="w-2.5 h-2.5" />}
+                        </button>
+                        <button
+                            onClick={() => updateConfig({ goalText: '', goalLocked: false, goalType: undefined })}
+                            className="p-0 transition-opacity opacity-0 group-hover:opacity-50 hover:!opacity-100"
+                            title="Remove goal"
+                        >
+                            <X className="w-2.5 h-2.5" />
+                        </button>
+                    </div>
                 ) : (
-                    <button
-                        onClick={() => { setGoalDraft(''); setIsEditingGoal(true); }}
-                        className="text-[10px] italic"
-                        style={{ color: 'var(--nerv-text-ghost)' }}
-                    >
-                        Set a goal…
-                    </button>
+                    <div className="relative">
+                        <button
+                            ref={goalBtnRef}
+                            onClick={() => { setGoalDraft(''); setGoalTypeDraft('custom'); setShowGoalPopover(!showGoalPopover); }}
+                            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[10px] transition-all duration-200 hover:bg-white/5"
+                            style={{ color: 'var(--nerv-text-ghost)' }}
+                            onMouseEnter={e => {
+                                (e.currentTarget as HTMLElement).style.color = 'var(--nerv-cyan)';
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget as HTMLElement).style.color = 'var(--nerv-text-ghost)';
+                            }}
+                        >
+                            <Plus className="w-2.5 h-2.5" />
+                            <span>Goal</span>
+                        </button>
+
+                        {/* Goal Popover */}
+                        {showGoalPopover && renderPopover(
+                            goalPopoverRef,
+                            'Set Goal',
+                            goalDraft,
+                            setGoalDraft,
+                            goalTypeDraft,
+                            setGoalTypeDraft,
+                            'Define your mission goal…',
+                            'Set',
+                            handleGoalSubmit,
+                            !!goalDraft.trim(),
+                        )}
+                    </div>
+                )}
+
+                {/* Goal edit popover when goal is already set */}
+                {goalText && !goalLocked && showGoalPopover && renderPopover(
+                    goalPopoverRef,
+                    'Edit Goal',
+                    goalDraft,
+                    setGoalDraft,
+                    goalTypeDraft,
+                    setGoalTypeDraft,
+                    'Define your mission goal…',
+                    'Save',
+                    handleGoalSubmit,
+                    !!goalDraft.trim(),
                 )}
             </div>
 
@@ -257,23 +413,18 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                     );
                 })}
 
-                {/* Add Constraint Button */}
+                {/* Add Constraint Button — plain text, no pill */}
                 <div className="relative">
                     <button
                         ref={addBtnRef}
                         onClick={() => setShowConstraintPopover(!showConstraintPopover)}
-                        className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] transition-all duration-200"
-                        style={{
-                            color: 'var(--nerv-text-ghost)',
-                            border: '1px dashed var(--nerv-border-subtle)',
-                        }}
+                        className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[10px] transition-all duration-200 hover:bg-white/5"
+                        style={{ color: 'var(--nerv-text-ghost)' }}
                         onMouseEnter={e => {
                             (e.currentTarget as HTMLElement).style.color = 'var(--nerv-cyan)';
-                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--nerv-cyan-dim)';
                         }}
                         onMouseLeave={e => {
                             (e.currentTarget as HTMLElement).style.color = 'var(--nerv-text-ghost)';
-                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--nerv-border-subtle)';
                         }}
                     >
                         <Plus className="w-2.5 h-2.5" />
@@ -281,72 +432,17 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                     </button>
 
                     {/* Constraint Popover */}
-                    {showConstraintPopover && (
-                        <div
-                            ref={popoverRef}
-                            className="absolute bottom-full left-0 mb-2 z-50 rounded-md overflow-hidden shadow-md"
-                            style={{
-                                background: 'var(--popover)',
-                                border: '1px solid var(--border)',
-                                minWidth: 220,
-                            }}
-                        >
-                            <div className="p-3 space-y-2.5">
-                                <span
-                                    className="text-[10px] font-semibold uppercase tracking-wider"
-                                    style={{ color: 'var(--nerv-text-tertiary)' }}
-                                >
-                                    Add Constraint
-                                </span>
-
-                                {/* Type selector */}
-                                <div className="flex gap-1">
-                                    {CONSTRAINT_TYPES.map(ct => (
-                                        <button
-                                            key={ct.type}
-                                            onClick={() => setNewConstraintType(ct.type)}
-                                            className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors"
-                                            style={{
-                                                background: newConstraintType === ct.type
-                                                    ? 'var(--accent)'
-                                                    : 'transparent',
-                                                color: newConstraintType === ct.type ? ct.color : 'var(--muted-foreground)',
-                                                border: newConstraintType === ct.type
-                                                    ? `1px solid color-mix(in srgb, ${ct.color} 30%, transparent)`
-                                                    : '1px solid transparent',
-                                            }}
-                                        >
-                                            {ct.icon}
-                                            <span>{ct.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* Label input */}
-                                <div className="flex gap-1.5">
-                                    <input
-                                        value={newConstraintLabel}
-                                        onChange={e => setNewConstraintLabel(e.target.value)}
-                                        onKeyDown={e => { if (e.key === 'Enter') addConstraint(); }}
-                                        placeholder={`e.g. "Max $5k spend"`}
-                                        className="flex-1 text-[11px] px-2 py-1.5 rounded-sm bg-transparent outline-none"
-                                        style={{
-                                            color: 'var(--popover-foreground)',
-                                            border: '1px solid var(--border)',
-                                        }}
-                                        autoFocus
-                                    />
-                                    <Button
-                                        size="sm"
-                                        onClick={addConstraint}
-                                        disabled={!newConstraintLabel.trim()}
-                                        className="h-7 px-2 rounded-md text-[10px]"
-                                    >
-                                        Add
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
+                    {showConstraintPopover && renderPopover(
+                        popoverRef,
+                        'Add Constraint',
+                        newConstraintLabel,
+                        setNewConstraintLabel,
+                        newConstraintType,
+                        setNewConstraintType,
+                        'e.g. "Max $5k spend"',
+                        'Add',
+                        addConstraint,
+                        !!newConstraintLabel.trim(),
                     )}
                 </div>
             </div>
@@ -359,8 +455,10 @@ export const getMissionSystemPrompt = (config: MissionConfig): string => {
     const parts: string[] = [];
 
     if (config.goalText) {
+        const goalMeta = CONSTRAINT_TYPES.find(ct => ct.type === (config.goalType || 'custom'));
         parts.push(
             `[SYSTEM DIRECTIVE — MISSION GOAL]\n` +
+            `Category: ${goalMeta?.label || 'Custom'}\n` +
             `Your primary objective for this conversation is: "${config.goalText}"\n` +
             `All responses MUST be oriented toward achieving this goal. Do not deviate. ` +
             `If a user request conflicts with this goal, acknowledge the conflict and steer back toward the goal.`

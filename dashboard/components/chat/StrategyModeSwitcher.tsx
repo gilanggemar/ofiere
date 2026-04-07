@@ -93,7 +93,7 @@ export const StrategyModeSwitcher: React.FC<StrategyModeSwitcherProps> = ({
             <button
                 onClick={() => setExpanded(!expanded)}
                 className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-colors duration-200 text-[10px] font-medium",
+                    "flex items-center gap-1.5 px-2.5 h-7 rounded-sm transition-colors duration-200 text-[10px] font-medium",
                     activeMode === 'off' ? "bg-transparent border border-border hover:bg-accent hover:text-accent-foreground text-foreground" : "hover:brightness-110"
                 )}
                 style={activeMode !== 'off' ? {

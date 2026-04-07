@@ -147,7 +147,7 @@ export const MessageRenderer = React.memo(function MessageRenderer({ content }: 
 
                     // Paragraphs
                     p: ({ children }) => (
-                        <p className="mb-3 last:mb-0 leading-snug">{children}</p>
+                        <p className="mb-3 last:mb-0 leading-snug" style={{ whiteSpace: 'pre-line' }}>{children}</p>
                     ),
 
                     // Links
@@ -157,7 +157,7 @@ export const MessageRenderer = React.memo(function MessageRenderer({ content }: 
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                                color: 'var(--accent)',
+                                color: 'var(--nerv-cyan)',
                                 textDecoration: 'underline',
                                 textUnderlineOffset: '2px',
                             }}
