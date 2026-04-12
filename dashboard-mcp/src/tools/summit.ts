@@ -62,8 +62,8 @@ const tools: ToolDefinition[] = [
         inputSchema: {
             title: z.string().describe("Summit title"),
             topic: z.string().optional().describe("Discussion topic"),
-            participants: z.array(z.string()).optional().describe("Array of agent IDs to participate"),
-            config: z.object({}).optional().describe("Summit configuration JSON"),
+            participants: z.string().describe("Comma-separated list of agent IDs to participate").optional(),
+            config: z.string().describe("JSON stringified Summit configuration").optional(),
         },
         handler: async (params) => {
             const { supabase, userId } = db();
@@ -73,8 +73,8 @@ const tools: ToolDefinition[] = [
                     user_id: userId,
                     title: params.title,
                     topic: params.topic || null,
-                    participants: params.participants || [],
-                    config: params.config || {},
+                    participants: params.participants ? (params.participants as string).split(',').map(p => p.trim()) : [],
+                    config: params.config ? JSON.parse(params.config as string) : {},
                     status: "active",
                     deliberation_round: 0,
                     message_count: 0,

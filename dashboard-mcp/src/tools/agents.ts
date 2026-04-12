@@ -77,7 +77,7 @@ const tools: ToolDefinition[] = [
             role: z.string().optional().describe("New role description"),
             status: z.string().optional().describe("New status (ONLINE, OFFLINE, WORKING, THINKING, QUEUED, IN_SUMMIT, PAUSED)"),
             temperature: z.number().optional().describe("LLM temperature (0.0 - 2.0)"),
-            specialty: z.array(z.string()).optional().describe("Array of specialties"),
+            specialty: z.string().describe("Comma separated list of specialties").optional(),
         },
         handler: async (params) => {
             const { supabase, userId } = db();
@@ -87,7 +87,7 @@ const tools: ToolDefinition[] = [
             if (params.role !== undefined) updates.role = params.role;
             if (params.status !== undefined) updates.status = params.status;
             if (params.temperature !== undefined) updates.temperature = params.temperature;
-            if (params.specialty !== undefined) updates.specialty = params.specialty;
+            if (params.specialty !== undefined) updates.specialty = (params.specialty as string).split(',').map(s => s.trim());
 
             const { data, error } = await supabase
                 .from("agents")

@@ -53,9 +53,9 @@ const tools: ToolDefinition[] = [
         inputSchema: {
             name: z.string().describe("Workflow name"),
             description: z.string().optional().describe("Workflow description"),
-            nodes: z.array(z.object({})).optional().describe("Array of node objects (ReactFlow format)"),
-            edges: z.array(z.object({})).optional().describe("Array of edge objects (ReactFlow format)"),
-            steps: z.array(z.object({})).optional().describe("Array of step objects"),
+            nodes: z.string().describe("JSON stringified array of node objects").optional(),
+            edges: z.string().describe("JSON stringified array of edge objects").optional(),
+            steps: z.string().describe("JSON stringified array of step objects").optional(),
             status: z.enum(["draft", "active", "paused", "archived"]).optional().default("draft").describe("Initial status"),
         },
         handler: async (params) => {
@@ -68,9 +68,9 @@ const tools: ToolDefinition[] = [
                     id,
                     name: params.name,
                     description: params.description || null,
-                    nodes: params.nodes || [],
-                    edges: params.edges || [],
-                    steps: params.steps || [],
+                    nodes: params.nodes ? JSON.parse(params.nodes as string) : [],
+                    edges: params.edges ? JSON.parse(params.edges as string) : [],
+                    steps: params.steps ? JSON.parse(params.steps as string) : [],
                     status: params.status || "draft",
                     definition_version: 1,
                     user_id: userId,
@@ -91,18 +91,21 @@ const tools: ToolDefinition[] = [
             workflow_id: z.string().describe("Workflow ID to update"),
             name: z.string().optional().describe("New name"),
             description: z.string().optional().describe("New description"),
-            nodes: z.array(z.object({})).optional().describe("Updated nodes"),
-            edges: z.array(z.object({})).optional().describe("Updated edges"),
-            steps: z.array(z.object({})).optional().describe("Updated steps"),
+            nodes: z.string().describe("JSON stringified array of new nodes").optional(),
+            edges: z.string().describe("JSON stringified array of new edges").optional(),
+            steps: z.string().describe("JSON stringified array of new steps").optional(),
             status: z.enum(["draft", "active", "paused", "archived"]).optional().describe("New status"),
         },
         handler: async (params) => {
             const { supabase, userId } = db();
             const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-            const fields = ["name", "description", "nodes", "edges", "steps", "status"];
+            const fields = ["name", "description", "status"];
             for (const f of fields) {
                 if ((params as any)[f] !== undefined) updates[f] = (params as any)[f];
             }
+            if (params.nodes !== undefined) updates.nodes = JSON.parse(params.nodes as string);
+            if (params.edges !== undefined) updates.edges = JSON.parse(params.edges as string);
+            if (params.steps !== undefined) updates.steps = JSON.parse(params.steps as string);
             const { data, error } = await supabase
                 .from("workflows")
                 .update(updates)
@@ -159,7 +162,7 @@ const tools: ToolDefinition[] = [
                     workflow_id: params.workflow_id,
                     status: "running",
                     triggered_by: params.triggered_by || "mcp",
-                    global_variables: params.global_variables || {},
+                    global_variables: params.global_variables ? JSON.parse(params.global_variables as string) : {},
                     step_results: [],
                     user_id: userId,
                     started_at: now,

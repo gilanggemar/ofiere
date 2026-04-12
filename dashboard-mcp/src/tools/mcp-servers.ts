@@ -30,7 +30,7 @@ const tools: ToolDefinition[] = [
             url: z.string().describe("Server URL or command"),
             transport: z.enum(["stdio", "sse", "http"]).optional().default("sse").describe("Transport type"),
             description: z.string().optional().describe("Server description"),
-            assigned_agents: z.array(z.string()).optional().describe("Agent IDs to assign"),
+            assigned_agents: z.string().describe("Comma-separated agent IDs to assign").optional(),
         },
         handler: async (params) => {
             const { supabase, userId } = db();
@@ -45,7 +45,7 @@ const tools: ToolDefinition[] = [
                     description: params.description || null,
                     status: "disconnected",
                     tools: [],
-                    assigned_agents: params.assigned_agents || [],
+                    assigned_agents: params.assigned_agents ? (params.assigned_agents as string).split(',').map(a => a.trim()) : [],
                     user_id: userId,
                 })
                 .select()
@@ -65,15 +65,16 @@ const tools: ToolDefinition[] = [
             transport: z.enum(["stdio", "sse", "http"]).optional().describe("New transport"),
             description: z.string().optional().describe("New description"),
             status: z.enum(["connected", "disconnected", "error", "testing"]).optional().describe("New status"),
-            assigned_agents: z.array(z.string()).optional().describe("Updated agent assignments"),
+            assigned_agents: z.string().describe("Comma-separated updated agent assignments").optional(),
         },
         handler: async (params) => {
             const { supabase, userId } = db();
             const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-            const fields = ["name", "url", "transport", "description", "status", "assigned_agents"];
+            const fields = ["name", "url", "transport", "description", "status"];
             for (const f of fields) {
                 if ((params as any)[f] !== undefined) updates[f] = (params as any)[f];
             }
+            if (params.assigned_agents !== undefined) updates.assigned_agents = (params.assigned_agents as string).split(',').map(a => a.trim());
             const { data, error } = await supabase
                 .from("mcp_servers")
                 .update(updates)

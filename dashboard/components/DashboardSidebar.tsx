@@ -30,6 +30,7 @@ import {
     Target,
     Puzzle,
     LogOut,
+    FolderKanban,
 } from "lucide-react";
 import { Logo } from "./logo";
 import type { Route } from "./nav-main";
@@ -79,6 +80,7 @@ const dashboardRouteGroups: RouteGroup[] = [
     {
         group: "OPERATIONS",
         items: [
+            { id: "projects", title: "Projects", icon: <FolderKanban className="size-3.5" />, link: "/dashboard/projects" },
             { id: "task-ops", title: "Task-Ops", icon: <ClipboardList className="size-3.5" />, link: "/agents" },
             { id: "workflows", title: "Workflows", icon: <GitBranch className="size-3.5" />, link: "/dashboard/workflows" },
             { id: "scheduler", title: "Scheduler", icon: <Calendar className="size-3.5" />, link: "/dashboard/scheduler" },

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import {
     LayoutGrid, Briefcase, Brain, Settings, ChevronUp,
     Home, MessageSquare, Activity, Target, GitBranch, Terminal,
-    ClipboardList, Calendar, Bell, Puzzle, Eye,
+    ClipboardList, Calendar, Bell, Puzzle, Eye, FolderKanban,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLayoutStore } from "@/store/useLayoutStore";
@@ -18,7 +18,7 @@ import Link from "next/link";
 
 const ICON_MAP: Record<string, typeof Home> = {
     Home, Package2: MessageSquare, Activity, Target, GitBranch, Store: Terminal,
-    ClipboardList, Calendar, Bell, Puzzle, Eye, Brain, Settings,
+    ClipboardList, Calendar, Bell, Puzzle, Eye, Brain, Settings, FolderKanban,
 };
 
 const DOCK_ITEMS: { group: NavGroup; icon: typeof LayoutGrid; label: string }[] = [

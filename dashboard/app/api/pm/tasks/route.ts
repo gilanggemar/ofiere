@@ -2,49 +2,38 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthUserId } from '@/lib/auth';
 
-// Priority mapping: DB stores integers, frontend uses string labels
-const PRIORITY_TO_LABEL: Record<number, string> = { 0: 'LOW', 1: 'MEDIUM', 2: 'HIGH', 3: 'CRITICAL' };
-const LABEL_TO_PRIORITY: Record<string, number> = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
+// ─── GET PM tasks (with hierarchy filters) ───────────────────────────────────
 
-// ─── GET all tasks for the authenticated user ────────────────────────────────
-
-export async function GET() {
+export async function GET(request: Request) {
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        const { data, error } = await db
+        const { searchParams } = new URL(request.url);
+        const spaceId = searchParams.get('space_id');
+        const folderId = searchParams.get('folder_id');
+
+        let query = db
             .from('tasks')
             .select('*')
             .eq('user_id', userId)
+            .order('sort_order', { ascending: true })
             .order('created_at', { ascending: false });
 
+        if (spaceId) query = query.eq('space_id', spaceId);
+        if (folderId) query = query.eq('folder_id', folderId);
+
+        const { data, error } = await query;
         if (error) throw new Error(error.message);
 
-        // Map DB rows to frontend Task shape
-        const tasks = (data || []).map((row: any) => ({
-            id: row.id,
-            title: row.title,
-            description: row.description || undefined,
-            agentId: row.agent_id || '',
-            status: row.status || 'PENDING',
-            priority: PRIORITY_TO_LABEL[row.priority] || 'LOW',
-            spaceId: row.space_id || null,
-            logs: [],
-            toolCalls: [],
-            updatedAt: new Date(row.updated_at).getTime(),
-            timestamp: new Date(row.updated_at).toLocaleTimeString(),
-        }));
-
-        return NextResponse.json({ tasks });
+        return NextResponse.json({ tasks: data || [] });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error('GET /api/tasks error:', msg);
         return NextResponse.json({ error: msg }, { status: 500 });
     }
 }
 
-// ─── POST create a new task ──────────────────────────────────────────────────
+// ─── POST create PM task ─────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
     const userId = await getAuthUserId();
@@ -52,17 +41,27 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const id = body.id || crypto.randomUUID();
-        const priorityVal = LABEL_TO_PRIORITY[String(body.priority || 'LOW').toUpperCase()] ?? 0;
+        const id = body.id || `task-${Date.now()}`;
 
         const insertData: Record<string, any> = {
             id,
             user_id: userId,
-            agent_id: body.agentId || null,
-            title: body.title,
+            title: body.title || 'Untitled Task',
             description: body.description || null,
             status: body.status || 'PENDING',
-            priority: priorityVal,
+            priority: body.priority ?? 1,
+            agent_id: body.agent_id || null,
+            assignee_type: body.assignee_type || 'agent',
+            space_id: body.space_id || null,
+            folder_id: body.folder_id || null,
+            project_id: body.project_id || null,
+            parent_task_id: body.parent_task_id || null,
+            start_date: body.start_date || null,
+            due_date: body.due_date || null,
+            progress: body.progress || 0,
+            sort_order: body.sort_order || 0,
+            custom_fields: body.custom_fields || {},
+            tags: body.tags || [],
         };
 
         const { error } = await db.from('tasks').insert(insertData);
@@ -70,25 +69,22 @@ export async function POST(request: Request) {
         if (error) {
             // FK violation on agent_id — retry with null
             if (error.message?.includes('agent_id') || error.message?.includes('foreign key')) {
-                console.warn('POST /api/tasks FK violation on agent_id, retrying with null');
                 insertData.agent_id = null;
                 const retry = await db.from('tasks').insert(insertData);
                 if (retry.error) throw new Error(retry.error.message);
                 return NextResponse.json({ id }, { status: 201 });
             }
-            console.error('POST /api/tasks Supabase error:', error.message, error.details);
             throw new Error(error.message);
         }
 
-        return NextResponse.json({ id }, { status: 201 });
+        return NextResponse.json({ id, task: insertData }, { status: 201 });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error('POST /api/tasks error:', msg);
         return NextResponse.json({ error: msg }, { status: 500 });
     }
 }
 
-// ─── PATCH update a task ─────────────────────────────────────────────────────
+// ─── PATCH update PM task ────────────────────────────────────────────────────
 
 export async function PATCH(request: Request) {
     const userId = await getAuthUserId();
@@ -99,14 +95,29 @@ export async function PATCH(request: Request) {
         if (!body.id) return NextResponse.json({ error: 'Missing task id' }, { status: 400 });
 
         const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+
+        // Standard fields
         if (body.title !== undefined) updates.title = body.title;
         if (body.description !== undefined) updates.description = body.description;
-        if (body.status !== undefined) updates.status = body.status;
-        if (body.agentId !== undefined) updates.agent_id = body.agentId;
-        if (body.priority !== undefined) {
-            updates.priority = LABEL_TO_PRIORITY[String(body.priority).toUpperCase()] ?? 0;
+        if (body.status !== undefined) {
+            updates.status = body.status;
+            if (body.status === 'DONE') updates.completed_at = new Date().toISOString();
         }
-        if (body.status === 'DONE') updates.completed_at = new Date().toISOString();
+        if (body.priority !== undefined) updates.priority = body.priority;
+        if (body.agent_id !== undefined) updates.agent_id = body.agent_id;
+        if (body.assignee_type !== undefined) updates.assignee_type = body.assignee_type;
+
+        // PM-specific fields
+        if (body.space_id !== undefined) updates.space_id = body.space_id;
+        if (body.folder_id !== undefined) updates.folder_id = body.folder_id;
+        if (body.project_id !== undefined) updates.project_id = body.project_id;
+        if (body.parent_task_id !== undefined) updates.parent_task_id = body.parent_task_id;
+        if (body.start_date !== undefined) updates.start_date = body.start_date;
+        if (body.due_date !== undefined) updates.due_date = body.due_date;
+        if (body.progress !== undefined) updates.progress = body.progress;
+        if (body.sort_order !== undefined) updates.sort_order = body.sort_order;
+        if (body.custom_fields !== undefined) updates.custom_fields = body.custom_fields;
+        if (body.tags !== undefined) updates.tags = body.tags;
 
         const { error } = await db
             .from('tasks')
@@ -118,12 +129,11 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ ok: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error('PATCH /api/tasks error:', msg);
         return NextResponse.json({ error: msg }, { status: 500 });
     }
 }
 
-// ─── DELETE a task ───────────────────────────────────────────────────────────
+// ─── DELETE a PM task ────────────────────────────────────────────────────────
 
 export async function DELETE(request: Request) {
     const userId = await getAuthUserId();
@@ -144,7 +154,6 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ ok: true });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error('DELETE /api/tasks error:', msg);
         return NextResponse.json({ error: msg }, { status: 500 });
     }
 }

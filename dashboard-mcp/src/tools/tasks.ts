@@ -198,14 +198,14 @@ const tools: ToolDefinition[] = [
         description:
             "Update the status of multiple tasks at once. Useful for batch operations.",
         inputSchema: {
-            task_ids: z.array(z.string()).describe("Array of task IDs to update"),
+            task_ids: z.string().describe("Comma-separated list of task IDs to update"),
             status: z
                 .enum(["PENDING", "IN_PROGRESS", "DONE", "FAILED"])
                 .describe("New status for all specified tasks"),
         },
         handler: async (params) => {
             const { supabase, userId } = db();
-            const ids = params.task_ids as string[];
+            const ids = (params.task_ids as string).split(',').map(id => id.trim());
             const now = new Date().toISOString();
             const updates: Record<string, unknown> = {
                 status: params.status,

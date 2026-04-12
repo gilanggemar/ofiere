@@ -1,6 +1,6 @@
 {
-  "name": "@hecate/dashboard-mcp",
-  "version": "1.0.0",
+  "name": "@hecate-ai/dashboard-mcp",
+  "version": "1.0.3",
   "description": "MCP server for full programmatic control of the Hecate dashboard",
   "type": "module",
   "main": "dist/index.js",

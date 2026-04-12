@@ -61,8 +61,8 @@ Add to your agent's MCP config (e.g. `mcp_settings.json`):
 {
   "mcpServers": {
     "hecate-dashboard": {
-      "command": "node",
-      "args": ["/path/to/Hecate/dashboard-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@hecate-ai/dashboard-mcp"],
       "env": {
         "SUPABASE_URL": "https://your-project.supabase.co",
         "SUPABASE_SERVICE_ROLE_KEY": "your-service-role-key",
