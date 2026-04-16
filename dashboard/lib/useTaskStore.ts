@@ -49,7 +49,7 @@ interface TaskState {
     hasFetched: boolean;
 
     // Actions
-    fetchTasks: () => Promise<void>;
+    fetchTasks: (force?: boolean) => Promise<void>;
     addTask: (task: Task) => void;
     updateTask: (id: string, updates: Partial<Task>) => void;
     updateTaskStatus: (id: string, status: TaskStatus) => void;
@@ -61,17 +61,22 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     tasks: [],
     hasFetched: false,
 
-    fetchTasks: async () => {
+    fetchTasks: async (force?: boolean) => {
         try {
             const res = await fetch('/api/tasks');
             if (!res.ok) return;
             const { tasks } = await res.json();
             if (Array.isArray(tasks)) {
-                // Merge: keep any in-memory tasks not in DB, add DB tasks
-                const current = get().tasks;
-                const dbIds = new Set(tasks.map((t: Task) => t.id));
-                const memOnly = current.filter(t => !dbIds.has(t.id));
-                set({ tasks: [...tasks, ...memOnly], hasFetched: true });
+                if (force) {
+                    // Full replacement — no stale mem-only ghosts
+                    set({ tasks, hasFetched: true });
+                } else {
+                    // Merge: keep any in-memory tasks not in DB, add DB tasks
+                    const current = get().tasks;
+                    const dbIds = new Set(tasks.map((t: Task) => t.id));
+                    const memOnly = current.filter(t => !dbIds.has(t.id));
+                    set({ tasks: [...tasks, ...memOnly], hasFetched: true });
+                }
             }
         } catch (e) {
             console.error('fetchTasks error:', e);
@@ -90,11 +95,23 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }),
 
     updateTask: (id, updates) => set((state) => {
+        // Build the payload to persist — include custom_fields-mapped keys
+        const payload: Record<string, any> = { id };
+        if (updates.title !== undefined) payload.title = updates.title;
+        if (updates.description !== undefined) payload.description = updates.description;
+        if (updates.status !== undefined) payload.status = updates.status;
+        if (updates.agentId !== undefined) payload.agentId = updates.agentId;
+        if (updates.priority !== undefined) payload.priority = updates.priority;
+        if (updates.executionPlan !== undefined) payload.executionPlan = updates.executionPlan;
+        if (updates.systemPrompt !== undefined) payload.systemPrompt = updates.systemPrompt;
+        if (updates.goals !== undefined) payload.goals = updates.goals;
+        if (updates.constraints !== undefined) payload.constraints = updates.constraints;
+
         // Persist to DB (fire-and-forget)
         fetch('/api/tasks', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, ...updates }),
+            body: JSON.stringify(payload),
         }).catch(e => console.error('updateTask persist error:', e));
         return {
             tasks: state.tasks.map(t => t.id === id
@@ -120,7 +137,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }),
 
     removeTask: (id) => set((state) => {
-        // Persist to DB (fire-and-forget)
+        // Persist to DB (fire-and-forget) — cascade-delete scheduler events too
         fetch(`/api/tasks?id=${id}`, { method: 'DELETE' })
             .catch(e => console.error('removeTask persist error:', e));
         return { tasks: state.tasks.filter(t => t.id !== id) };

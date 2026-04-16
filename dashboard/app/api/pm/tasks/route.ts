@@ -10,8 +10,21 @@ export async function GET(request: Request) {
 
     try {
         const { searchParams } = new URL(request.url);
+        const taskId = searchParams.get('id');
         const spaceId = searchParams.get('space_id');
         const folderId = searchParams.get('folder_id');
+
+        // Direct lookup by task ID (used by sync)
+        if (taskId) {
+            const { data, error } = await db
+                .from('tasks')
+                .select('*')
+                .eq('id', taskId)
+                .eq('user_id', userId)
+                .single();
+            if (error) throw new Error(error.message);
+            return NextResponse.json({ tasks: data ? [data] : [] });
+        }
 
         let query = db
             .from('tasks')
@@ -143,6 +156,18 @@ export async function DELETE(request: Request) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'Missing task id' }, { status: 400 });
+
+        // Cascade-delete any scheduler events referencing this task
+        await db.from('scheduler_events').delete().eq('task_id', id).then(() => {});
+
+        // Also delete subtasks first (they reference parent through parent_task_id)
+        const { data: subtasks } = await db.from('tasks').select('id').eq('parent_task_id', id).eq('user_id', userId);
+        if (subtasks && subtasks.length > 0) {
+            for (const sub of subtasks) {
+                await db.from('scheduler_events').delete().eq('task_id', sub.id).then(() => {});
+            }
+            await db.from('tasks').delete().in('id', subtasks.map((s: any) => s.id)).eq('user_id', userId);
+        }
 
         const { error } = await db
             .from('tasks')

@@ -39,21 +39,19 @@ export async function POST(request: Request) {
         const body = await request.json();
         const id = `appr-${Date.now()}`;
 
-        const insertData = {
-            id,
+        const insertData: Record<string, any> = {
             task_id: body.task_id,
             approver_type: body.approver_type || 'human',
             approver_name: body.approver_name || 'You',
             status: 'pending',
-            due_date: body.due_date || null,
-            comment: body.comment || null,
-            file_ids: body.file_ids || [],
         };
+        if (body.due_date) insertData.due_date = body.due_date;
+        if (body.comment) insertData.comment = body.comment;
 
-        const { error } = await db.from('pm_approvals').insert(insertData);
+        const { data, error } = await db.from('pm_approvals').insert(insertData).select().single();
         if (error) throw new Error(error.message);
 
-        return NextResponse.json({ id, approval: insertData }, { status: 201 });
+        return NextResponse.json({ id: data.id, approval: data }, { status: 201 });
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return NextResponse.json({ error: msg }, { status: 500 });

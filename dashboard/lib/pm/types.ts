@@ -238,6 +238,9 @@ export interface PMTaskCustomFields {
     goals?: PMTaskGoal[];
     constraints?: PMTaskConstraint[];
     assignees?: PMTaskAssignee[];
+    recurrence_days?: number | null; // null/0 = one-time, >0 = repeat every N days
+    recurrence_mode?: 'start_to_start' | 'end_to_start' | null; // SS = overlapping, ES = sequential (default ES)
+    bar_color?: string | null; // custom timeline bar color
     [key: string]: any;
 }
 

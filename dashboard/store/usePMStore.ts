@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useTaskStore } from '@/lib/useTaskStore';
 import type {
     PMSpace, PMFolder, PMTask, PMAgent, PMDependency,
     PMActivity, PMViewType, PMAssigneeType, PMTaskStatus
@@ -63,6 +64,8 @@ interface PMStore {
     updateTask: (id: string, updates: Partial<PMTask>) => Promise<void>;
     deleteTask: (id: string) => Promise<void>;
     linkTask: (taskId: string, overrides?: Partial<PMTask>) => Promise<void>;
+    saveTaskToOps: (taskId: string) => Promise<string | null>;
+    syncTaskToOps: (taskId: string) => Promise<void>;
 
     // Dependencies
     fetchDependencies: (taskId?: string) => Promise<void>;
@@ -260,10 +263,21 @@ export const usePMStore = create<PMStore>((set, get) => ({
 
     deleteFolder: async (id) => {
         try {
+            // Collect all descendant folder IDs recursively
+            const collectDescendantIds = (parentId: string): string[] => {
+                const children = get().folders.filter((f) => f.parent_folder_id === parentId);
+                const ids: string[] = [];
+                children.forEach((c) => {
+                    ids.push(c.id);
+                    ids.push(...collectDescendantIds(c.id));
+                });
+                return ids;
+            };
+            const allFolderIds = new Set([id, ...collectDescendantIds(id)]);
             await fetch(`/api/pm/folders?id=${id}`, { method: 'DELETE' });
             set((s) => ({
-                folders: s.folders.filter((f) => f.id !== id),
-                tasks: s.tasks.filter((t) => t.folder_id !== id),
+                folders: s.folders.filter((f) => !allFolderIds.has(f.id)),
+                tasks: s.tasks.filter((t) => !t.folder_id || !allFolderIds.has(t.folder_id)),
             }));
         } catch (e) {
             console.error('[PM] deleteFolder error:', e);
@@ -281,6 +295,10 @@ export const usePMStore = create<PMStore>((set, get) => ({
                 status: data.status || 'PENDING',
                 priority: data.priority ?? 1,
                 assignee_type: data.assignee_type || 'agent',
+                custom_fields: {
+                    ...(data.custom_fields || {}),
+                    pm_only: true,  // PM tasks are PM-only by default
+                },
             };
 
             const res = await fetch('/api/pm/tasks', {
@@ -347,6 +365,9 @@ export const usePMStore = create<PMStore>((set, get) => ({
 
     deleteTask: async (id) => {
         try {
+            // Also cascade-delete scheduler events referencing this task
+            await fetch(`/api/scheduler/events/by-task?task_id=${id}`, { method: 'DELETE' }).catch(() => {});
+
             await fetch(`/api/pm/tasks?id=${id}`, { method: 'DELETE' });
             // Remove the task and any subtasks (DB cascade handles this too)
             const subtaskIds = new Set<string>();
@@ -427,6 +448,142 @@ export const usePMStore = create<PMStore>((set, get) => ({
             }
         } catch (e) {
             console.error('[PM] linkTask error:', e);
+        }
+    },
+
+    // ── Save PM task to Task-Ops as a new copy ──
+    saveTaskToOps: async (taskId) => {
+        try {
+            const task = get().tasks.find(t => t.id === taskId);
+            if (!task) return null;
+
+            const cf = (task.custom_fields || {}) as any;
+            const assignees = cf.assignees || [];
+            if (assignees.length === 0 && !task.agent_id) return null;
+
+            const primaryAgentId = task.agent_id || (assignees.length > 0 ? assignees[0].id : null);
+            if (!primaryAgentId) return null;
+
+            // Create a new task row in the DB (copy) for task-ops
+            const newId = `task-ops-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const newTaskData = {
+                id: newId,
+                title: task.title,
+                description: task.description || null,
+                agent_id: primaryAgentId,
+                status: 'PENDING', // Always use PENDING for task-ops (PM statuses like 'NEW' don't map)
+                priority: task.priority ?? 1,
+                custom_fields: {
+                    execution_plan: cf.execution_plan || [],
+                    system_prompt: cf.system_prompt || '',
+                    goals: cf.goals || [],
+                    constraints: cf.constraints || [],
+                    // NOT pm_only — this is a task-ops task
+                },
+            };
+
+            const res = await fetch('/api/pm/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newTaskData),
+            });
+            const result = await res.json();
+
+            if (result.id) {
+                // Only store linked_task_id if this PM task doesn't already have one
+                // (Save always creates a new copy; it doesn't change the existing link)
+                const updatedCf = { ...cf };
+                if (!cf.linked_task_id) {
+                    updatedCf.linked_task_id = result.id;
+                    updatedCf.last_sync_snapshot = JSON.stringify({
+                        title: task.title,
+                        description: task.description,
+                        execution_plan: cf.execution_plan,
+                        system_prompt: cf.system_prompt,
+                        goals: cf.goals,
+                        constraints: cf.constraints,
+                    });
+                    await get().updateTask(taskId, { custom_fields: updatedCf });
+                }
+                // Force task-ops store to refetch so the new task appears immediately
+                try { useTaskStore.getState().fetchTasks(true); } catch {}
+                return result.id;
+            }
+            return null;
+        } catch (e) {
+            console.error('[PM] saveTaskToOps error:', e);
+            return null;
+        }
+    },
+
+    // ── Sync PM task modifications back to the linked task-ops task ──
+    syncTaskToOps: async (taskId) => {
+        try {
+            const task = get().tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const cf = (task.custom_fields || {}) as any;
+            const linkedTaskId = cf.linked_task_id;
+            if (!linkedTaskId) return;
+
+            // First, fetch the current custom_fields of the linked task to merge
+            let existingCf: any = {};
+            try {
+                const fetchRes = await fetch(`/api/pm/tasks?id=${linkedTaskId}`);
+                if (fetchRes.ok) {
+                    const fetchData = await fetchRes.json();
+                    const linkedTask = Array.isArray(fetchData.tasks)
+                        ? fetchData.tasks.find((t: any) => t.id === linkedTaskId)
+                        : null;
+                    if (linkedTask) {
+                        existingCf = linkedTask.custom_fields || {};
+                    }
+                }
+            } catch { /* proceed with empty merge base */ }
+
+            // Merge: preserve existing custom_fields, overlay PM data
+            const mergedCf = {
+                ...existingCf,
+                execution_plan: cf.execution_plan || [],
+                system_prompt: cf.system_prompt || '',
+                goals: cf.goals || [],
+                constraints: cf.constraints || [],
+            };
+            // Make sure we don't mark the linked task as pm_only
+            delete mergedCf.pm_only;
+            delete mergedCf.linked_task_id;
+            delete mergedCf.last_sync_snapshot;
+
+            // Push current PM data to the linked task-ops task
+            await fetch('/api/pm/tasks', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: linkedTaskId,
+                    title: task.title,
+                    description: task.description,
+                    custom_fields: mergedCf,
+                }),
+            });
+
+            // Update sync snapshot on the PM side
+            const updatedCf = {
+                ...cf,
+                last_sync_snapshot: JSON.stringify({
+                    title: task.title,
+                    description: task.description,
+                    execution_plan: cf.execution_plan,
+                    system_prompt: cf.system_prompt,
+                    goals: cf.goals,
+                    constraints: cf.constraints,
+                }),
+            };
+            await get().updateTask(taskId, { custom_fields: updatedCf });
+
+            // Force task-ops store to refetch so synced data appears immediately
+            try { useTaskStore.getState().fetchTasks(true); } catch {}
+        } catch (e) {
+            console.error('[PM] syncTaskToOps error:', e);
         }
     },
 
@@ -554,7 +711,7 @@ export const usePMStore = create<PMStore>((set, get) => ({
 
     // ── UI Setters ──
     setActiveSpace: (id) => set({ activeSpaceId: id, activeFolderId: null, activeProjectId: null, selectedTaskId: null }),
-    setActiveFolder: (id) => set({ activeFolderId: id, selectedTaskId: null }),
+    setActiveFolder: (id) => set({ activeFolderId: id, activeProjectId: null, selectedTaskId: null }),
     setActiveProject: (id) => set({ activeProjectId: id, activeFolderId: id, selectedTaskId: null }),
     setSelectedTask: (id) => set({ selectedTaskId: id }),
     setCurrentView: (view) => set({ currentView: view }),

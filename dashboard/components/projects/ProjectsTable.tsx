@@ -521,9 +521,39 @@ export function ProjectsTable() {
                 // Move folder inside target folder
                 await updateFolder(dragItem.id, { parent_folder_id: dropTarget.id });
             } else if (dropTarget.type === 'folder') {
-                // Move before/after a folder => same parent
+                // Move before/after a folder => reorder within same parent
                 const parentId = targetFolder?.parent_folder_id || null;
-                await updateFolder(dragItem.id, { parent_folder_id: parentId });
+                const draggedFolder = allFolders.find(f => f.id === dragItem.id);
+
+                // Check if same parent (reorder) vs different parent (move)
+                if (draggedFolder?.parent_folder_id === parentId) {
+                    // Same parent — reorder siblings by updating sort_order
+                    const siblings = allFolders
+                        .filter(f => f.parent_folder_id === parentId && f.space_id === (draggedFolder?.space_id || ''))
+                        .sort((a, b) => a.sort_order - b.sort_order);
+
+                    const orderedIds = siblings.map(f => f.id);
+                    const fromIdx = orderedIds.indexOf(dragItem.id);
+                    const toIdx = orderedIds.indexOf(dropTarget.id);
+
+                    if (fromIdx >= 0 && toIdx >= 0) {
+                        orderedIds.splice(fromIdx, 1);
+                        const insertIdx = dropTarget.position === 'before' ? orderedIds.indexOf(dropTarget.id) : orderedIds.indexOf(dropTarget.id) + 1;
+                        orderedIds.splice(insertIdx, 0, dragItem.id);
+
+                        // Update sort_order for all reordered siblings
+                        for (let i = 0; i < orderedIds.length; i++) {
+                            const fId = orderedIds[i];
+                            const folder = siblings.find(f => f.id === fId);
+                            if (folder && folder.sort_order !== i) {
+                                await updateFolder(fId, { sort_order: i });
+                            }
+                        }
+                    }
+                } else {
+                    // Different parent — move to new parent
+                    await updateFolder(dragItem.id, { parent_folder_id: parentId });
+                }
             }
         } else if (dragItem.type === 'task') {
             // Moving a task
@@ -540,9 +570,38 @@ export function ProjectsTable() {
                     await updateTask(dragItem.id, { folder_id: null, parent_task_id: null });
                 }
             } else if (dropTarget.type === 'task') {
-                // Drop before/after a task => move to same folder as target task
-                const folderId = targetTask?.folder_id || null;
-                await updateTask(dragItem.id, { folder_id: folderId, parent_task_id: targetTask?.parent_task_id || null });
+                // Drop before/after a task => reorder within same folder/parent
+                const draggedTask = allTasks.find(t => t.id === dragItem.id);
+                const sameFolderId = targetTask?.folder_id || null;
+                const sameParentTaskId = targetTask?.parent_task_id || null;
+
+                if (draggedTask?.folder_id === sameFolderId && draggedTask?.parent_task_id === sameParentTaskId) {
+                    // Same container — reorder by updating sort_order
+                    const siblings = allTasks
+                        .filter(t => t.folder_id === sameFolderId && t.parent_task_id === sameParentTaskId)
+                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+                    const orderedIds = siblings.map(t => t.id);
+                    const fromIdx = orderedIds.indexOf(dragItem.id);
+                    const toIdx = orderedIds.indexOf(dropTarget.id);
+
+                    if (fromIdx >= 0 && toIdx >= 0) {
+                        orderedIds.splice(fromIdx, 1);
+                        const insertIdx = dropTarget.position === 'before' ? orderedIds.indexOf(dropTarget.id) : orderedIds.indexOf(dropTarget.id) + 1;
+                        orderedIds.splice(insertIdx, 0, dragItem.id);
+
+                        for (let i = 0; i < orderedIds.length; i++) {
+                            const tId = orderedIds[i];
+                            const task = siblings.find(t => t.id === tId);
+                            if (task && (task.sort_order ?? 0) !== i) {
+                                await updateTask(tId, { sort_order: i });
+                            }
+                        }
+                    }
+                } else {
+                    // Different container — move task
+                    await updateTask(dragItem.id, { folder_id: sameFolderId, parent_task_id: sameParentTaskId });
+                }
             }
         }
 
@@ -1159,7 +1218,7 @@ export function ProjectsTable() {
     };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full" style={{ isolation: 'isolate' }}>
             {/* ── Toolbar ── */}
             <div className="flex items-center gap-2 px-3 py-1.5">
                 {/* Search */}
@@ -1367,7 +1426,7 @@ export function ProjectsTable() {
             </div>
 
             {/* ── Column Headers ── */}
-            <div className="flex items-center border-b border-border/30 py-2" style={{ paddingLeft: '8px' }}>
+            <div className="flex items-center border-b border-border/30 py-2 sticky top-0 z-20" style={{ paddingLeft: '8px', background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)' }}>
                 {/* Row # header / Reorder toggle */}
                 <div className="w-8 shrink-0 flex items-center justify-center">
                     <button

@@ -22,19 +22,36 @@ export async function GET() {
         if (error) throw new Error(error.message);
 
         // Map DB rows to frontend Task shape
-        const tasks = (data || []).map((row: any) => ({
-            id: row.id,
-            title: row.title,
-            description: row.description || undefined,
-            agentId: row.agent_id || '',
-            status: row.status || 'PENDING',
-            priority: PRIORITY_TO_LABEL[row.priority] || 'LOW',
-            spaceId: row.space_id || null,
-            logs: [],
-            toolCalls: [],
-            updatedAt: new Date(row.updated_at).getTime(),
-            timestamp: new Date(row.updated_at).toLocaleTimeString(),
-        }));
+        // Filter out PM-only tasks (they shouldn't appear in task-ops)
+        // Also exclude tasks that belong to PM hierarchy (have space_id)
+        const tasks = (data || [])
+            .filter((row: any) => {
+                const cf = row.custom_fields;
+                if (cf && typeof cf === 'object' && cf.pm_only === true) return false;
+                if (row.space_id) return false; // PM hierarchy task
+                return true;
+            })
+            .map((row: any) => {
+                const cf = row.custom_fields;
+                return {
+                    id: row.id,
+                    title: row.title,
+                    description: row.description || undefined,
+                    agentId: row.agent_id || '',
+                    status: row.status || 'PENDING',
+                    priority: PRIORITY_TO_LABEL[row.priority] || 'LOW',
+                    spaceId: row.space_id || null,
+                    logs: [],
+                    toolCalls: [],
+                    updatedAt: new Date(row.updated_at).getTime(),
+                    timestamp: new Date(row.updated_at).toLocaleTimeString(),
+                    // Include task-ops extended fields for sync
+                    executionPlan: cf?.execution_plan || [],
+                    systemPrompt: cf?.system_prompt || '',
+                    goals: cf?.goals || [],
+                    constraints: cf?.constraints || [],
+                };
+            });
 
         return NextResponse.json({ tasks });
     } catch (error: unknown) {
@@ -64,6 +81,14 @@ export async function POST(request: Request) {
             status: body.status || 'PENDING',
             priority: priorityVal,
         };
+
+        // Build custom_fields from task-ops fields
+        const cf: Record<string, any> = {};
+        if (body.executionPlan && Array.isArray(body.executionPlan) && body.executionPlan.length > 0) cf.execution_plan = body.executionPlan;
+        if (body.systemPrompt) cf.system_prompt = body.systemPrompt;
+        if (body.goals && Array.isArray(body.goals) && body.goals.length > 0) cf.goals = body.goals;
+        if (body.constraints && Array.isArray(body.constraints) && body.constraints.length > 0) cf.constraints = body.constraints;
+        if (Object.keys(cf).length > 0) insertData.custom_fields = cf;
 
         const { error } = await db.from('tasks').insert(insertData);
 
@@ -108,6 +133,22 @@ export async function PATCH(request: Request) {
         }
         if (body.status === 'DONE') updates.completed_at = new Date().toISOString();
 
+        // Support custom_fields updates (execution plan, system prompt, goals, constraints)
+        if (body.custom_fields !== undefined) {
+            updates.custom_fields = body.custom_fields;
+        } else if (body.executionPlan !== undefined || body.systemPrompt !== undefined || body.goals !== undefined || body.constraints !== undefined) {
+            // Also support flat field updates from task-ops UI
+            // Fetch existing custom_fields first to merge
+            const { data: existing } = await db.from('tasks').select('custom_fields').eq('id', body.id).eq('user_id', userId).single();
+            const existingCf = (existing?.custom_fields || {}) as Record<string, any>;
+            const mergedCf = { ...existingCf };
+            if (body.executionPlan !== undefined) mergedCf.execution_plan = body.executionPlan;
+            if (body.systemPrompt !== undefined) mergedCf.system_prompt = body.systemPrompt;
+            if (body.goals !== undefined) mergedCf.goals = body.goals;
+            if (body.constraints !== undefined) mergedCf.constraints = body.constraints;
+            updates.custom_fields = mergedCf;
+        }
+
         const { error } = await db
             .from('tasks')
             .update(updates)
@@ -133,6 +174,9 @@ export async function DELETE(request: Request) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'Missing task id' }, { status: 400 });
+
+        // Cascade-delete any scheduler events referencing this task
+        await db.from('scheduler_events').delete().eq('task_id', id).then(() => {});
 
         const { error } = await db
             .from('tasks')

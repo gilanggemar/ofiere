@@ -65,7 +65,10 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", class
     };
 
     const selectDay = (day: number) => {
-        const d = new Date(viewYear, viewMonth, day, 12, 0, 0);
+        // Preserve existing time if a date was already set, otherwise default to 00:00
+        const existingHour = selectedDate ? selectedDate.getHours() : 0;
+        const existingMin = selectedDate ? selectedDate.getMinutes() : 0;
+        const d = new Date(viewYear, viewMonth, day, existingHour, existingMin, 0);
         onChange(d.toISOString());
         setOpen(false);
     };
