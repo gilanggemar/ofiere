@@ -8,6 +8,7 @@ import { getSupabase } from "./src/supabase.js";
 import { registerTools } from "./src/tools.js";
 import { getSystemPrompt } from "./src/prompt.js";
 import { registerCli } from "./src/cli.js";
+import { seedAgentCache } from "./src/agent-resolver.js";
 
 export default definePluginEntry({
   id: "hecate",
@@ -41,6 +42,19 @@ export default definePluginEntry({
       return;
     }
 
+    // ── Pre-seed agent cache if HECATE_AGENT_ID is set (legacy mode) ──────
+    if (config.agentId) {
+      // Try to extract the calling agent's name from OpenClaw context
+      const callerName =
+        (api as any)?.agentContext?.accountId ||
+        (api as any)?.agentContext?.name ||
+        (api as any)?.currentAgent?.accountId ||
+        "";
+      if (callerName) {
+        seedAgentCache(callerName, config.userId, config.agentId);
+      }
+    }
+
     // ── State for system prompt injection ──────────────────────────────────
     const promptState = {
       toolCount: 0,
@@ -64,8 +78,9 @@ export default definePluginEntry({
       registerTools(api, supabase, config);
       promptState.toolCount = 5;
       promptState.ready = true;
+      const agentLabel = config.agentId || "auto-detect";
       api.logger.info(
-        `[hecate] Ready — 5 tools registered (agent: ${config.agentId})`,
+        `[hecate] Ready — 5 tools registered (agent: ${agentLabel})`,
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

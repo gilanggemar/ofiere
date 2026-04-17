@@ -13,26 +13,55 @@ import { createClient } from "@supabase/supabase-js";
 
 // ── Config paths ─────────────────────────────────────────────────────────────
 
-const CONFIG_DIR = path.join(os.homedir(), ".openclaw");
-const CONFIG_PATH = path.join(CONFIG_DIR, "openclaw.json");
+/** Auto-detect OpenClaw home for env file */
+function getOpenClawHome(): string {
+  if (fs.existsSync("/data/.openclaw")) return "/data/.openclaw";
+  return path.join(os.homedir(), ".openclaw");
+}
 
-function readConfig(): Record<string, unknown> {
+function getEnvFile(): string {
+  return path.join(getOpenClawHome(), ".env");
+}
+
+/** Read env vars from the .env file */
+function readEnvFile(): Record<string, string> {
+  const envPath = getEnvFile();
+  const result: Record<string, string> = {};
   try {
-    return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
-  } catch {
-    return {};
-  }
+    const content = fs.readFileSync(envPath, "utf-8");
+    for (const line of content.split("\n")) {
+      const match = line.match(/^([^#=]+)=(.*)$/);
+      if (match) {
+        result[match[1].trim()] = match[2].trim();
+      }
+    }
+  } catch { /* file doesn't exist yet */ }
+  return result;
 }
 
-function writeConfig(config: Record<string, unknown>): void {
-  if (!fs.existsSync(CONFIG_DIR)) {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+/** Append or update env vars in the .env file (idempotent) */
+function setEnvVars(vars: Record<string, string>): void {
+  const envPath = getEnvFile();
+  const dir = path.dirname(envPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
-}
 
-function ask(rl: readline.Interface, question: string): Promise<string> {
-  return new Promise((resolve) => rl.question(question, resolve));
+  let content = "";
+  try {
+    content = fs.readFileSync(envPath, "utf-8");
+  } catch { /* file doesn't exist yet */ }
+
+  for (const [key, value] of Object.entries(vars)) {
+    const regex = new RegExp(`^${key}=.*$`, "m");
+    if (regex.test(content)) {
+      content = content.replace(regex, `${key}=${value}`);
+    } else {
+      content = content.trimEnd() + `\n${key}=${value}`;
+    }
+  }
+
+  fs.writeFileSync(envPath, content.trim() + "\n");
 }
 
 function getPluginConfig(): {
@@ -42,18 +71,18 @@ function getPluginConfig(): {
   agentId?: string;
   enabled?: boolean;
 } {
-  const config = readConfig();
-  const plugins = config.plugins as Record<string, unknown> | undefined;
-  const entries = plugins?.entries as Record<string, unknown> | undefined;
-  const entry = entries?.hecate as Record<string, unknown> | undefined;
-  const cfg = entry?.config as Record<string, unknown> | undefined;
+  const env = readEnvFile();
   return {
-    supabaseUrl: (cfg?.supabaseUrl as string) || process.env.HECATE_SUPABASE_URL || undefined,
-    serviceRoleKey: (cfg?.serviceRoleKey as string) || process.env.HECATE_SERVICE_ROLE_KEY || undefined,
-    userId: (cfg?.userId as string) || process.env.HECATE_USER_ID || undefined,
-    agentId: (cfg?.agentId as string) || process.env.HECATE_AGENT_ID || undefined,
-    enabled: (entry?.enabled as boolean) ?? true,
+    supabaseUrl: process.env.HECATE_SUPABASE_URL || env.HECATE_SUPABASE_URL || undefined,
+    serviceRoleKey: process.env.HECATE_SERVICE_ROLE_KEY || env.HECATE_SERVICE_ROLE_KEY || undefined,
+    userId: process.env.HECATE_USER_ID || env.HECATE_USER_ID || undefined,
+    agentId: process.env.HECATE_AGENT_ID || env.HECATE_AGENT_ID || undefined,
+    enabled: true,
   };
+}
+
+function ask(rl: readline.Interface, question: string): Promise<string> {
+  return new Promise((resolve) => rl.question(question, resolve));
 }
 
 // ── CLI Registration ─────────────────────────────────────────────────────────
@@ -69,24 +98,21 @@ export function registerCli(api: any): void {
       // ── setup ──────────────────────────────────────────────────────────
       cmd
         .command("setup")
-        .description("Configure Hecate PM connection")
+        .description("Configure Hecate PM connection (writes to .env, never touches openclaw.json)")
         .option("--supabase-url <url>", "Supabase project URL")
         .option("--service-key <key>", "Supabase service role key")
         .option("--user-id <id>", "Hecate user UUID")
-        .option("--agent-id <id>", "This agent's ID (e.g. 'sasha')")
         .action(async (opts: {
           supabaseUrl?: string;
           serviceKey?: string;
           userId?: string;
-          agentId?: string;
         }) => {
           let supabaseUrl = opts.supabaseUrl?.trim();
           let serviceKey = opts.serviceKey?.trim();
           let userId = opts.userId?.trim();
-          let agentId = opts.agentId?.trim();
 
           // Interactive mode if any field is missing
-          if (!supabaseUrl || !serviceKey || !userId || !agentId) {
+          if (!supabaseUrl || !serviceKey || !userId) {
             console.log("\nHecate PM Setup\n");
             const rl = readline.createInterface({
               input: process.stdin,
@@ -102,46 +128,27 @@ export function registerCli(api: any): void {
             if (!userId) {
               userId = (await ask(rl, "User ID (UUID): ")).trim();
             }
-            if (!agentId) {
-              agentId = (await ask(rl, "Agent ID (e.g. sasha): ")).trim();
-            }
 
             rl.close();
           }
 
-          if (!supabaseUrl || !serviceKey || !userId || !agentId) {
+          if (!supabaseUrl || !serviceKey || !userId) {
             console.log("\nAll fields are required. Setup cancelled.");
             return;
           }
 
-          // Save to config under plugins.entries.hecate.config
-          const config = readConfig();
-          if (!config.plugins) config.plugins = {};
-          const plugins = config.plugins as Record<string, unknown>;
-          if (!plugins.entries) plugins.entries = {};
-          const entries = plugins.entries as Record<string, unknown>;
-          entries.hecate = {
-            ...(entries.hecate as Record<string, unknown> ?? {}),
-            enabled: true,
-            config: { supabaseUrl, serviceRoleKey: serviceKey, userId, agentId },
-          };
+          // Write to .env file (NEVER touches openclaw.json)
+          setEnvVars({
+            HECATE_SUPABASE_URL: supabaseUrl,
+            HECATE_SERVICE_ROLE_KEY: serviceKey,
+            HECATE_USER_ID: userId,
+          });
 
-          // Enable Hecate tools via tools.allow (so optional tools are accessible)
-          if (!config.tools) config.tools = {};
-          const tools = config.tools as Record<string, unknown>;
-          if (!Array.isArray(tools.allow)) tools.allow = [];
-          const allow = tools.allow as string[];
-          // Adding plugin id to tools.allow enables all its optional tools
-          if (!allow.includes("hecate")) allow.push("hecate");
-
-          writeConfig(config);
-
-          console.log("\nDone. Saved to ~/.openclaw/openclaw.json");
+          const envFile = getEnvFile();
+          console.log(`\nDone. Saved to ${envFile}`);
           console.log(`  Supabase URL: ${supabaseUrl}`);
           console.log(`  User ID:      ${userId}`);
-          console.log(`  Agent ID:     ${agentId}`);
-          console.log("  Plugin:       enabled");
-          console.log("  Tools:        allowed");
+          console.log(`  Plugin:       enabled (global — all agents)`);
           console.log("\nRestart to apply: openclaw gateway restart\n");
         });
 
@@ -165,8 +172,8 @@ export function registerCli(api: any): void {
           console.log(`  Supabase URL:    ${cfg.supabaseUrl}`);
           console.log(`  Service Key:     ${maskedKey}`);
           console.log(`  User ID:         ${cfg.userId || "not set"}`);
-          console.log(`  Agent ID:        ${cfg.agentId || "not set"}`);
-          console.log(`  Enabled:         ${cfg.enabled}`);
+          console.log(`  Agent ID:        ${cfg.agentId || "(auto-detect — all agents)"}`);
+          console.log(`  Config Source:    ${getEnvFile()}`);
           console.log("");
         });
 
@@ -184,7 +191,7 @@ export function registerCli(api: any): void {
           }
 
           console.log(`  Supabase URL:  ${cfg.supabaseUrl}`);
-          console.log(`  Agent ID:      ${cfg.agentId}`);
+          console.log(`  Agent Mode:    ${cfg.agentId ? `fixed (${cfg.agentId})` : "auto-detect (all agents)"}`);
           console.log("\n  Testing connection...");
 
           try {
@@ -205,7 +212,7 @@ export function registerCli(api: any): void {
 
             console.log(`  ✓ Found ${(data || []).length} agents\n`);
             for (const agent of data || []) {
-              const marker = agent.id === cfg.agentId ? " ← YOU" : "";
+              const marker = agent.id === cfg.agentId ? " ← PINNED" : "";
               console.log(`    ${agent.id} — ${agent.name} (${agent.status})${marker}`);
             }
 

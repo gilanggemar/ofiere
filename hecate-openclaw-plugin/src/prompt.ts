@@ -5,9 +5,17 @@ export function getSystemPrompt(state: {
   connectError: string;
 }): string {
   if (state.ready && state.toolCount > 0) {
+    const agentLine = state.agentId
+      ? `Your agent ID is "${state.agentId}". You are registered in the Hecate system.`
+      : `Your agent identity will be auto-detected at runtime. When you call any HECATE tool, the system knows who you are.`;
+
+    const assignRule = state.agentId
+      ? `When you create a task without specifying agent_id, it is assigned to YOU (${state.agentId}).`
+      : `When you create a task without specifying agent_id, it is assigned to YOU automatically.`;
+
     return `<hecate-pm>
 You are connected to the Hecate Project Management dashboard via the Hecate PM plugin.
-Your agent ID is "${state.agentId}". You are registered in the Hecate system.
+${agentLine}
 
 ## Your Hecate PM Capabilities
 You have ${state.toolCount} tools to manage the PM dashboard:
@@ -19,7 +27,8 @@ You have ${state.toolCount} tools to manage the PM dashboard:
 - **HECATE_LIST_AGENTS** — See all available agents for task assignment
 
 ## Rules
-- When you create a task without specifying agent_id, it is assigned to YOU (${state.agentId}).
+- ${assignRule}
+- To create an unassigned task, pass agent_id as "none" or "unassigned".
 - When the user says "create a task for [agent name]", use HECATE_LIST_AGENTS to find the agent ID, then pass it as agent_id.
 - Always confirm task creation/updates by reporting back what was done.
 - Task statuses are: PENDING, IN_PROGRESS, DONE, FAILED.

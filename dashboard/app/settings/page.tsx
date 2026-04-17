@@ -30,6 +30,7 @@ import {
   Loader2,
   Settings2,
   Sparkles,
+  Puzzle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import ConnectionProfiles from "@/components/settings/ConnectionProfiles";
+import { PluginInstall } from "@/components/settings/PluginInstall";
 import { AddModelDialog } from "@/components/settings/AddModelDialog";
 import { ConfigureModelDialog } from "@/components/settings/ConfigureModelDialog";
 import { useRouter } from "next/navigation";
@@ -269,6 +271,16 @@ export default function SettingsPage() {
               <Server className="w-3.5 h-3.5" /> Connection Profiles
             </h2>
             <ConnectionProfiles />
+          </section>
+
+          <Separator className="bg-border" />
+
+          {/* Plugin Integration */}
+          <section className="space-y-4">
+            <h2 className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <Puzzle className="w-3.5 h-3.5" /> Plugin Integration
+            </h2>
+            <PluginInstall />
           </section>
 
           <Separator className="bg-border" />

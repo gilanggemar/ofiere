@@ -8,6 +8,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HecateConfig } from "./types.js";
+import { resolveAgentId } from "./agent-resolver.js";
 
 // ─── Tool result shape (matches OpenClaw SDK) ────────────────────────────────
 
@@ -27,6 +28,23 @@ function err(message: string): ToolResult {
   };
 }
 
+// ─── Helper: extract calling agent's accountId from OpenClaw context ─────────
+
+function getCallingAgentName(api: any): string {
+  // OpenClaw passes agent context in various ways — try all known paths
+  try {
+    return (
+      api?.agentContext?.accountId ||
+      api?.agentContext?.name ||
+      api?.currentAgent?.accountId ||
+      api?.currentAgent?.name ||
+      ""
+    );
+  } catch {
+    return "";
+  }
+}
+
 // ─── Tool Registration ───────────────────────────────────────────────────────
 
 export function registerTools(
@@ -35,7 +53,29 @@ export function registerTools(
   config: HecateConfig,
 ): void {
   const userId = config.userId;
-  const selfAgentId = config.agentId;
+  const fallbackAgentId = config.agentId; // May be empty — that's fine
+
+  /**
+   * Resolve the agent ID for the calling agent.
+   * Priority: explicit param > runtime context > env var fallback
+   */
+  async function resolveAgent(explicitId?: string): Promise<string | null> {
+    // 1. Explicit agent_id passed by the LLM (e.g. "create task for Daisy")
+    if (explicitId && explicitId.trim()) return explicitId.trim();
+
+    // 2. Runtime: read calling agent's name from OpenClaw context
+    const callerName = getCallingAgentName(api);
+    if (callerName) {
+      try {
+        return await resolveAgentId(callerName, userId, supabase);
+      } catch {
+        // Fall through to env var
+      }
+    }
+
+    // 3. Env var fallback (HECATE_AGENT_ID — legacy single-agent mode)
+    return fallbackAgentId || null;
+  }
 
   // ── HECATE_LIST_TASKS — Required (read-only, no side effects) ────────
 
@@ -95,6 +135,7 @@ export function registerTools(
       description:
         "Create a new task in the Hecate PM dashboard. " +
         "If agent_id is not provided, the task is automatically assigned to you (the calling agent). " +
+        "Pass agent_id as 'none' or 'unassigned' to create an unassigned task. " +
         "The task will appear in the dashboard immediately via real-time sync.",
       parameters: {
         type: "object",
@@ -106,6 +147,7 @@ export function registerTools(
             type: "string",
             description:
               "Agent ID to assign the task to. If omitted, assigns to yourself. " +
+              "Pass 'none' or 'unassigned' to create a task with no assignee. " +
               "Use HECATE_LIST_AGENTS to see available agents.",
           },
           status: {
@@ -134,7 +176,14 @@ export function registerTools(
 
           const id = `task-${Date.now()}`;
           const now = new Date().toISOString();
-          const assignee = (params.agent_id as string) || selfAgentId || null;
+
+          // Handle explicit "none"/"unassigned"
+          const rawAgentId = params.agent_id as string | undefined;
+          const isUnassigned =
+            rawAgentId &&
+            ["none", "unassigned", "null", ""].includes(rawAgentId.toLowerCase().trim());
+
+          const assignee = isUnassigned ? null : await resolveAgent(rawAgentId);
 
           const insertData: Record<string, unknown> = {
             id,
@@ -321,6 +370,15 @@ export function registerTools(
     },
     async execute(_id: string, _params: Record<string, unknown>) {
       try {
+        // Resolve calling agent's ID for the "your_agent_id" hint
+        const callerName = getCallingAgentName(api);
+        let yourAgentId = fallbackAgentId || "";
+        if (callerName && !yourAgentId) {
+          try {
+            yourAgentId = await resolveAgentId(callerName, userId, supabase);
+          } catch { /* ignore */ }
+        }
+
         const { data, error } = await supabase
           .from("agents")
           .select("id, name, codename, role, status")
@@ -331,7 +389,7 @@ export function registerTools(
         return ok({
           agents: data || [],
           count: (data || []).length,
-          your_agent_id: selfAgentId,
+          your_agent_id: yourAgentId,
         });
       } catch (e) {
         return err(e instanceof Error ? e.message : String(e));
@@ -339,5 +397,7 @@ export function registerTools(
     },
   });
 
-  api.logger.info(`[hecate] 5 tools registered (agent: ${selfAgentId})`);
+  const callerName = getCallingAgentName(api);
+  const agentLabel = fallbackAgentId || callerName || "auto-detect";
+  api.logger.info(`[hecate] 5 tools registered (agent: ${agentLabel})`);
 }

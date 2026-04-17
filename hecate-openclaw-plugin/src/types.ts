@@ -3,5 +3,6 @@ export interface HecateConfig {
   supabaseUrl: string;
   serviceRoleKey: string;
   userId: string;
+  /** Optional — if not set, agent identity is resolved at runtime from OpenClaw context */
   agentId: string;
 }
