@@ -4,7 +4,7 @@
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { parseOfiereConfig } from "./src/config.js";
 import { getSupabase } from "./src/supabase.js";
-import { registerTools } from "./src/tools.js";
+import { registerTools, probeApiForAgentName } from "./src/tools.js";
 import { getSystemPrompt } from "./src/prompt.js";
 import { registerCli } from "./src/cli.js";
 import { seedAgentCache } from "./src/agent-resolver.js";
@@ -70,6 +70,10 @@ const ofierePlugin = {
     // ── Connect to Supabase and register tools ────────────────────────────
     try {
       const supabase = getSupabase(config.supabaseUrl, config.serviceRoleKey);
+
+      // Probe the api object for any agent identity info (for debugging + fallback)
+      probeApiForAgentName(api, api.logger);
+
       registerTools(api, supabase, config);
       promptState.toolCount = 5;
       promptState.ready = true;

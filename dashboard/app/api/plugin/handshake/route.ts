@@ -5,7 +5,7 @@ import { getAuthUserId } from '@/lib/auth';
  * POST /api/plugin/handshake
  *
  * Returns personalized install commands with embedded credentials.
- * The user copies them and runs in their VPS terminal — same pattern as Composio.
+ * Uses the install.sh script from GitHub so it always pulls the latest plugin code.
  */
 export async function POST(request: Request) {
     const userId = await getAuthUserId();
@@ -18,31 +18,23 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Server missing Supabase credentials' }, { status: 500 });
     }
 
+    // Build the one-liner install command that uses the install.sh script from GitHub
+    const installCmd = [
+        `curl -sSL https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/install.sh | bash -s --`,
+        `--supabase-url "${SUPABASE_URL}"`,
+        `--service-key "${SERVICE_ROLE_KEY}"`,
+        `--user-id "${userId}"`,
+    ].join(' \\\n  ');
+
     return NextResponse.json({
         success: true,
         steps: [
             {
-                label: 'Install Ofiere OpenClaw plugin',
-                command: 'openclaw plugins install ofiere-openclaw-plugin',
+                label: 'Install / Update Ofiere plugin (downloads latest from GitHub)',
+                command: installCmd,
             },
             {
-                label: 'Set Supabase URL',
-                command: `openclaw config set plugins.entries.ofiere.config.supabaseUrl "${SUPABASE_URL}"`,
-            },
-            {
-                label: 'Set Service Role Key',
-                command: `openclaw config set plugins.entries.ofiere.config.serviceRoleKey "${SERVICE_ROLE_KEY}"`,
-            },
-            {
-                label: 'Set User ID',
-                command: `openclaw config set plugins.entries.ofiere.config.userId "${userId}"`,
-            },
-            {
-                label: 'Allow Ofiere tools',
-                command: 'openclaw config set tools.allow composio ofiere',
-            },
-            {
-                label: 'Restart OpenClaw',
+                label: 'Restart OpenClaw gateway',
                 command: 'openclaw gateway restart',
             },
         ],

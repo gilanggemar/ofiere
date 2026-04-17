@@ -30,19 +30,74 @@ function err(message: string): ToolResult {
 
 // ─── Helper: extract calling agent's accountId from OpenClaw context ─────────
 
+// Module-level: set once at registration time from index.ts
+let _registrationAgentName = "";
+export function setRegistrationAgentName(name: string) {
+  if (name && !_registrationAgentName) _registrationAgentName = name;
+}
+
 function getCallingAgentName(api: any): string {
-  // OpenClaw passes agent context in various ways — try all known paths
+  // OpenClaw passes agent context in various ways — try ALL known paths
   try {
-    return (
-      api?.agentContext?.accountId ||
-      api?.agentContext?.name ||
-      api?.currentAgent?.accountId ||
-      api?.currentAgent?.name ||
-      ""
-    );
+    const candidates = [
+      api?.agentContext?.accountId,
+      api?.agentContext?.name,
+      api?.agentContext?.id,
+      api?.currentAgent?.accountId,
+      api?.currentAgent?.name,
+      api?.currentAgent?.id,
+      api?.agent?.accountId,
+      api?.agent?.name,
+      api?.agent?.id,
+      api?.agentId,
+      api?.agentName,
+      api?.accountId,
+      api?.name,
+      api?.id,
+      api?.metadata?.agentId,
+      api?.metadata?.accountId,
+      api?.metadata?.agentName,
+      api?.context?.agentId,
+      api?.context?.accountId,
+      api?.context?.agent?.name,
+    ];
+    for (const c of candidates) {
+      if (typeof c === "string" && c.trim()) return c.trim();
+    }
   } catch {
-    return "";
+    // ignore
   }
+  return "";
+}
+
+/**
+ * Probe the API object for any agent identity info. Called once at registration.
+ * Logs ALL available keys for debugging.
+ */
+export function probeApiForAgentName(api: any, logger?: any): string {
+  // Direct detection
+  const name = getCallingAgentName(api);
+  if (name) {
+    logger?.info?.(`[ofiere] Detected agent from API: "${name}"`);
+    setRegistrationAgentName(name);
+    return name;
+  }
+
+  // Log all top-level keys for future debugging
+  try {
+    const keys = Object.keys(api || {});
+    logger?.debug?.(`[ofiere] API object keys: ${JSON.stringify(keys)}`);
+    // Check if any key looks like it contains agent info
+    for (const key of keys) {
+      const val = api[key];
+      if (typeof val === "string" && val.length > 0 && val.length < 50) {
+        logger?.debug?.(`[ofiere] API.${key} = "${val}"`);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return "";
 }
 
 // ─── Tool Registration ───────────────────────────────────────────────────────
@@ -57,7 +112,7 @@ export function registerTools(
 
   /**
    * Resolve the agent ID for the calling agent.
-   * Priority: explicit param > runtime context > env var fallback
+   * Priority: explicit param > runtime context > registration-time detection > env var > DB fallback
    */
   async function resolveAgent(explicitId?: string): Promise<string | null> {
     // 1. Explicit agent_id passed by the LLM (e.g. "ivy", "daisy", or a UUID)
@@ -81,12 +136,37 @@ export function registerTools(
       try {
         return await resolveAgentId(callerName, userId, supabase);
       } catch {
-        // Fall through to env var
+        // Fall through
       }
     }
 
-    // 3. Env var fallback (OFIERE_AGENT_ID — legacy single-agent mode)
-    return fallbackAgentId || null;
+    // 3. Registration-time detection (set when plugin was loaded)
+    if (_registrationAgentName) {
+      try {
+        return await resolveAgentId(_registrationAgentName, userId, supabase);
+      } catch {
+        // Fall through
+      }
+    }
+
+    // 4. Env var fallback (OFIERE_AGENT_ID — legacy single-agent mode)
+    if (fallbackAgentId) return fallbackAgentId;
+
+    // 5. Nuclear fallback: query the FIRST agent for this user
+    try {
+      const { data } = await supabase
+        .from("agents")
+        .select("id")
+        .eq("user_id", userId)
+        .order("name", { ascending: true })
+        .limit(1)
+        .single();
+      if (data?.id) return data.id;
+    } catch {
+      // ignore
+    }
+
+    return null;
   }
 
   // ── OFIERE_LIST_TASKS — Required (read-only, no side effects) ────────
