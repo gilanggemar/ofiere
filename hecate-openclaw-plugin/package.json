@@ -1,0 +1,28 @@
+{
+  "name": "@hecate-ai/openclaw-plugin",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "OpenClaw plugin for Hecate PM — manage tasks, agents, and projects from your agent",
+  "keywords": ["openclaw", "hecate", "project-management", "agents", "plugin"],
+  "homepage": "https://github.com/gilanggemar/Hecate",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gilanggemar/Hecate.git"
+  },
+  "license": "MIT",
+  "files": [
+    "index.ts",
+    "src",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
+    "zod": "^3.25.11"
+  }
+}

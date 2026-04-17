@@ -1,0 +1,54 @@
+{
+  "id": "hecate",
+  "name": "Hecate PM",
+  "description": "Manage Hecate PM tasks, agents, and projects directly from the agent. The agent can create tasks, update progress, list work items, and more — all synced to the Hecate dashboard in real time.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Enable or disable the Hecate PM integration"
+      },
+      "supabaseUrl": {
+        "type": "string",
+        "description": "Your Supabase project URL (e.g. https://xxx.supabase.co)"
+      },
+      "serviceRoleKey": {
+        "type": "string",
+        "description": "Supabase service role key for full database access"
+      },
+      "userId": {
+        "type": "string",
+        "description": "Your Hecate user ID (UUID from auth.users)"
+      },
+      "agentId": {
+        "type": "string",
+        "description": "This agent's ID in Hecate (e.g. 'sasha', 'ivy', 'thalia')"
+      }
+    }
+  },
+  "uiHints": {
+    "enabled": {
+      "label": "Enable Hecate PM",
+      "help": "Enable or disable the Hecate PM integration"
+    },
+    "supabaseUrl": {
+      "label": "Supabase URL",
+      "help": "Your Supabase project URL"
+    },
+    "serviceRoleKey": {
+      "label": "Service Role Key",
+      "help": "Supabase service role key (keep secret!)",
+      "sensitive": true
+    },
+    "userId": {
+      "label": "User ID",
+      "help": "Your user UUID from the Hecate dashboard"
+    },
+    "agentId": {
+      "label": "Agent ID",
+      "help": "This agent's ID (e.g. 'sasha')"
+    }
+  }
+}
