@@ -53,7 +53,3 @@ export function parseHecateConfig(value: unknown): HecateConfig {
     agentId,
   });
 }
-
-export const hecatePluginConfigSchema = {
-  parse: parseHecateConfig,
-};

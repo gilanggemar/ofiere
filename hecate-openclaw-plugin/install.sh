@@ -109,8 +109,8 @@ openclaw hecate setup \
           }
         };
         if (!c.tools) c.tools = {};
-        if (!Array.isArray(c.tools.alsoAllow)) c.tools.alsoAllow = [];
-        if (!c.tools.alsoAllow.includes('hecate')) c.tools.alsoAllow.push('hecate');
+        if (!Array.isArray(c.tools.allow)) c.tools.allow = [];
+        if (!c.tools.allow.includes('hecate')) c.tools.allow.push('hecate');
         fs.mkdirSync(require('path').dirname(p), {recursive:true});
         fs.writeFileSync(p, JSON.stringify(c, null, 2));
       "
