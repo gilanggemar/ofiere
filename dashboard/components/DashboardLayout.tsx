@@ -43,7 +43,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="hecate-app-shell">
                 <TopRightUserMenu />
                 <ShellFrame>
-                    <main className={`hecate-content-viewport${pathname === '/dashboard/constellation' || pathname === '/dashboard/scheduler' || pathname === '/dashboard/projects' || pathname?.match(/^\/dashboard\/workflows\/[^/]+\/builder/) ? ' hecate-content-fullbleed' : ''}`}>
+                    <main className={`hecate-content-viewport${pathname === '/dashboard/constellation' || pathname === '/dashboard/projects' || pathname?.match(/^\/dashboard\/workflows\/[^/]+\/builder/) ? ' hecate-content-fullbleed' : ''}`}>
                         <ClientShell>
                             <Suspense fallback={
                                 <div className="flex items-center justify-center h-full w-full">

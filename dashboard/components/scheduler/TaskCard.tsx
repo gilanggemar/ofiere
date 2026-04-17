@@ -67,7 +67,7 @@ export function TaskCard({
                 'transition-all duration-150 cursor-grab active:cursor-grabbing select-none',
                 isCompact
                     ? 'rounded-lg p-2 mb-1.5'
-                    : 'rounded-md p-3 mb-2',
+                    : 'rounded-md p-2 mb-1.5',
                 isDragging && 'opacity-50 border-dashed',
             )}
             style={{
@@ -124,42 +124,35 @@ export function TaskCard({
                     )}
                 </div>
             ) : (
-                /* ─── Full mode (tray) ─── */
-                <div className="flex flex-col gap-1 min-w-0">
-                    <div className="flex items-start justify-between gap-1.5">
-                        <span className="hecate-body font-medium line-clamp-2 flex-1">
+                /* ─── Full mode (tray) — compact ─── */
+                <div className="flex flex-col gap-0.5 min-w-0">
+                    <div className="flex items-center justify-between gap-1.5">
+                        <span className="hecate-body-sm font-medium truncate flex-1">
                             {title}
                         </span>
                         {status === 'running' && (
-                            <span className="w-2.5 h-2.5 rounded-full bg-[var(--status-online)] animate-pulse shrink-0 mt-1" />
+                            <span className="w-2 h-2 rounded-full bg-[var(--status-online)] animate-pulse shrink-0" />
                         )}
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                         <div
-                            className="w-4 h-4 rounded-full shrink-0"
+                            className="w-3 h-3 rounded-full shrink-0"
                             style={{ backgroundColor: agentColor }}
                         />
-                        <span className="hecate-body-sm opacity-70">{agentName}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
+                        <span className="hecate-caption opacity-70 truncate">{agentName}</span>
+                        <span className="text-white/20">·</span>
                         <span
-                            className="w-2 h-2 rounded-full shrink-0"
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
                             style={{ backgroundColor: priorityColor }}
                         />
                         <span className="hecate-caption capitalize">{priority}</span>
                         {isRecurring && (
-                            <span className="flex items-center gap-0.5 hecate-caption">
-                                <Repeat className="w-3 h-3 opacity-50" />
-                                {getRecurrenceLabel(recurrenceType)}
+                            <span className="flex items-center gap-0.5 hecate-caption opacity-50">
+                                <Repeat className="w-2.5 h-2.5" />
                             </span>
                         )}
                     </div>
-
-                    {description && (
-                        <p className="hecate-caption truncate mt-0.5">{description}</p>
-                    )}
                 </div>
             )}
         </motion.div>

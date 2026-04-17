@@ -26,7 +26,6 @@ export const NAV_GROUPS: Record<NavGroup, NavRoute[]> = {
         { id: "projects", title: "Projects", link: "/dashboard/projects", iconName: "FolderKanban" },
         { id: "task-ops", title: "Task-Ops", link: "/agents", iconName: "ClipboardList" },
         { id: "workflows", title: "Workflows", link: "/dashboard/workflows", iconName: "GitBranch" },
-        { id: "scheduler", title: "Scheduler", link: "/dashboard/scheduler", iconName: "Calendar" },
         { id: "notifications", title: "Notifications", link: "/dashboard/notifications", iconName: "Bell" },
     ],
     INTELLIGENCE: [

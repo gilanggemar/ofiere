@@ -4,7 +4,7 @@ import { usePMStore } from "@/store/usePMStore";
 import type { PMViewType } from "@/lib/pm/types";
 import { Button } from "@/components/ui/button";
 import {
-    Table2, Kanban, GanttChart, Plus, Activity, FileText, BarChart3,
+    Table2, CalendarDays, GanttChart, Plus, Activity, FileText, BarChart3,
     MoreHorizontal, Pencil, Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ import { CreateNewModal } from "./CreateNewModal";
 
 const VIEWS: { id: PMViewType; icon: typeof Table2; label: string }[] = [
     { id: 'table', icon: Table2, label: 'Table' },
-    { id: 'board', icon: Kanban, label: 'Board' },
+    { id: 'scheduler', icon: CalendarDays, label: 'Scheduler' },
     { id: 'timeline', icon: GanttChart, label: 'Timeline' },
     { id: 'stream', icon: Activity, label: 'Stream' },
     { id: 'analytics', icon: BarChart3, label: 'Analytics' },

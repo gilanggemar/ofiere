@@ -188,7 +188,7 @@ export interface PMFile {
 
 // ── View Types ──
 
-export type PMViewType = 'table' | 'board' | 'timeline' | 'files' | 'analytics' | 'stream';
+export type PMViewType = 'table' | 'scheduler' | 'timeline' | 'files' | 'analytics' | 'stream';
 
 // ── Sidebar Node (for hierarchical tree rendering) ──
 

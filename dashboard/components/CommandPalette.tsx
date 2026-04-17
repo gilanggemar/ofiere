@@ -48,7 +48,7 @@ export function CommandPalette() {
         { id: "summit", label: "The Summit", icon: Users, action: () => navigate("/dashboard/summit"), group: "Navigate", keywords: "summit deliberation" },
         { id: "observability", label: "Observability", icon: Eye, action: () => navigate("/dashboard/observability"), group: "Navigate", keywords: "metrics cost tokens" },
         { id: "audit", label: "Audit Trail", icon: ClipboardList, action: () => navigate("/dashboard/audit"), group: "Navigate", keywords: "audit logs actions" },
-        { id: "scheduler", label: "Scheduler", icon: Calendar, action: () => navigate("/dashboard/scheduler"), group: "Navigate", keywords: "cron schedule webhook" },
+        { id: "scheduler", label: "Scheduler", icon: Calendar, action: () => navigate("/dashboard/projects"), group: "Navigate", keywords: "cron schedule webhook" },
         { id: "workflows", label: "Workflows", icon: GitBranch, action: () => navigate("/dashboard/workflows"), group: "Navigate", keywords: "workflow pipeline" },
         { id: "knowledge", label: "Knowledge", icon: Brain, action: () => navigate("/dashboard/knowledge"), group: "Navigate", keywords: "memory knowledge" },
         { id: "notifications", label: "Notifications", icon: Bell, action: () => navigate("/dashboard/notifications"), group: "Navigate", keywords: "alerts notifications" },

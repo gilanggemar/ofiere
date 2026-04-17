@@ -5,7 +5,7 @@ import { usePMStore } from "@/store/usePMStore";
 import { ProjectsSidebar } from "@/components/projects/ProjectsSidebar";
 import { ProjectsHeader } from "@/components/projects/ProjectsHeader";
 import { ProjectsTable } from "@/components/projects/ProjectsTable";
-import { ProjectsBoard } from "@/components/projects/ProjectsBoard";
+import { ProjectScheduler } from "@/components/projects/ProjectScheduler";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectStream } from "@/components/projects/ProjectStream";
 import { ProjectAnalytics } from "@/components/projects/ProjectAnalytics";
@@ -57,10 +57,10 @@ export default function ProjectsPage() {
                     ) : (
                         <>
                             <ProjectsHeader />
-                            {activeSpaceId && <ProjectStatsBar />}
-                            <div className="flex-1 overflow-auto">
+                            {activeSpaceId && currentView !== 'scheduler' && <ProjectStatsBar />}
+                            <div className={`flex-1 ${currentView === 'scheduler' ? 'overflow-hidden flex flex-col' : 'overflow-auto'}`}>
                                 {currentView === 'table' && <ProjectsTable />}
-                                {currentView === 'board' && <ProjectsBoard />}
+                                {currentView === 'scheduler' && <ProjectScheduler />}
                                 {currentView === 'timeline' && <ProjectTimeline />}
                                 {currentView === 'stream' && <ProjectStream />}
                                 {currentView === 'analytics' && <ProjectAnalytics />}

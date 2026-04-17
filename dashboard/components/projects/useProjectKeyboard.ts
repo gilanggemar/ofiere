@@ -45,7 +45,7 @@ export function useProjectKeyboard() {
 
             const VIEW_KEYS: Record<string, PMViewType> = {
                 '1': 'table',
-                '2': 'board',
+                '2': 'scheduler',
                 '3': 'timeline',
                 '4': 'stream',
                 '5': 'analytics',
