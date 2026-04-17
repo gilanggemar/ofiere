@@ -1,5 +1,5 @@
 // ============================================================
-// Hecate Workflow V2 — Workflow Executor
+// Ofiere Workflow V2 — Workflow Executor
 // Walks the node graph, executes each step, yields events.
 // ============================================================
 

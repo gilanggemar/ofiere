@@ -2,20 +2,20 @@
 
 import { cn } from "@/lib/utils";
 
-interface HecateSkeletonProps {
+interface OfiereSkeletonProps {
     variant: 'card' | 'metric' | 'text' | 'avatar' | 'chart';
     className?: string;
 }
 
-export function HecateSkeleton({ variant, className }: HecateSkeletonProps) {
+export function OfiereSkeleton({ variant, className }: OfiereSkeletonProps) {
     const baseClasses = "relative overflow-hidden bg-muted/20 border border-border/10";
 
     // The specific shimmering styles are defined inline or via Tailwind
-    // We'll use a custom animation matching Hecate's visual language
+    // We'll use a custom animation matching Ofiere's visual language
     const shimmerStyle = {
         background: "linear-gradient(90deg, oklch(0.18 0.005 0 / 0.5) 0%, oklch(0.25 0.01 0 / 0.5) 50%, oklch(0.18 0.005 0 / 0.5) 100%)",
         backgroundSize: "200% 100%",
-        animation: "hecate-shimmer 1.5s ease-in-out infinite"
+        animation: "ofiere-shimmer 1.5s ease-in-out infinite"
     };
 
     let variantClasses = "";

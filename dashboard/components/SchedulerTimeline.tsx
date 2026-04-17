@@ -186,13 +186,13 @@ export default function SchedulerTimeline({
         <div className={`rounded-md border border-border bg-card p-4 ${className}`}>
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
-                <h3 className="hecate-section text-muted-foreground">Schedule Timeline</h3>
-                <span className="hecate-caption">{date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                <h3 className="ofiere-section text-muted-foreground">Schedule Timeline</h3>
+                <span className="ofiere-caption">{date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
             </div>
 
             {tasks.length === 0 ? (
                 <div className="py-12 border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center">
-                    <span className="text-muted-foreground hecate-body-sm">No scheduled tasks</span>
+                    <span className="text-muted-foreground ofiere-body-sm">No scheduled tasks</span>
                 </div>
             ) : (
                 <div className="relative">
@@ -208,7 +208,7 @@ export default function SchedulerTimeline({
                                             className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]"
                                             style={{ backgroundColor: getAgentColor(agentId), color: getAgentColor(agentId) }}
                                         />
-                                        <span className={`hecate-body-sm truncate ${occurrences.length === 0 ? 'opacity-30' : ''}`}>
+                                        <span className={`ofiere-body-sm truncate ${occurrences.length === 0 ? 'opacity-30' : ''}`}>
                                             {getAgentName(agentId)}
                                         </span>
                                     </div>

@@ -1,14 +1,14 @@
 {
-  "id": "hecate",
-  "name": "Hecate PM",
-  "description": "Manage Hecate PM tasks, agents, and projects directly from the agent. The agent can create tasks, update progress, list work items, and more — all synced to the Hecate dashboard in real time.",
+  "id": "ofiere",
+  "name": "Ofiere PM",
+  "description": "Manage Ofiere PM tasks, agents, and projects directly from the agent. The agent can create tasks, update progress, list work items, and more — all synced to the Ofiere dashboard in real time.",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
       "enabled": {
         "type": "boolean",
-        "description": "Enable or disable the Hecate PM integration"
+        "description": "Enable or disable the Ofiere PM integration"
       },
       "supabaseUrl": {
         "type": "string",
@@ -20,18 +20,18 @@
       },
       "userId": {
         "type": "string",
-        "description": "Your Hecate user ID (UUID from auth.users)"
+        "description": "Your Ofiere user ID (UUID from auth.users)"
       },
       "agentId": {
         "type": "string",
-        "description": "This agent's ID in Hecate (e.g. 'sasha', 'ivy', 'thalia')"
+        "description": "This agent's ID in Ofiere (e.g. 'sasha', 'ivy', 'thalia')"
       }
     }
   },
   "uiHints": {
     "enabled": {
-      "label": "Enable Hecate PM",
-      "help": "Enable or disable the Hecate PM integration"
+      "label": "Enable Ofiere PM",
+      "help": "Enable or disable the Ofiere PM integration"
     },
     "supabaseUrl": {
       "label": "Supabase URL",
@@ -44,7 +44,7 @@
     },
     "userId": {
       "label": "User ID",
-      "help": "Your user UUID from the Hecate dashboard"
+      "help": "Your user UUID from the Ofiere dashboard"
     },
     "agentId": {
       "label": "Agent ID",

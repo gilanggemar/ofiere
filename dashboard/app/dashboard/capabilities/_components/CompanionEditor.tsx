@@ -237,7 +237,7 @@ export function CompanionEditor({ agentId, agentName }: CompanionEditorProps) {
                     <div>
                         <h3 className="text-sm font-semibold text-white/90">COMPANION.md</h3>
                         <p className="text-[10px] font-mono text-white/35 mt-0.5">
-                            Structured character profile — Stored in Hecate
+                            Structured character profile — Stored in Ofiere
                         </p>
                     </div>
                 </div>
@@ -418,7 +418,7 @@ export function CompanionEditor({ agentId, agentName }: CompanionEditorProps) {
                 <div className="flex items-start gap-2 rounded-sm border border-pink-500/15 bg-pink-500/5 px-3 py-2">
                     <Heart className="size-3 shrink-0 text-pink-400/50 mt-0.5" />
                     <p className="text-[10px] font-mono text-pink-400/50 leading-relaxed">
-                        Companion profiles are stored in your Hecate dashboard (Supabase).
+                        Companion profiles are stored in your Ofiere dashboard (Supabase).
                         When companion mode is active, this profile replaces all OpenClaw agent files.
                     </p>
                 </div>

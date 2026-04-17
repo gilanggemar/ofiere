@@ -17,7 +17,7 @@ type ResponseCallback = {
 export interface OpenClawGatewayConfig {
   url: string;                    // e.g., "ws://127.0.0.1:18789"
   token?: string;                 // OPENCLAW_GATEWAY_TOKEN value (if set)
-  clientId?: string;              // default: "hecate-dashboard"
+  clientId?: string;              // default: "ofiere-dashboard"
   clientVersion?: string;         // default: "0.1.0"
   reconnectDelayMs?: number;      // default: 3000
   requestTimeoutMs?: number;      // default: 30000
@@ -38,7 +38,7 @@ export class OpenClawGateway {
     this.config = {
       url: config.url,
       token: config.token || "",
-      clientId: config.clientId || "hecate-dashboard",
+      clientId: config.clientId || "ofiere-dashboard",
       clientVersion: config.clientVersion || "0.1.0",
       reconnectDelayMs: config.reconnectDelayMs || 3000,
       requestTimeoutMs: config.requestTimeoutMs || 30000,
@@ -301,8 +301,8 @@ export class OpenClawGateway {
 
   // --- Device Identity Crypto Helpers ---
 
-  private static readonly DEVICE_KEY_STORAGE = "hecate_openclaw_device_keypair";
-  private static readonly DEVICE_ID_STORAGE = "hecate_openclaw_device_id";
+  private static readonly DEVICE_KEY_STORAGE = "ofiere_openclaw_device_keypair";
+  private static readonly DEVICE_ID_STORAGE = "ofiere_openclaw_device_id";
 
   private static base64urlEncode(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);
@@ -483,7 +483,7 @@ export class OpenClawGateway {
           token,
         },
         locale: "en-US",
-        userAgent: "hecate-dashboard/0.1.0",
+        userAgent: "ofiere-dashboard/0.1.0",
       },
     };
 

@@ -1,4 +1,4 @@
-// ─── HECATE GRAPH — V2 Node Style Constants ──────────────────────────────
+// ─── OFIERE GRAPH — V2 Node Style Constants ──────────────────────────────
 
 import React from 'react';
 import type { WfNodeExecStatus } from '@/store/useWorkflowBuilderStore';

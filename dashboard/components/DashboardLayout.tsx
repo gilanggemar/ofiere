@@ -40,17 +40,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <TooltipProvider>
-            <div className="hecate-app-shell">
+            <div className="ofiere-app-shell">
                 <TopRightUserMenu />
                 <ShellFrame>
-                    <main className={`hecate-content-viewport${pathname === '/dashboard/constellation' || pathname === '/dashboard/projects' || pathname?.match(/^\/dashboard\/workflows\/[^/]+\/builder/) ? ' hecate-content-fullbleed' : ''}`}>
+                    <main className={`ofiere-content-viewport${pathname === '/dashboard/constellation' || pathname === '/dashboard/projects' || pathname?.match(/^\/dashboard\/workflows\/[^/]+\/builder/) ? ' ofiere-content-fullbleed' : ''}`}>
                         <ClientShell>
                             <Suspense fallback={
                                 <div className="flex items-center justify-center h-full w-full">
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, opacity: 0.5 }}>
                                         <svg width="48" height="48" viewBox="0 0 80 80" fill="none">
                                             <circle cx="40" cy="40" r="34" stroke="oklch(0.75 0.18 55 / 0.12)" strokeWidth="1" />
-                                            <circle cx="40" cy="40" r="34" stroke="oklch(0.78 0.18 55)" strokeWidth="2" strokeLinecap="round" strokeDasharray="50 164" style={{ transformOrigin: '40px 40px', animation: 'hecate-orbit-cw 2.4s linear infinite' }} />
+                                            <circle cx="40" cy="40" r="34" stroke="oklch(0.78 0.18 55)" strokeWidth="2" strokeLinecap="round" strokeDasharray="50 164" style={{ transformOrigin: '40px 40px', animation: 'ofiere-orbit-cw 2.4s linear infinite' }} />
                                             <circle cx="40" cy="40" r="3" fill="oklch(0.78 0.18 55)" />
                                         </svg>
                                     </div>

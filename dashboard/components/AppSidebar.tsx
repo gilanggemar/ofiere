@@ -52,7 +52,7 @@ export function AppSidebar() {
             <div className="p-6 border-b border-border">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-semibold text-foreground tracking-tight">HECATE</h1>
+                        <h1 className="text-xl font-semibold text-foreground tracking-tight">OFIERE</h1>
                         <p className="text-xs text-muted-foreground mt-1">Agent Orchestration</p>
                     </div>
                     <div className={cn("w-2 h-2 rounded-full", isConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" : "bg-zinc-600")} />

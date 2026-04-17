@@ -219,11 +219,11 @@ export const ChatHistorySidebar = ({
         )} style={{ background: 'transparent' }}>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--hecate-border-default)' }}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--ofiere-border-default)' }}>
                 <div className="flex items-center gap-2">
                     <span
                         className="text-[11px] font-semibold uppercase tracking-[0.1em]"
-                        style={{ color: 'var(--hecate-text-tertiary)' }}
+                        style={{ color: 'var(--ofiere-text-tertiary)' }}
                     >
                         Sessions
                         {!showAllAgents && <span className="lowercase"> — {agentName}</span>}
@@ -236,8 +236,8 @@ export const ChatHistorySidebar = ({
                         aria-label="Toggle agent scope"
                     >
                         {showAllAgents
-                            ? <Grid3X3 className="w-3 h-3" style={{ color: 'var(--hecate-cyan)' }} />
-                            : <LayoutList className="w-3 h-3" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                            ? <Grid3X3 className="w-3 h-3" style={{ color: 'var(--ofiere-cyan)' }} />
+                            : <LayoutList className="w-3 h-3" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                         }
                     </button>
                 </div>
@@ -258,21 +258,21 @@ export const ChatHistorySidebar = ({
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-all"
                     style={{
                         background: 'transparent',
-                        border: '1px solid var(--hecate-border-subtle)',
+                        border: '1px solid var(--ofiere-border-subtle)',
                     }}
                 >
-                    <Search className="w-3 h-3 shrink-0" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                    <Search className="w-3 h-3 shrink-0" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Search conversations…"
                         className="flex-1 text-[11px] bg-transparent border-none outline-none"
-                        style={{ color: 'var(--hecate-text-primary)' }}
+                        style={{ color: 'var(--ofiere-text-primary)' }}
                     />
                     {searchQuery && (
                         <button onClick={() => setSearchQuery('')} className="p-0.5 rounded hover:bg-white/5">
-                            <X className="w-2.5 h-2.5" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                            <X className="w-2.5 h-2.5" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                         </button>
                     )}
                 </div>
@@ -284,12 +284,12 @@ export const ChatHistorySidebar = ({
                 <div className="p-2 space-y-0.5 w-full overflow-hidden">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
-                            <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                            <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                         </div>
                     ) : filteredConversations.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                            <MessageSquare className="w-6 h-6 mb-2" style={{ color: 'var(--hecate-text-ghost)' }} />
-                            <span className="text-[11px]" style={{ color: 'var(--hecate-text-tertiary)' }}>
+                            <MessageSquare className="w-6 h-6 mb-2" style={{ color: 'var(--ofiere-text-ghost)' }} />
+                            <span className="text-[11px]" style={{ color: 'var(--ofiere-text-tertiary)' }}>
                                 {searchQuery ? 'No matching conversations' : 'No conversations yet'}
                             </span>
                         </div>
@@ -337,14 +337,14 @@ export const ChatHistorySidebar = ({
                                                 className="p-1.5 rounded-md transition-all hover:bg-white/[0.07]"
                                                 title="Rename"
                                             >
-                                                <Pencil className="w-3 h-3" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                                                <Pencil className="w-3 h-3" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                                             </button>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); handleDelete(convo.id); }}
                                                 className="p-1.5 rounded-md transition-all hover:bg-white/[0.07]"
                                                 title="Delete"
                                             >
-                                                <Trash2 className="w-3 h-3" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                                                <Trash2 className="w-3 h-3" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                                             </button>
                                         </div>
 
@@ -362,7 +362,7 @@ export const ChatHistorySidebar = ({
                                                     onBlur={() => handleRenameSubmit(convo.id)}
                                                     className="text-[12px] font-medium w-full flex-1 min-w-0 pr-14 focus:outline-none"
                                                     style={{ 
-                                                        color: 'var(--hecate-text-primary)',
+                                                        color: 'var(--ofiere-text-primary)',
                                                         background: 'transparent',
                                                         border: 'none',
                                                         outline: 'none',
@@ -379,7 +379,7 @@ export const ChatHistorySidebar = ({
                                                 <div 
                                                     className="text-[12px] font-medium flex-1 min-w-0 flex items-center gap-1.5"
                                                     style={{ 
-                                                        color: 'var(--hecate-text-primary)',
+                                                        color: 'var(--ofiere-text-primary)',
                                                         whiteSpace: 'nowrap',
                                                     }}
                                                 >
@@ -387,9 +387,9 @@ export const ChatHistorySidebar = ({
                                                     {convo.mode === 'companion' ? (
                                                         <Heart className="w-3 h-3 shrink-0 text-pink-400 fill-pink-400/30" />
                                                     ) : (
-                                                        <Bot className="w-3 h-3 shrink-0" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                                                        <Bot className="w-3 h-3 shrink-0" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                                                     )}
-                                                    {convo.pinned && <Pin className="w-2.5 h-2.5 inline" style={{ color: 'var(--hecate-cyan)' }} />}
+                                                    {convo.pinned && <Pin className="w-2.5 h-2.5 inline" style={{ color: 'var(--ofiere-cyan)' }} />}
                                                     <span className="truncate">{displayTitle}</span>
                                                 </div>
                                                 );
@@ -398,7 +398,7 @@ export const ChatHistorySidebar = ({
                                             {!isEditing && (
                                                 <div
                                                     className="text-[9px] shrink-0 mt-0.5 transition-opacity group-hover:opacity-0"
-                                                    style={{ color: 'var(--hecate-text-ghost)' }}
+                                                    style={{ color: 'var(--ofiere-text-ghost)' }}
                                                 >
                                                     {formatDate(convo.updated_at)}
                                                 </div>
@@ -407,7 +407,7 @@ export const ChatHistorySidebar = ({
 
                                         {/* Agent name in all-agents mode */}
                                         {showAllAgents && (
-                                            <span className="text-[9px]" style={{ color: 'var(--hecate-text-tertiary)' }}>
+                                            <span className="text-[9px]" style={{ color: 'var(--ofiere-text-tertiary)' }}>
                                                 {getAgentName(convo.agent_id)}
                                             </span>
                                         )}
@@ -429,8 +429,8 @@ export const ChatHistorySidebar = ({
                     style={{
                         left: contextMenu.x,
                         top: contextMenu.y,
-                        background: 'var(--hecate-surface-3)',
-                        border: '1px solid var(--hecate-border-default)',
+                        background: 'var(--ofiere-surface-3)',
+                        border: '1px solid var(--ofiere-border-default)',
                         minWidth: 160,
                     }}
                 >
@@ -482,9 +482,9 @@ export const ChatHistorySidebar = ({
                             onClick={item.action}
                             className="flex items-center gap-2.5 w-full px-3 py-2 text-[11px] text-left transition-colors"
                             style={{
-                                color: (item as any).danger ? 'var(--hecate-danger)' : 'var(--hecate-text-secondary)',
+                                color: (item as any).danger ? 'var(--ofiere-danger)' : 'var(--ofiere-text-secondary)',
                             }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--hecate-surface-4)')}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--ofiere-surface-4)')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                         >
                             {item.icon}
@@ -504,17 +504,17 @@ export const ChatHistorySidebar = ({
                     <div
                         className="mx-4 p-4 rounded-md w-full max-w-[240px]"
                         style={{
-                            background: 'var(--hecate-surface-3)',
-                            border: '1px solid var(--hecate-border-default)',
+                            background: 'var(--ofiere-surface-3)',
+                            border: '1px solid var(--ofiere-border-default)',
                             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                         }}
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="flex items-center gap-2 mb-2">
-                            <Trash2 className="w-4 h-4" style={{ color: 'var(--hecate-danger)' }} />
-                            <span className="text-[13px] font-semibold" style={{ color: 'var(--hecate-text-primary)' }}>Delete conversation?</span>
+                            <Trash2 className="w-4 h-4" style={{ color: 'var(--ofiere-danger)' }} />
+                            <span className="text-[13px] font-semibold" style={{ color: 'var(--ofiere-text-primary)' }}>Delete conversation?</span>
                         </div>
-                        <p className="text-[11px] mb-4" style={{ color: 'var(--hecate-text-secondary)', lineHeight: '1.5' }}>
+                        <p className="text-[11px] mb-4" style={{ color: 'var(--ofiere-text-secondary)', lineHeight: '1.5' }}>
                             This removes the stored chat history from the database. The agent session itself will not be affected.
                         </p>
                         <div className="flex gap-2 justify-end">
@@ -522,12 +522,12 @@ export const ChatHistorySidebar = ({
                                 onClick={() => setDeleteConfirmId(null)}
                                 className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
                                 style={{
-                                    color: 'var(--hecate-text-secondary)',
-                                    background: 'var(--hecate-surface-4)',
-                                    border: '1px solid var(--hecate-border-subtle)',
+                                    color: 'var(--ofiere-text-secondary)',
+                                    background: 'var(--ofiere-surface-4)',
+                                    border: '1px solid var(--ofiere-border-subtle)',
                                 }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--hecate-border-default)')}
-                                onMouseLeave={e => (e.currentTarget.style.background = 'var(--hecate-surface-4)')}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--ofiere-border-default)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'var(--ofiere-surface-4)')}
                             >
                                 Cancel
                             </button>
@@ -536,8 +536,8 @@ export const ChatHistorySidebar = ({
                                 className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
                                 style={{
                                     color: '#fff',
-                                    background: 'var(--hecate-danger)',
-                                    border: '1px solid var(--hecate-danger)',
+                                    background: 'var(--ofiere-danger)',
+                                    border: '1px solid var(--ofiere-danger)',
                                 }}
                                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
                                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
@@ -550,8 +550,8 @@ export const ChatHistorySidebar = ({
             )}
 
             {/* Footer */}
-            <div className="px-4 py-2" style={{ borderTop: '1px solid var(--hecate-border-subtle)' }}>
-                <span className="text-[9px] uppercase tracking-[0.08em]" style={{ color: 'var(--hecate-text-ghost)' }}>
+            <div className="px-4 py-2" style={{ borderTop: '1px solid var(--ofiere-border-subtle)' }}>
+                <span className="text-[9px] uppercase tracking-[0.08em]" style={{ color: 'var(--ofiere-text-ghost)' }}>
                     {filteredConversations.length} conversation{filteredConversations.length !== 1 ? 's' : ''}
                 </span>
             </div>

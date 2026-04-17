@@ -186,7 +186,7 @@ export function HeroCropModal({ file, agentId, onClose, onApply }: HeroCropModal
     return (
         <Dialog open modal={false}>
             <DialogContent 
-                className="max-w-[95vw] sm:max-w-[95vw] w-fit max-h-[85vh] flex flex-col hecate-glass-3 border-white/10 text-white overflow-hidden"
+                className="max-w-[95vw] sm:max-w-[95vw] w-fit max-h-[85vh] flex flex-col ofiere-glass-3 border-white/10 text-white overflow-hidden"
                 onInteractOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
             >

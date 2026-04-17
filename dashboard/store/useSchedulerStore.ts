@@ -224,7 +224,7 @@ export const useSchedulerStore = create<SchedulerState>((set, get) => ({
                     : `Scheduled Task: ${event.title}`;
 
                 await gw.request('cron.add', {
-                    name: createdId || 'hecate-scheduled-task',
+                    name: createdId || 'ofiere-scheduled-task',
                     sessionTarget: `agent:${event.agentId}:cron-${createdId || Date.now()}`,
                     payload: { kind: 'agentTurn', message: prompt },
                     schedule: { cron: cronExpr }

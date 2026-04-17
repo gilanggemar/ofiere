@@ -1,7 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 
-const ENV_FILE = 'D:\\AI Model\\2-Antigravity Projects\\NERV.OS\\dashboard\\.env.local'; // NOTE: Update path after repo folder rename
+const ENV_FILE = 'D:\\AI Model\\2-Antigravity Projects\\hecate\\dashboard\\.env.local'; // Update path if repo folder is renamed
 const TOKEN = process.env.VERCEL_TOKEN || 'YOUR_VERCEL_TOKEN';
 const PROJECT_ID = 'prj_umn49c6DV16uFohzLD0dYzJ0An71';
 const TEAM_ID = 'team_DFjfeII8DrgoxxKvET5Teksh';

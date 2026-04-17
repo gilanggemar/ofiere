@@ -82,11 +82,11 @@ export function TopRail() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -48 }}
                         transition={{ duration: 0.25, ease: [0.25, 1, 0.5, 1] }}
-                        className="hecate-top-rail relative"
+                        className="ofiere-top-rail relative"
                     >
                         <motion.div
                             key={activeGroup}
-                            className="hecate-rail-items"
+                            className="ofiere-rail-items"
                             initial={{ opacity: 0, y: -8 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -8 }}
@@ -104,8 +104,8 @@ export function TopRail() {
                                                 href={route.link}
                                                 onClick={() => setActiveSubPage(route.id)}
                                                 className={cn(
-                                                    "hecate-rail-item",
-                                                    isActive && "hecate-rail-item--active"
+                                                    "ofiere-rail-item",
+                                                    isActive && "ofiere-rail-item--active"
                                                 )}
                                             >
                                                 <span className="relative flex items-center justify-center w-8 h-8">

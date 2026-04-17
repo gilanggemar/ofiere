@@ -81,7 +81,7 @@ export default function SignupPage() {
             {/* Mobile logo */}
             <div className="flex items-center gap-2.5 lg:hidden mb-4">
                 <Logo className="h-8 w-8 text-white" />
-                <span className="text-2xl font-bold tracking-tight text-white">HECATE</span>
+                <span className="text-2xl font-bold tracking-tight text-white">OFIERE</span>
             </div>
 
             <div className="space-y-2">
@@ -123,7 +123,7 @@ export default function SignupPage() {
                     <input
                         id="email"
                         type="email"
-                        placeholder="operator@hecate.ai"
+                        placeholder="operator@ofiere.ai"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         onKeyDown={handleKeyDown}

@@ -246,9 +246,9 @@ export interface PMTaskCustomFields {
 
 // Type config for goal/constraint icons & colors (mirrors TaskCardModal)
 export const TASK_OPS_TYPE_CONFIG: Record<TaskOpsItemType, { label: string; color: string }> = {
-    budget:   { label: 'Budget',   color: 'var(--hecate-warn)' },
-    stack:    { label: 'Stack',    color: 'var(--hecate-cyan)' },
-    legal:    { label: 'Legal',    color: 'var(--hecate-violet)' },
-    deadline: { label: 'Deadline', color: 'var(--hecate-danger)' },
-    custom:   { label: 'Custom',   color: 'var(--hecate-text-secondary)' },
+    budget:   { label: 'Budget',   color: 'var(--ofiere-warn)' },
+    stack:    { label: 'Stack',    color: 'var(--ofiere-cyan)' },
+    legal:    { label: 'Legal',    color: 'var(--ofiere-violet)' },
+    deadline: { label: 'Deadline', color: 'var(--ofiere-danger)' },
+    custom:   { label: 'Custom',   color: 'var(--ofiere-text-secondary)' },
 };

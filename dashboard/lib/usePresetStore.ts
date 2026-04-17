@@ -89,7 +89,7 @@ export const usePresetStore = create<PresetStore>()(
             resetConstraintPresets: () => set({ constraintPresets: DEFAULT_CONSTRAINT_PRESETS }),
         }),
         {
-            name: 'hecate-preset-store',
+            name: 'ofiere-preset-store',
         }
     )
 );

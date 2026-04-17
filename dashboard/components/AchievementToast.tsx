@@ -72,7 +72,7 @@ export const AchievementToastContent = ({ id, achievement }: { id: string | numb
 
             {/* Label */}
             <div
-                className="hecate-badge-text mb-2 text-[10px] uppercase tracking-wider font-bold"
+                className="ofiere-badge-text mb-2 text-[10px] uppercase tracking-wider font-bold"
                 style={{ color: achievement.color }}
             >
                 {getRarityLabel(achievement.rarity)}
@@ -85,7 +85,7 @@ export const AchievementToastContent = ({ id, achievement }: { id: string | numb
                     <h2 className="text-[22px] font-semibold tracking-tight text-foreground leading-none">
                         {achievement.title}
                     </h2>
-                    <p className="hecate-body-sm opacity-60 mt-1 pb-1">
+                    <p className="ofiere-body-sm opacity-60 mt-1 pb-1">
                         {achievement.description}
                     </p>
                 </div>

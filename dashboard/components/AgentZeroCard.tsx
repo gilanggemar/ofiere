@@ -77,7 +77,7 @@ export const AgentZeroCard = ({ className, compact }: AgentZeroCardProps) => {
 
     return (
         <Card
-            className={cn("hecate-glass-1 hecate-glow-border flex flex-col", className)}
+            className={cn("ofiere-glass-1 ofiere-glow-border flex flex-col", className)}
             style={{ '--glow-color': 'var(--accent-ocean)' } as React.CSSProperties}
         >
             <CardHeader className="pb-3 border-b border-white/5 flex flex-row items-center justify-between">
@@ -85,7 +85,7 @@ export const AgentZeroCard = ({ className, compact }: AgentZeroCardProps) => {
                     <Bot size={20} className="text-[var(--accent-ocean)]" />
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <span className="hecate-h2">Agent Zero</span>
+                            <span className="ofiere-h2">Agent Zero</span>
                             <Badge
                                 variant="outline"
                                 style={{
@@ -99,7 +99,7 @@ export const AgentZeroCard = ({ className, compact }: AgentZeroCardProps) => {
                                 External
                             </Badge>
                         </div>
-                        <span className="hecate-caption">Socket.IO • REST API</span>
+                        <span className="ofiere-caption">Socket.IO • REST API</span>
                     </div>
                 </div>
 
@@ -145,8 +145,8 @@ export const AgentZeroCard = ({ className, compact }: AgentZeroCardProps) => {
                                                                 : "self-start bg-[var(--accent-ocean-ultra)] border-[var(--accent-ocean)]/20"
                                                         )}
                                                     >
-                                                        <span className="hecate-body-sm leading-relaxed whitespace-pre-wrap">{msg.content}</span>
-                                                        <span className="hecate-caption text-[9px] mt-1.5 opacity-40 uppercase tracking-widest">
+                                                        <span className="ofiere-body-sm leading-relaxed whitespace-pre-wrap">{msg.content}</span>
+                                                        <span className="ofiere-caption text-[9px] mt-1.5 opacity-40 uppercase tracking-widest">
                                                             {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                                         </span>
                                                     </motion.div>
@@ -161,8 +161,8 @@ export const AgentZeroCard = ({ className, compact }: AgentZeroCardProps) => {
                             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4 bg-black/20 rounded-md border border-white/5">
                                 <Bot size={32} className="opacity-20" />
                                 <div className="flex flex-col gap-1">
-                                    <span className="hecate-body font-medium">Agent Zero Offline</span>
-                                    <span className="hecate-caption text-muted-foreground max-w-[200px]">Waiting for connection to the Agent Zero VPS. Ensure URL and API Key are set in .env.local</span>
+                                    <span className="ofiere-body font-medium">Agent Zero Offline</span>
+                                    <span className="ofiere-caption text-muted-foreground max-w-[200px]">Waiting for connection to the Agent Zero VPS. Ensure URL and API Key are set in .env.local</span>
                                 </div>
                                 <div className="flex items-center gap-2 w-full max-w-[250px] justify-center mt-2">
                                     <Button size="sm" onClick={checkConnection} disabled={status === 'connecting'} className="h-8 w-32">

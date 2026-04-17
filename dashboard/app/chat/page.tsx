@@ -145,13 +145,13 @@ export default function ChatPage() {
     const [slashQuery, setSlashQuery] = useState("");
     const [selectedAgentId, setSelectedAgentId] = useState<string>(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('hecate_active_agent') || "";
+            return localStorage.getItem('ofiere_active_agent') || "";
         }
         return "";
     });
     const [activeConversationId, setActiveConversationId] = useState<string | undefined>(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('hecate_active_conversation') || undefined;
+            return localStorage.getItem('ofiere_active_conversation') || undefined;
         }
         return undefined;
     });
@@ -161,21 +161,21 @@ export default function ChatPage() {
 
     useEffect(() => {
         if (activeConversationId) {
-            localStorage.setItem('hecate_active_conversation', activeConversationId);
+            localStorage.setItem('ofiere_active_conversation', activeConversationId);
         } else {
-            localStorage.removeItem('hecate_active_conversation');
+            localStorage.removeItem('ofiere_active_conversation');
         }
     }, [activeConversationId]);
 
     // Sync agent selection into unified store for DB operations
     useEffect(() => {
         if (selectedAgentId) {
-            localStorage.setItem('hecate_active_agent', selectedAgentId);
+            localStorage.setItem('ofiere_active_agent', selectedAgentId);
             if (selectedAgentId !== chatStore.activeAgentId) {
                 chatStore.setActiveAgent(selectedAgentId);
             }
         } else {
-            localStorage.removeItem('hecate_active_agent');
+            localStorage.removeItem('ofiere_active_agent');
         }
     }, [selectedAgentId]);
 
@@ -404,7 +404,7 @@ export default function ChatPage() {
 
         const handleMouseDown = (e: MouseEvent) => {
             // Dismiss if clicking outside the popup
-            const popup = document.getElementById('hecate-selection-quote');
+            const popup = document.getElementById('ofiere-selection-quote');
             if (popup && !popup.contains(e.target as Node)) {
                 setSelectionPopup(null);
             }
@@ -683,7 +683,7 @@ export default function ChatPage() {
             finalMessage = `${projectContext}${finalMessage}`;
         }
 
-        // Inject Hecate specific context to tag memory correctly in global nchat
+        // Inject Ofiere specific context to tag memory correctly in global nchat
         if (capturedConvoId) {
             finalMessage = `[SYSTEM DIRECTIVE — WORKSPACE CONTEXT]\nUser is currently talking in Chat Workspace ID: ${capturedConvoId}\n\n${finalMessage}`;
         }
@@ -1014,7 +1014,7 @@ export default function ChatPage() {
     const handleEscalate = () => {
         if (!selectedAgentId) return;
         const context = visibleMessages.slice(-5).map(m => m.content).join('\n');
-        sessionStorage.setItem('hecate_escalation_topic', `[ESCALATION from ${selectedAgentId}]:\n${context}`);
+        sessionStorage.setItem('ofiere_escalation_topic', `[ESCALATION from ${selectedAgentId}]:\n${context}`);
         router.push('/summit');
     };
 
@@ -1180,8 +1180,8 @@ export default function ChatPage() {
                             aria-label={showSidebar ? 'Close history sidebar' : 'Open history sidebar'}
                         >
                             {showSidebar
-                                ? <PanelLeftClose className="w-4 h-4" style={{ color: 'var(--hecate-cyan)' }} />
-                                : <PanelLeftOpen className="w-4 h-4" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                                ? <PanelLeftClose className="w-4 h-4" style={{ color: 'var(--ofiere-cyan)' }} />
+                                : <PanelLeftOpen className="w-4 h-4" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                             }
                         </button>
 
@@ -1261,7 +1261,7 @@ export default function ChatPage() {
                             >
                             {isDbLoading ? (
                                 <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-60 gap-3">
-                                    <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--hecate-cyan)' }} />
+                                    <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--ofiere-cyan)' }} />
                                     <p className="text-sm">Loading Neural Archives...</p>
                                 </div>
                             ) : !isGlobalOrAgentConnected ? (
@@ -1287,7 +1287,7 @@ export default function ChatPage() {
                                         const displayName = isUser ? 'You' : selectedAgentName;
 
                                         return (
-                                            <div key={msg.id} data-msg-idx={idx} className={cn("flex w-full justify-start hecate-chat-bubble-enter", isFirstInGroup ? "mt-[12px]" : "mt-[4px]")}
+                                            <div key={msg.id} data-msg-idx={idx} className={cn("flex w-full justify-start ofiere-chat-bubble-enter", isFirstInGroup ? "mt-[12px]" : "mt-[4px]")}
                                                 style={{ animationDelay: `${Math.min(idx * 30, 200)}ms` }}
                                             >
                                                 <div className="flex-shrink-0 mr-[12px] w-[42px] flex flex-col justify-start items-center relative mt-[5px]">
@@ -1400,7 +1400,7 @@ export default function ChatPage() {
                                                                             border: '1px solid color-mix(in srgb, rgb(234, 120, 47) 20%, transparent)',
                                                                         }}>
                                                                             <Quote className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'rgb(234, 120, 47)' }} />
-                                                                            <p className="text-[10px] line-clamp-2" style={{ color: 'var(--hecate-text-secondary)' }}>{quoteText}</p>
+                                                                            <p className="text-[10px] line-clamp-2" style={{ color: 'var(--ofiere-text-secondary)' }}>{quoteText}</p>
                                                                         </div>
                                                                     );
                                                                 })()}
@@ -1433,19 +1433,19 @@ export default function ChatPage() {
                                                                     return (
                                                                         <div className="flex items-center gap-1 mt-1">
                                                                             {indicators.hasGoal && (
-                                                                                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--hecate-success) 12%, transparent)', color: 'var(--hecate-success)', border: '1px solid color-mix(in srgb, var(--hecate-success) 20%, transparent)' }} title="Goal active">
+                                                                                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--ofiere-success) 12%, transparent)', color: 'var(--ofiere-success)', border: '1px solid color-mix(in srgb, var(--ofiere-success) 20%, transparent)' }} title="Goal active">
                                                                                     <Target className="w-2.5 h-2.5" />
                                                                                     <span>Goal</span>
                                                                                 </div>
                                                                             )}
                                                                             {indicators.hasConstraints && (
-                                                                                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--hecate-warn) 12%, transparent)', color: 'var(--hecate-warn)', border: '1px solid color-mix(in srgb, var(--hecate-warn) 20%, transparent)' }} title="Constraints active">
+                                                                                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--ofiere-warn) 12%, transparent)', color: 'var(--ofiere-warn)', border: '1px solid color-mix(in srgb, var(--ofiere-warn) 20%, transparent)' }} title="Constraints active">
                                                                                     <Shield className="w-2.5 h-2.5" />
                                                                                     <span>Constraints</span>
                                                                                 </div>
                                                                             )}
                                                                             {indicators.hasStrategy && (
-                                                                                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--hecate-cyan) 12%, transparent)', color: 'var(--hecate-cyan)', border: '1px solid color-mix(in srgb, var(--hecate-cyan) 20%, transparent)' }} title={`Strategy: ${indicators.strategyMode || 'active'}`}>
+                                                                                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--ofiere-cyan) 12%, transparent)', color: 'var(--ofiere-cyan)', border: '1px solid color-mix(in srgb, var(--ofiere-cyan) 20%, transparent)' }} title={`Strategy: ${indicators.strategyMode || 'active'}`}>
                                                                                     <Compass className="w-2.5 h-2.5" />
                                                                                     <span>{indicators.strategyMode ? indicators.strategyMode.charAt(0).toUpperCase() + indicators.strategyMode.slice(1) : 'Strategy'}</span>
                                                                                 </div>
@@ -1492,7 +1492,7 @@ export default function ChatPage() {
                                                                 <button onClick={() => handleCopyMessage(msg.content, msg.id)} className="p-1 rounded hover:bg-white/10 transition-colors" title="Copy message">
                                                                     {copiedMessageId === msg.id ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
                                                                 </button>
-                                                                <button onClick={() => { setEditDraft(msg.content); setEditingMessageId(msg.id); }} className="p-1 rounded hover:bg-white/10 transition-colors" title="Edit message"><Pencil className="w-3 h-3" style={{ color: 'var(--hecate-warn)' }} /></button>
+                                                                <button onClick={() => { setEditDraft(msg.content); setEditingMessageId(msg.id); }} className="p-1 rounded hover:bg-white/10 transition-colors" title="Edit message"><Pencil className="w-3 h-3" style={{ color: 'var(--ofiere-warn)' }} /></button>
                                                                 <button onClick={async () => {
                                                                     if (!activeConversationId || !selectedAgentId || isBranching) return;
                                                                     setIsBranching(true);
@@ -1532,7 +1532,7 @@ export default function ChatPage() {
                                                                     } finally {
                                                                         setIsBranching(false);
                                                                     }
-                                                                }} className="p-1 rounded hover:bg-white/10 transition-colors" title="Branch from here"><ArrowUpRight className="w-3 h-3" style={{ color: 'var(--hecate-cyan)' }} /></button>
+                                                                }} className="p-1 rounded hover:bg-white/10 transition-colors" title="Branch from here"><ArrowUpRight className="w-3 h-3" style={{ color: 'var(--ofiere-cyan)' }} /></button>
                                                             </div>
                                                         </div>
                                                     )}
@@ -1542,7 +1542,7 @@ export default function ChatPage() {
                                     })}
                                     {/* ═══ THINKING PLACEHOLDER — shows while agent is processing ═══ */}
                                     {showThinkingPlaceholder && (
-                                        <div className="flex w-full justify-start hecate-chat-bubble-enter mt-[12px]">
+                                        <div className="flex w-full justify-start ofiere-chat-bubble-enter mt-[12px]">
                                             <div className="flex-shrink-0 mr-[12px] w-[42px] flex flex-col justify-start items-center relative mt-[5px]">
                                                 <AgentAvatar agentId={selectedAgentId!} name={selectedAgentName} width={42} height={56} />
                                             </div>
@@ -1552,7 +1552,7 @@ export default function ChatPage() {
                                                 </div>
                                                 <div className="px-1 flex items-center gap-1.5">
                                                     <span
-                                                        className="hecate-shimmer-text text-[13px] italic"
+                                                        className="ofiere-shimmer-text text-[13px] italic"
                                                     >
                                                         thinking
                                                     </span>
@@ -1607,7 +1607,7 @@ export default function ChatPage() {
                                         boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
                                     }}
                                 >
-                                    <ArrowDown className="w-4 h-4" style={{ color: 'var(--hecate-cyan)' }} />
+                                    <ArrowDown className="w-4 h-4" style={{ color: 'var(--ofiere-cyan)' }} />
                                 </button>
                             )}
 
@@ -1627,14 +1627,14 @@ export default function ChatPage() {
                                         variant="ghost"
                                         size="sm"
                                         className="text-[11px] h-8 px-3 gap-1.5 rounded-sm disabled:opacity-30 transition-all border border-transparent hover:border-border/50"
-                                        style={{ color: 'var(--hecate-text-tertiary)' }}
+                                        style={{ color: 'var(--ofiere-text-tertiary)' }}
                                         onMouseEnter={e => {
-                                            (e.currentTarget as HTMLElement).style.boxShadow = '0 0 12px var(--hecate-cyan-glow)';
-                                            (e.currentTarget as HTMLElement).style.color = 'var(--hecate-cyan)';
+                                            (e.currentTarget as HTMLElement).style.boxShadow = '0 0 12px var(--ofiere-cyan-glow)';
+                                            (e.currentTarget as HTMLElement).style.color = 'var(--ofiere-cyan)';
                                         }}
                                         onMouseLeave={e => {
                                             (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                                            (e.currentTarget as HTMLElement).style.color = 'var(--hecate-text-tertiary)';
+                                            (e.currentTarget as HTMLElement).style.color = 'var(--ofiere-text-tertiary)';
                                         }}
                                     >
                                         <ArrowUpRight className="w-3 h-3" />
@@ -1646,7 +1646,7 @@ export default function ChatPage() {
                                         variant="ghost"
                                         size="sm"
                                         className="text-[11px] h-8 px-3 gap-1.5 rounded-sm disabled:opacity-30 transition-all border border-transparent hover:border-border/50"
-                                        style={{ color: 'var(--hecate-text-tertiary)' }}
+                                        style={{ color: 'var(--ofiere-text-tertiary)' }}
                                     >
                                         <Package className="w-3 h-3" />
                                         Handoff
@@ -1680,7 +1680,7 @@ export default function ChatPage() {
                                         : "border-border"
                                 )}
                                 style={showThinkingPlaceholder ? {
-                                    animation: 'hecateProcessingGlow 2s ease-in-out infinite',
+                                    animation: 'ofiereProcessingGlow 2s ease-in-out infinite',
                                     boxShadow: '0 0 15px rgba(249, 115, 22, 0.15), 0 0 30px rgba(249, 115, 22, 0.08), inset 0 0 8px rgba(249, 115, 22, 0.03)',
                                 } : undefined}
                             >
@@ -1706,16 +1706,16 @@ export default function ChatPage() {
                                                 className="relative shrink-0 group rounded-lg overflow-hidden"
                                                 style={{
                                                     width: 64, height: 64,
-                                                    background: 'var(--hecate-surface-3)',
-                                                    border: '1px solid var(--hecate-border-default)',
+                                                    background: 'var(--ofiere-surface-3)',
+                                                    border: '1px solid var(--ofiere-border-default)',
                                                 }}
                                             >
                                                 {pf.previewUrl ? (
                                                     <img src={pf.previewUrl} alt={pf.file.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex flex-col items-center justify-center gap-0.5">
-                                                        <FileText className="w-4 h-4" style={{ color: 'var(--hecate-text-tertiary)' }} />
-                                                        <span className="text-[8px] truncate max-w-[56px] px-1" style={{ color: 'var(--hecate-text-ghost)' }}>
+                                                        <FileText className="w-4 h-4" style={{ color: 'var(--ofiere-text-tertiary)' }} />
+                                                        <span className="text-[8px] truncate max-w-[56px] px-1" style={{ color: 'var(--ofiere-text-ghost)' }}>
                                                             {pf.file.name.split('.').pop()}
                                                         </span>
                                                     </div>
@@ -1866,7 +1866,7 @@ export default function ChatPage() {
                                             <Button
                                                 type="button"
                                                 className="size-7 p-0 rounded-sm bg-orange-500 hover:bg-orange-600 transition-colors"
-                                                style={{ animation: 'hecateProcessingGlow 2s ease-in-out infinite' }}
+                                                style={{ animation: 'ofiereProcessingGlow 2s ease-in-out infinite' }}
                                                 onClick={async () => {
                                                     if (!selectedAgentId) return;
                                                     const sessionKey = `agent:${selectedAgentId}:nchat`;
@@ -1879,16 +1879,16 @@ export default function ChatPage() {
                                                                 sessionKey,
                                                                 ...(activeRunId ? { runId: activeRunId } : {}),
                                                             });
-                                                            console.log('[HECATE] Agent interrupted via chat.interrupt');
+                                                            console.log('[OFIERE] Agent interrupted via chat.interrupt');
                                                         }
                                                     } catch {
                                                         // chat.interrupt may not be supported — that's fine
-                                                        console.log('[HECATE] chat.interrupt not available');
+                                                        console.log('[OFIERE] chat.interrupt not available');
                                                     }
 
                                                     // 2. Always clear local processing state
                                                     useOpenClawStore.getState().clearRunsForSession(sessionKey);
-                                                    console.log('[HECATE] Cleared local runs for session:', sessionKey);
+                                                    console.log('[OFIERE] Cleared local runs for session:', sessionKey);
                                                 }}
                                                 title="Stop processing"
                                             >
@@ -1939,7 +1939,7 @@ export default function ChatPage() {
             {/* ═══ FLOATING TEXT SELECTION QUOTE ICON ═══ */}
             {selectionPopup && (
                 <div
-                    id="hecate-selection-quote"
+                    id="ofiere-selection-quote"
                     className="fixed z-[300] flex items-center"
                     style={{
                         left: selectionPopup.x - 14,
@@ -1960,7 +1960,7 @@ export default function ChatPage() {
                         }}
                         title="Quote selected text"
                     >
-                        <MessageSquare className="w-3.5 h-3.5" style={{ color: 'var(--hecate-violet)' }} />
+                        <MessageSquare className="w-3.5 h-3.5" style={{ color: 'var(--ofiere-violet)' }} />
                     </button>
                 </div>
             )}
@@ -2132,7 +2132,7 @@ function CompanionToggle({ agentId, onModeSwitch }: { agentId: string; onModeSwi
                     <div
                         className="mx-4 p-5 rounded-md w-full max-w-[340px]"
                         style={{
-                            background: 'var(--hecate-surface-3, #1a1a1a)',
+                            background: 'var(--ofiere-surface-3, #1a1a1a)',
                             border: `1px solid ${targetMode === 'companion' ? 'rgba(236,72,153,0.3)' : 'rgba(100,100,120,0.3)'}`,
                             boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
                         }}
@@ -2148,12 +2148,12 @@ function CompanionToggle({ agentId, onModeSwitch }: { agentId: string; onModeSwi
                                     <Bot className="w-4 h-4 text-zinc-400" />
                                 </div>
                             )}
-                            <span className="text-[13px] font-semibold" style={{ color: 'var(--hecate-text-primary, #fff)' }}>
+                            <span className="text-[13px] font-semibold" style={{ color: 'var(--ofiere-text-primary, #fff)' }}>
                                 Switch to {targetMode === 'companion' ? 'Companion' : 'Agent'} Mode?
                             </span>
                         </div>
 
-                        <p className="text-[11px] mb-4 leading-relaxed" style={{ color: 'var(--hecate-text-secondary, #aaa)' }}>
+                        <p className="text-[11px] mb-4 leading-relaxed" style={{ color: 'var(--ofiere-text-secondary, #aaa)' }}>
                             {targetMode === 'companion'
                                 ? 'This will start a new conversation using your Companion profile. OpenClaw agent files will be bypassed and the companion model will be used instead.'
                                 : 'This will start a new conversation using the standard OpenClaw agent configuration.'
@@ -2166,9 +2166,9 @@ function CompanionToggle({ agentId, onModeSwitch }: { agentId: string; onModeSwi
                                 disabled={switching}
                                 className="px-3 py-1.5 rounded-sm text-[11px] font-medium transition-colors"
                                 style={{
-                                    color: 'var(--hecate-text-secondary, #aaa)',
-                                    background: 'var(--hecate-surface-4, #252525)',
-                                    border: '1px solid var(--hecate-border-subtle, #333)',
+                                    color: 'var(--ofiere-text-secondary, #aaa)',
+                                    background: 'var(--ofiere-surface-4, #252525)',
+                                    border: '1px solid var(--ofiere-border-subtle, #333)',
                                 }}
                             >
                                 Cancel

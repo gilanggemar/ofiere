@@ -1,5 +1,5 @@
 // src/agent-resolver.ts — Dynamic agent identity resolution
-// Resolves an OpenClaw account name (e.g. "ivy") to a Hecate agent UUID.
+// Resolves an OpenClaw account name (e.g. "ivy") to a Ofiere agent UUID.
 // Caches lookups so only the first call per agent hits Supabase.
 // Auto-registers unknown agents so multi-agent setups work out of the box.
 
@@ -8,7 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const cache = new Map<string, string>();
 
 /**
- * Resolves an OpenClaw accountId to a Hecate agent UUID.
+ * Resolves an OpenClaw accountId to a Ofiere agent UUID.
  *
  * Strategy:
  *   1. Check in-memory cache
@@ -17,9 +17,9 @@ const cache = new Map<string, string>();
  *   4. Cache the result for subsequent calls
  *
  * @param accountId - The OpenClaw account name (e.g. "ivy", "daisy")
- * @param userId    - The Hecate user UUID who owns this agent
+ * @param userId    - The Ofiere user UUID who owns this agent
  * @param supabase  - Supabase client
- * @returns The Hecate agent UUID
+ * @returns The Ofiere agent UUID
  */
 export async function resolveAgentId(
   accountId: string,
@@ -88,7 +88,7 @@ export async function resolveAgentId(
 
 /**
  * Pre-warm the cache with a known mapping.
- * Used when HECATE_AGENT_ID env var is set (legacy single-agent mode).
+ * Used when OFIERE_AGENT_ID env var is set (legacy single-agent mode).
  */
 export function seedAgentCache(accountId: string, userId: string, agentId: string): void {
   if (accountId && agentId) {

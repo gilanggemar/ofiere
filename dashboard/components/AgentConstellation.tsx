@@ -199,20 +199,20 @@ export default function AgentConstellation({
         <div ref={containerRef} className={`relative rounded-md border border-border bg-black/5 overflow-hidden ${className}`} style={{ height: height ? height : '100%', width: width ? width : '100%' }}>
             {/* Legend & Labels */}
             <div className="absolute top-4 left-4 z-10 pointer-events-none">
-                <h3 className="hecate-section text-muted-foreground">Agent Constellation</h3>
+                <h3 className="ofiere-section text-muted-foreground">Agent Constellation</h3>
             </div>
 
             <div className="absolute bottom-4 right-4 z-10 pointer-events-none flex flex-col gap-2 items-end bg-background/50 backdrop-blur-sm p-3 rounded-lg border border-border/50">
                 <div className="flex items-center gap-2">
-                    <span className="hecate-caption">Collaboration</span>
+                    <span className="ofiere-caption">Collaboration</span>
                     <div className="w-8 h-[2px] bg-[rgba(255,255,255,0.4)]" />
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="hecate-caption">Delegation</span>
+                    <span className="ofiere-caption">Delegation</span>
                     <div className="w-8 h-[2px] bg-[rgba(58,173,168,0.6)]" />
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="hecate-caption">Summit</span>
+                    <span className="ofiere-caption">Summit</span>
                     <div className="w-8 h-[2px] bg-[rgba(139,107,173,0.6)]" />
                 </div>
             </div>

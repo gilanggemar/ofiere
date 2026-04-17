@@ -102,13 +102,13 @@ export function BottomDock() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 52 }}
                             transition={{ duration: 0.25, ease: [0.25, 1, 0.5, 1] }}
-                            className="hecate-dock-stack"
+                            className="ofiere-dock-stack"
                         >
                             <AnimatePresence>
                                 {bloomGroup && (
                                     <motion.div
                                         key="bloom-rail"
-                                        className="hecate-bloom-rail"
+                                        className="ofiere-bloom-rail"
                                         initial={{ opacity: 0, y: 14 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: 14 }}
@@ -119,10 +119,10 @@ export function BottomDock() {
                                         onMouseEnter={keepBloom}
                                         onMouseLeave={cancelBloom}
                                     >
-                                        <span className="hecate-bloom-label">
+                                        <span className="ofiere-bloom-label">
                                             {bloomLabel}
                                         </span>
-                                        <div className="hecate-bloom-items">
+                                        <div className="ofiere-bloom-items">
                                             {bloomRoutes.map((route) => {
                                                 const IconComp = ICON_MAP[route.iconName] || Home;
                                                 const isSubActive = activeSubPageId === route.id;
@@ -140,17 +140,17 @@ export function BottomDock() {
                                                             clearAll();
                                                         }}
                                                         className={cn(
-                                                            "hecate-bloom-tile",
-                                                            isSubActive && "hecate-bloom-tile--active"
+                                                            "ofiere-bloom-tile",
+                                                            isSubActive && "ofiere-bloom-tile--active"
                                                         )}
                                                     >
-                                                        <span className="hecate-bloom-tile__icon">
+                                                        <span className="ofiere-bloom-tile__icon">
                                                             <IconComp className="w-4 h-4" />
                                                             {showBadge && (
                                                                 <span className="absolute -top-0.5 -right-0.5 w-[5px] h-[5px] rounded-full bg-orange-500" />
                                                             )}
                                                         </span>
-                                                        <span className="hecate-bloom-tile__label">{route.title}</span>
+                                                        <span className="ofiere-bloom-tile__label">{route.title}</span>
                                                     </Link>
                                                 );
                                             })}
@@ -159,7 +159,7 @@ export function BottomDock() {
                                 )}
                             </AnimatePresence>
 
-                            <div className="hecate-dock-pill">
+                            <div className="ofiere-dock-pill">
                                 {DOCK_ITEMS.map(({ group, icon: Icon, label }) => {
                                     const isActive = activeGroup === group;
                                     const isBlooming = bloomGroup === group;
@@ -167,7 +167,7 @@ export function BottomDock() {
                                     return (
                                         <div
                                             key={group}
-                                            className="hecate-dock-anchor"
+                                            className="ofiere-dock-anchor"
                                             onMouseEnter={() => openBloom(group)}
                                             onMouseLeave={cancelBloom}
                                         >
@@ -176,9 +176,9 @@ export function BottomDock() {
                                                 animate={isBlooming ? { y: -2 } : { y: 0 }}
                                                 transition={{ duration: 0.15, ease: "easeOut" }}
                                                 className={cn(
-                                                    "hecate-dock-btn",
-                                                    isActive && "hecate-dock-btn--active",
-                                                    isBlooming && "hecate-dock-btn--blooming"
+                                                    "ofiere-dock-btn",
+                                                    isActive && "ofiere-dock-btn--active",
+                                                    isBlooming && "ofiere-dock-btn--blooming"
                                                 )}
                                                 aria-label={label}
                                                 aria-current={isActive ? "page" : undefined}

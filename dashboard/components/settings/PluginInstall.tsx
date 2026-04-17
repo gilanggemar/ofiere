@@ -67,7 +67,7 @@ export function PluginInstall() {
     }, [effectiveAgent]);
 
     const handleCopyCommand = useCallback(async () => {
-        const cmd = `curl -sSL https://raw.githubusercontent.com/gilanggemar/Hecate/main/hecate-openclaw-plugin/install.sh | bash -s -- --supabase-url "$SUPABASE_URL" --service-key "$SERVICE_ROLE_KEY" --user-id "$USER_ID"`;
+        const cmd = `curl -sSL https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/install.sh | bash -s -- --supabase-url "$SUPABASE_URL" --service-key "$SERVICE_ROLE_KEY" --user-id "$USER_ID"`;
         await navigator.clipboard.writeText(cmd);
         setCopied(true);
         toast.success("Install command copied!");
@@ -86,7 +86,7 @@ export function PluginInstall() {
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
                                 <p className="text-sm font-medium text-foreground">
-                                    Hecate Plugin for OpenClaw
+                                    Ofiere Plugin for OpenClaw
                                 </p>
                                 <StatusBadge status={status} />
                             </div>

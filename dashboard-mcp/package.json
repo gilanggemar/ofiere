@@ -1,11 +1,11 @@
 {
-  "name": "@hecate-ai/dashboard-mcp",
+  "name": "@ofiere-ai/dashboard-mcp",
   "version": "1.0.3",
-  "description": "MCP server for full programmatic control of the Hecate dashboard",
+  "description": "MCP server for full programmatic control of the Ofiere dashboard",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "hecate-mcp": "dist/index.js"
+    "ofiere-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",

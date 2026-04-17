@@ -400,10 +400,10 @@ export default function SummitPage() {
     }, [agents, integratedAgents, hiddenAgentIds]);
 
     useEffect(() => {
-        const escalatedTopic = sessionStorage.getItem('hecate_escalation_topic');
+        const escalatedTopic = sessionStorage.getItem('ofiere_escalation_topic');
         if (escalatedTopic) {
             setSummitTopic(escalatedTopic);
-            sessionStorage.removeItem('hecate_escalation_topic');
+            sessionStorage.removeItem('ofiere_escalation_topic');
         }
     }, []);
 
@@ -494,7 +494,7 @@ export default function SummitPage() {
             setSelectionPopup({ text: sel.toString().slice(0, 200), messageId: msgId, x: rect.left + rect.width / 2, y: rect.top - 8 });
         };
         const handleMouseDown = (e: MouseEvent) => {
-            const popup = document.getElementById('hecate-summit-selection-quote');
+            const popup = document.getElementById('ofiere-summit-selection-quote');
             if (popup && !popup.contains(e.target as Node)) setSelectionPopup(null);
         };
         document.addEventListener('mouseup', handleMouseUp);
@@ -938,14 +938,14 @@ export default function SummitPage() {
                                                 className="p-1.5 rounded-md transition-all hover:bg-white/[0.07]"
                                                 title="Rename"
                                             >
-                                                <Pencil className="w-3 h-3" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                                                <Pencil className="w-3 h-3" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                                             </button>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setDeleteSessionConfirmId(s.id); }}
                                                 className="p-1.5 rounded-md transition-all hover:bg-white/[0.07]"
                                                 title="Delete"
                                             >
-                                                <Trash2 className="w-3 h-3" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                                                <Trash2 className="w-3 h-3" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                                             </button>
                                         </div>
                                     )}
@@ -962,7 +962,7 @@ export default function SummitPage() {
                                             onBlur={() => handleSessionRenameSubmit(s.id)}
                                             className="text-[12px] font-medium w-full min-w-0 pr-14 focus:outline-none"
                                             style={{ 
-                                                color: 'var(--hecate-text-primary)',
+                                                color: 'var(--ofiere-text-primary)',
                                                 background: 'transparent',
                                                 border: 'none',
                                                 outline: 'none',
@@ -1152,7 +1152,7 @@ export default function SummitPage() {
                             const displayName = isUser ? 'You' : (agent ? agentDisplayName(agent) : msg.agentId);
 
                             return (
-                                <div key={msg.id} data-msg-idx={globalIdx} className={cn("flex w-full justify-start hecate-chat-bubble-enter", isFirstInGroup ? "mt-[12px]" : "mt-[4px]")}
+                                <div key={msg.id} data-msg-idx={globalIdx} className={cn("flex w-full justify-start ofiere-chat-bubble-enter", isFirstInGroup ? "mt-[12px]" : "mt-[4px]")}
                                     style={{ animationDelay: `${Math.min(globalIdx * 30, 200)}ms` }}
                                 >
                                     {/* Avatar column */}
@@ -1260,9 +1260,9 @@ export default function SummitPage() {
                                                         if (!hasAny) return null;
                                                         return (
                                                             <div className="flex items-center gap-1 mt-1">
-                                                                {indicators.hasGoal && (<div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--hecate-success) 12%, transparent)', color: 'var(--hecate-success)', border: '1px solid color-mix(in srgb, var(--hecate-success) 20%, transparent)' }}><Target className="w-2.5 h-2.5" /><span>Goal</span></div>)}
-                                                                {indicators.hasConstraints && (<div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--hecate-warn) 12%, transparent)', color: 'var(--hecate-warn)', border: '1px solid color-mix(in srgb, var(--hecate-warn) 20%, transparent)' }}><Shield className="w-2.5 h-2.5" /><span>Constraints</span></div>)}
-                                                                {indicators.hasStrategy && (<div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--hecate-cyan) 12%, transparent)', color: 'var(--hecate-cyan)', border: '1px solid color-mix(in srgb, var(--hecate-cyan) 20%, transparent)' }}><Compass className="w-2.5 h-2.5" /><span>{indicators.strategyMode ? indicators.strategyMode.charAt(0).toUpperCase() + indicators.strategyMode.slice(1) : 'Strategy'}</span></div>)}
+                                                                {indicators.hasGoal && (<div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--ofiere-success) 12%, transparent)', color: 'var(--ofiere-success)', border: '1px solid color-mix(in srgb, var(--ofiere-success) 20%, transparent)' }}><Target className="w-2.5 h-2.5" /><span>Goal</span></div>)}
+                                                                {indicators.hasConstraints && (<div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--ofiere-warn) 12%, transparent)', color: 'var(--ofiere-warn)', border: '1px solid color-mix(in srgb, var(--ofiere-warn) 20%, transparent)' }}><Shield className="w-2.5 h-2.5" /><span>Constraints</span></div>)}
+                                                                {indicators.hasStrategy && (<div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium" style={{ background: 'color-mix(in srgb, var(--ofiere-cyan) 12%, transparent)', color: 'var(--ofiere-cyan)', border: '1px solid color-mix(in srgb, var(--ofiere-cyan) 20%, transparent)' }}><Compass className="w-2.5 h-2.5" /><span>{indicators.strategyMode ? indicators.strategyMode.charAt(0).toUpperCase() + indicators.strategyMode.slice(1) : 'Strategy'}</span></div>)}
                                                             </div>
                                                         );
                                                     })()}
@@ -1273,7 +1273,7 @@ export default function SummitPage() {
                                                     <button onClick={() => handleCopyMessage(msg.content, msg.id)} className="p-1 rounded hover:bg-white/10 transition-colors" title="Copy message">
                                                         {copiedMessageId === msg.id ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
                                                     </button>
-                                                    <button onClick={() => { setEditDraft(msg.content); setEditingMessageId(msg.id); }} className="p-1 rounded hover:bg-white/10 transition-colors" title="Edit message"><Pencil className="w-3 h-3" style={{ color: 'var(--hecate-warn)' }} /></button>
+                                                    <button onClick={() => { setEditDraft(msg.content); setEditingMessageId(msg.id); }} className="p-1 rounded hover:bg-white/10 transition-colors" title="Edit message"><Pencil className="w-3 h-3" style={{ color: 'var(--ofiere-warn)' }} /></button>
                                                     <button onClick={() => setQuotedReply({ text: msg.content.slice(0, 100), messageId: msg.id })} className="p-1 rounded hover:bg-white/10 transition-colors" title="Quote reply"><ArrowUpRight className="w-3 h-3 text-muted-foreground" /></button>
                                                 </div>
                                             </div>
@@ -1499,7 +1499,7 @@ export default function SummitPage() {
 
                 {/* Floating Quote Popup */}
                 {selectionPopup && (
-                    <div id="hecate-summit-selection-quote" className="fixed z-[9999] flex items-center gap-1 px-2 py-1 rounded-sm shadow-lg cursor-pointer transition-all hover:scale-105" style={{ left: selectionPopup.x, top: selectionPopup.y, transform: 'translate(-50%, -100%)', background: 'var(--popover)', border: '1px solid var(--border)' }} onClick={() => { setQuotedReply({ text: selectionPopup.text, messageId: selectionPopup.messageId }); setSelectionPopup(null); window.getSelection()?.removeAllRanges(); }}>
+                    <div id="ofiere-summit-selection-quote" className="fixed z-[9999] flex items-center gap-1 px-2 py-1 rounded-sm shadow-lg cursor-pointer transition-all hover:scale-105" style={{ left: selectionPopup.x, top: selectionPopup.y, transform: 'translate(-50%, -100%)', background: 'var(--popover)', border: '1px solid var(--border)' }} onClick={() => { setQuotedReply({ text: selectionPopup.text, messageId: selectionPopup.messageId }); setSelectionPopup(null); window.getSelection()?.removeAllRanges(); }}>
                         <ArrowUpRight className="w-3 h-3 text-foreground" />
                         <span className="text-[10px] font-medium text-foreground">Quote</span>
                     </div>
@@ -1861,17 +1861,17 @@ export default function SummitPage() {
                     <div
                         className="mx-4 p-4 rounded-md w-full max-w-[240px]"
                         style={{
-                            background: 'var(--hecate-surface-3)',
-                            border: '1px solid var(--hecate-border-default)',
+                            background: 'var(--ofiere-surface-3)',
+                            border: '1px solid var(--ofiere-border-default)',
                             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                         }}
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="flex items-center gap-2 mb-2">
-                            <Trash2 className="w-4 h-4" style={{ color: 'var(--hecate-danger)' }} />
-                            <span className="text-[13px] font-semibold" style={{ color: 'var(--hecate-text-primary)' }}>Delete session?</span>
+                            <Trash2 className="w-4 h-4" style={{ color: 'var(--ofiere-danger)' }} />
+                            <span className="text-[13px] font-semibold" style={{ color: 'var(--ofiere-text-primary)' }}>Delete session?</span>
                         </div>
-                        <p className="text-[11px] mb-4" style={{ color: 'var(--hecate-text-secondary)', lineHeight: '1.5' }}>
+                        <p className="text-[11px] mb-4" style={{ color: 'var(--ofiere-text-secondary)', lineHeight: '1.5' }}>
                             This completely removes the summit session and its messages from the database.
                         </p>
                         <div className="flex gap-2 justify-end">
@@ -1879,12 +1879,12 @@ export default function SummitPage() {
                                 onClick={() => setDeleteSessionConfirmId(null)}
                                 className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
                                 style={{
-                                    color: 'var(--hecate-text-secondary)',
-                                    background: 'var(--hecate-surface-4)',
-                                    border: '1px solid var(--hecate-border-subtle)',
+                                    color: 'var(--ofiere-text-secondary)',
+                                    background: 'var(--ofiere-surface-4)',
+                                    border: '1px solid var(--ofiere-border-subtle)',
                                 }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--hecate-border-default)')}
-                                onMouseLeave={e => (e.currentTarget.style.background = 'var(--hecate-surface-4)')}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--ofiere-border-default)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'var(--ofiere-surface-4)')}
                             >
                                 Cancel
                             </button>
@@ -1893,8 +1893,8 @@ export default function SummitPage() {
                                 className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
                                 style={{
                                     color: '#fff',
-                                    background: 'var(--hecate-danger)',
-                                    border: '1px solid var(--hecate-danger)',
+                                    background: 'var(--ofiere-danger)',
+                                    border: '1px solid var(--ofiere-danger)',
                                 }}
                                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
                                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
@@ -1922,7 +1922,7 @@ export default function SummitPage() {
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--hecate-border-default)' }}>
+                        <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--ofiere-border-default)' }}>
                             <div className="flex items-center gap-2">
                                 <Target className="w-5 h-5 text-orange-500" />
                                 <h3 className="text-sm font-semibold text-foreground">Topic & Behaviors</h3>
@@ -1982,7 +1982,7 @@ export default function SummitPage() {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t flex justify-end" style={{ borderColor: 'var(--hecate-border-default)', background: 'var(--hecate-surface-3)' }}>
+                        <div className="p-4 border-t flex justify-end" style={{ borderColor: 'var(--ofiere-border-default)', background: 'var(--ofiere-surface-3)' }}>
                             <Button onClick={() => setShowTopicModal(false)} className="bg-orange-500 text-white hover:bg-orange-600 rounded-lg h-9 px-6 text-xs">
                                 Apply & Close
                             </Button>

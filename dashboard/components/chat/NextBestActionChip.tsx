@@ -25,20 +25,20 @@ export const NextBestActionChip: React.FC<NextBestActionChipProps> = ({
                 className
             )}
             style={{
-                background: 'var(--hecate-surface-3)',
-                border: '1px solid var(--hecate-border-default)',
+                background: 'var(--ofiere-surface-3)',
+                border: '1px solid var(--ofiere-border-default)',
             }}
             onMouseEnter={e => {
                 (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--accent-base) 8%, transparent)';
                 (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--accent-base) 25%, transparent)';
             }}
             onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'var(--hecate-surface-3)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'var(--hecate-border-default)';
+                (e.currentTarget as HTMLElement).style.background = 'var(--ofiere-surface-3)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'var(--ofiere-border-default)';
             }}
         >
             <Sparkles className="w-3 h-3 shrink-0" style={{ color: 'var(--accent-base)' }} />
-            <span className="text-[11px] font-medium" style={{ color: 'var(--hecate-text-secondary)' }}>
+            <span className="text-[11px] font-medium" style={{ color: 'var(--ofiere-text-secondary)' }}>
                 {action}
             </span>
             <ArrowRight

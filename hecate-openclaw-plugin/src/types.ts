@@ -1,4 +1,4 @@
-export interface HecateConfig {
+export interface OfiereConfig {
   enabled: boolean;
   supabaseUrl: string;
   serviceRoleKey: string;

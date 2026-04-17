@@ -28,11 +28,11 @@ interface ContextControlDrawerProps {
 }
 
 const TYPE_CONFIG = {
-    memory: { icon: <Brain className="w-3 h-3" />, color: 'var(--hecate-cyan)' },
-    file: { icon: <FileText className="w-3 h-3" />, color: 'var(--hecate-violet)' },
-    goal: { icon: <Target className="w-3 h-3" />, color: 'var(--hecate-success)' },
-    constraint: { icon: <Lock className="w-3 h-3" />, color: 'var(--hecate-warn)' },
-    recent_message: { icon: <MessageSquare className="w-3 h-3" />, color: 'var(--hecate-text-secondary)' },
+    memory: { icon: <Brain className="w-3 h-3" />, color: 'var(--ofiere-cyan)' },
+    file: { icon: <FileText className="w-3 h-3" />, color: 'var(--ofiere-violet)' },
+    goal: { icon: <Target className="w-3 h-3" />, color: 'var(--ofiere-success)' },
+    constraint: { icon: <Lock className="w-3 h-3" />, color: 'var(--ofiere-warn)' },
+    recent_message: { icon: <MessageSquare className="w-3 h-3" />, color: 'var(--ofiere-text-secondary)' },
 };
 
 /* ─── Component ─── */
@@ -76,52 +76,52 @@ export const ContextControlDrawer: React.FC<ContextControlDrawerProps> = ({
             )}
             style={{
                 maxHeight: '50vh',
-                background: 'var(--hecate-surface-2)',
-                borderTop: '1px solid var(--hecate-border-default)',
-                borderLeft: '1px solid var(--hecate-border-subtle)',
-                borderRight: '1px solid var(--hecate-border-subtle)',
+                background: 'var(--ofiere-surface-2)',
+                borderTop: '1px solid var(--ofiere-border-default)',
+                borderLeft: '1px solid var(--ofiere-border-subtle)',
+                borderRight: '1px solid var(--ofiere-border-subtle)',
                 borderRadius: '12px 12px 0 0',
                 boxShadow: '0 -8px 32px rgba(0,0,0,0.3)',
             }}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--hecate-border-subtle)' }}>
+            <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--ofiere-border-subtle)' }}>
                 <div className="flex items-center gap-2">
-                    <Settings2 className="w-3.5 h-3.5" style={{ color: 'var(--hecate-cyan)' }} />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hecate-text-secondary)' }}>
+                    <Settings2 className="w-3.5 h-3.5" style={{ color: 'var(--ofiere-cyan)' }} />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ofiere-text-secondary)' }}>
                         Context Control
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
                     {/* Token Budget Meter */}
                     <div className="flex items-center gap-2">
-                        <Gauge className="w-3 h-3" style={{ color: isOverBudget ? 'var(--hecate-danger)' : 'var(--hecate-text-tertiary)' }} />
+                        <Gauge className="w-3 h-3" style={{ color: isOverBudget ? 'var(--ofiere-danger)' : 'var(--ofiere-text-tertiary)' }} />
                         <div className="flex items-center gap-1.5">
                             <div
                                 className="w-20 h-1.5 rounded-full overflow-hidden"
-                                style={{ background: 'var(--hecate-surface-4)' }}
+                                style={{ background: 'var(--ofiere-surface-4)' }}
                             >
                                 <div
                                     className="h-full rounded-full transition-all duration-300"
                                     style={{
                                         width: `${Math.min(usagePercent, 100)}%`,
                                         background: isOverBudget
-                                            ? 'var(--hecate-danger)'
+                                            ? 'var(--ofiere-danger)'
                                             : usagePercent > 80
-                                                ? 'var(--hecate-warn)'
-                                                : 'var(--hecate-cyan)',
+                                                ? 'var(--ofiere-warn)'
+                                                : 'var(--ofiere-cyan)',
                                     }}
                                 />
                             </div>
                             <span
                                 className="text-[9px] font-mono"
-                                style={{ color: isOverBudget ? 'var(--hecate-danger)' : 'var(--hecate-text-tertiary)' }}
+                                style={{ color: isOverBudget ? 'var(--ofiere-danger)' : 'var(--ofiere-text-tertiary)' }}
                             >
                                 {(usedTokens / 1000).toFixed(1)}k / {(maxTokenBudget / 1000).toFixed(0)}k
                             </span>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-[10px] px-2 py-0.5 rounded hover:bg-white/5" style={{ color: 'var(--hecate-text-tertiary)' }}>
+                    <button onClick={onClose} className="text-[10px] px-2 py-0.5 rounded hover:bg-white/5" style={{ color: 'var(--ofiere-text-tertiary)' }}>
                         Close
                     </button>
                 </div>
@@ -136,58 +136,58 @@ export const ContextControlDrawer: React.FC<ContextControlDrawerProps> = ({
                         const includedCount = items.filter(i => i.included).length;
 
                         return (
-                            <div key={type} className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--hecate-border-subtle)' }}>
+                            <div key={type} className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--ofiere-border-subtle)' }}>
                                 {/* Group header */}
                                 <button
                                     onClick={() => setGroupCollapsed(prev => ({ ...prev, [type]: !prev[type] }))}
                                     className="flex items-center justify-between w-full px-3 py-2 text-left transition-colors"
-                                    style={{ background: 'var(--hecate-surface-3)' }}
-                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--hecate-surface-4)')}
-                                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--hecate-surface-3)')}
+                                    style={{ background: 'var(--ofiere-surface-3)' }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--ofiere-surface-4)')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--ofiere-surface-3)')}
                                 >
                                     <div className="flex items-center gap-2">
                                         <span style={{ color: config.color }}>{config.icon}</span>
-                                        <span className="text-[11px] font-medium capitalize" style={{ color: 'var(--hecate-text-primary)' }}>
+                                        <span className="text-[11px] font-medium capitalize" style={{ color: 'var(--ofiere-text-primary)' }}>
                                             {type.replace('_', ' ')}
                                         </span>
-                                        <span className="text-[9px]" style={{ color: 'var(--hecate-text-ghost)' }}>
+                                        <span className="text-[9px]" style={{ color: 'var(--ofiere-text-ghost)' }}>
                                             {includedCount}/{items.length}
                                         </span>
                                     </div>
                                     {isCollapsed
-                                        ? <ChevronDown className="w-3 h-3" style={{ color: 'var(--hecate-text-ghost)' }} />
-                                        : <ChevronUp className="w-3 h-3" style={{ color: 'var(--hecate-text-ghost)' }} />
+                                        ? <ChevronDown className="w-3 h-3" style={{ color: 'var(--ofiere-text-ghost)' }} />
+                                        : <ChevronUp className="w-3 h-3" style={{ color: 'var(--ofiere-text-ghost)' }} />
                                     }
                                 </button>
 
                                 {/* Items */}
                                 {!isCollapsed && (
-                                    <div className="divide-y" style={{ borderColor: 'var(--hecate-border-subtle)' }}>
+                                    <div className="divide-y" style={{ borderColor: 'var(--ofiere-border-subtle)' }}>
                                         {items.map(item => (
                                             <div
                                                 key={item.id}
                                                 className="flex items-center justify-between px-3 py-1.5 cursor-pointer transition-colors"
                                                 onClick={() => onItemToggle(item.id)}
                                                 style={{ background: item.included ? 'transparent' : 'rgba(0,0,0,0.15)' }}
-                                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--hecate-surface-4)')}
+                                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--ofiere-surface-4)')}
                                                 onMouseLeave={e => (e.currentTarget.style.background = item.included ? 'transparent' : 'rgba(0,0,0,0.15)')}
                                             >
                                                 <div className="flex items-center gap-2">
                                                     {item.included
                                                         ? <Eye className="w-3 h-3" style={{ color: config.color }} />
-                                                        : <EyeOff className="w-3 h-3" style={{ color: 'var(--hecate-text-ghost)' }} />
+                                                        : <EyeOff className="w-3 h-3" style={{ color: 'var(--ofiere-text-ghost)' }} />
                                                     }
                                                     <span
                                                         className="text-[11px] truncate max-w-[200px]"
                                                         style={{
-                                                            color: item.included ? 'var(--hecate-text-primary)' : 'var(--hecate-text-ghost)',
+                                                            color: item.included ? 'var(--ofiere-text-primary)' : 'var(--ofiere-text-ghost)',
                                                             textDecoration: item.included ? 'none' : 'line-through',
                                                         }}
                                                     >
                                                         {item.label}
                                                     </span>
                                                 </div>
-                                                <span className="text-[9px] font-mono" style={{ color: 'var(--hecate-text-ghost)' }}>
+                                                <span className="text-[9px] font-mono" style={{ color: 'var(--ofiere-text-ghost)' }}>
                                                     ~{item.tokenEstimate}t
                                                 </span>
                                             </div>
@@ -200,7 +200,7 @@ export const ContextControlDrawer: React.FC<ContextControlDrawerProps> = ({
 
                     {contextItems.length === 0 && (
                         <div className="text-center py-8">
-                            <span className="text-[11px]" style={{ color: 'var(--hecate-text-tertiary)' }}>No context items in this conversation</span>
+                            <span className="text-[11px]" style={{ color: 'var(--ofiere-text-tertiary)' }}>No context items in this conversation</span>
                         </div>
                     )}
                 </div>

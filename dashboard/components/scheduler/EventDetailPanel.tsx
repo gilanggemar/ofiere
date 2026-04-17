@@ -150,7 +150,7 @@ export function EventDetailPanel() {
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="hecate-glass-3 border-t border-white/[0.08] p-6 max-h-[40vh] overflow-y-auto"
+                    className="ofiere-glass-3 border-t border-white/[0.08] p-6 max-h-[40vh] overflow-y-auto"
                 >
                     {/* ─── Top bar ─── */}
                     <div className="flex items-start justify-between mb-4">
@@ -158,13 +158,13 @@ export function EventDetailPanel() {
                             <Input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="hecate-h2 bg-transparent border-none px-0 h-auto focus-visible:ring-0 font-semibold text-[var(--text-primary)]"
+                                className="ofiere-h2 bg-transparent border-none px-0 h-auto focus-visible:ring-0 font-semibold text-[var(--text-primary)]"
                             />
                         </div>
                         <div className="flex items-center gap-2 ml-4">
                             {(() => {
                                 const agent = agents.find((a: any) => a.id === event.agentId);
-                                return agent ? <span className="hecate-body-sm opacity-70">{agent.name}</span> : null;
+                                return agent ? <span className="ofiere-body-sm opacity-70">{agent.name}</span> : null;
                             })()}
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -172,7 +172,7 @@ export function EventDetailPanel() {
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent className="hecate-glass-3">
+                                <AlertDialogContent className="ofiere-glass-3">
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Delete Event</AlertDialogTitle>
                                         <AlertDialogDescription>
@@ -211,12 +211,12 @@ export function EventDetailPanel() {
                     <div className="grid grid-cols-2 gap-6">
                         {/* ─── Schedule section ─── */}
                         <div>
-                            <h4 className="hecate-section mb-3 flex items-center gap-1.5">
+                            <h4 className="ofiere-section mb-3 flex items-center gap-1.5">
                                 <Calendar className="w-3.5 h-3.5" /> Schedule
                             </h4>
                             <div className="grid grid-cols-3 gap-2">
                                 <div>
-                                    <label className="hecate-caption mb-1 block">Date</label>
+                                    <label className="ofiere-caption mb-1 block">Date</label>
                                     <Input
                                         type="date"
                                         value={scheduledDate}
@@ -225,7 +225,7 @@ export function EventDetailPanel() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="hecate-caption mb-1 block">Time</label>
+                                    <label className="ofiere-caption mb-1 block">Time</label>
                                     <Input
                                         type="time"
                                         value={scheduledTime}
@@ -234,7 +234,7 @@ export function EventDetailPanel() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="hecate-caption mb-1 block">Duration</label>
+                                    <label className="ofiere-caption mb-1 block">Duration</label>
                                     <Input
                                         type="number"
                                         value={durationMinutes}
@@ -245,12 +245,12 @@ export function EventDetailPanel() {
                                 </div>
                             </div>
                             <div className="mt-3">
-                                <label className="hecate-caption mb-1 block">Priority</label>
+                                <label className="ofiere-caption mb-1 block">Priority</label>
                                 <Select value={priority} onValueChange={setPriority}>
                                     <SelectTrigger className="h-8 text-xs bg-white/[0.04] border-white/[0.06] text-[var(--text-primary)]">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="hecate-glass-3">
+                                    <SelectContent className="ofiere-glass-3">
                                         <SelectItem value="low">Low</SelectItem>
                                         <SelectItem value="medium">Medium</SelectItem>
                                         <SelectItem value="high">High</SelectItem>
@@ -262,7 +262,7 @@ export function EventDetailPanel() {
 
                         {/* ─── Recurrence section ─── */}
                         <div>
-                            <h4 className="hecate-section mb-3 flex items-center gap-1.5">
+                            <h4 className="ofiere-section mb-3 flex items-center gap-1.5">
                                 <Repeat className="w-3.5 h-3.5" /> Recurrence
                             </h4>
                             <div className="space-y-2">
@@ -270,7 +270,7 @@ export function EventDetailPanel() {
                                     <SelectTrigger className="h-8 text-xs bg-white/[0.04] border-white/[0.06] text-[var(--text-primary)]">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="hecate-glass-3">
+                                    <SelectContent className="ofiere-glass-3">
                                         <SelectItem value="none">No recurrence</SelectItem>
                                         <SelectItem value="hourly">Hourly</SelectItem>
                                         <SelectItem value="daily">Daily</SelectItem>
@@ -281,7 +281,7 @@ export function EventDetailPanel() {
 
                                 {recurrenceType !== 'none' && (
                                     <div className="flex items-center gap-2">
-                                        <span className="hecate-caption">Every</span>
+                                        <span className="ofiere-caption">Every</span>
                                         <Input
                                             type="number"
                                             value={recurrenceInterval}
@@ -289,13 +289,13 @@ export function EventDetailPanel() {
                                             min={1}
                                             className="w-16 h-7 text-xs bg-white/[0.04] border-white/[0.06] text-[var(--text-primary)]"
                                         />
-                                        <span className="hecate-caption">{recurrenceLabel}</span>
+                                        <span className="ofiere-caption">{recurrenceLabel}</span>
                                     </div>
                                 )}
 
                                 {recurrenceType === 'weekly' && (
                                     <div>
-                                        <label className="hecate-caption mb-1.5 block">Days of Week</label>
+                                        <label className="ofiere-caption mb-1.5 block">Days of Week</label>
                                         <DayToggle
                                             activeDays={recurrenceDaysOfWeek}
                                             onChange={setRecurrenceDaysOfWeek}
@@ -305,7 +305,7 @@ export function EventDetailPanel() {
 
                                 {recurrenceType !== 'none' && (
                                     <div>
-                                        <label className="hecate-caption mb-1 block">Until (optional)</label>
+                                        <label className="ofiere-caption mb-1 block">Until (optional)</label>
                                         <Input
                                             type="date"
                                             value={recurrenceEndDate}
@@ -321,8 +321,8 @@ export function EventDetailPanel() {
                     {/* ─── Execution history ─── */}
                     {event.runCount > 0 && (
                         <div className="mt-4 border-t border-white/[0.06] pt-3">
-                            <h4 className="hecate-section mb-2">Execution History</h4>
-                            <div className="hecate-caption space-y-1">
+                            <h4 className="ofiere-section mb-2">Execution History</h4>
+                            <div className="ofiere-caption space-y-1">
                                 <div className="flex items-center gap-2">
                                     <span>Runs: {event.runCount}</span>
                                     {event.lastRunAt && (

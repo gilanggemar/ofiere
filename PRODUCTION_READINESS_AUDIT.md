@@ -1,4 +1,4 @@
-# 🔴 NERV.OS — Production Readiness Audit
+# 🔴 Ofiere — Production Readiness Audit
 
 > **Audit Date:** April 9, 2026  
 > **Auditor:** Antigravity AI (Claude Opus 4.6)  
@@ -47,7 +47,7 @@ The `.env.local` file contains **hardcoded secrets, API keys, and passwords**. W
 | `SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...` | Service role key — **full database access bypassing RLS** |
 | `COMPOSIO_API_KEY=ak_6JfmLwWBByDmd18yGlMi` | Third-party API key |
 
-### Additional Risk: `NERV_ENCRYPTION_KEY` Not Set
+### Additional Risk: `OFIERE_ENCRYPTION_KEY` Not Set
 The `lib/encryption.ts` file falls back to a **deterministic default key** derived from `'nerv-os-default-key-change-me'`. This means all encrypted secrets in the database (connection profiles, API keys) are encrypted with a publicly-known key.
 
 ### Solution
@@ -58,7 +58,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 # 2. Set it in Vercel Environment Variables (NOT in .env.local for production)
 # Go to: Vercel Dashboard → nerv → Settings → Environment Variables
-# Add: NERV_ENCRYPTION_KEY = <generated_key>
+# Add: OFIERE_ENCRYPTION_KEY = <generated_key>
 
 # 3. Rotate ALL secrets that may have been exposed:
 #    - Regenerate OPENCLAW_AUTH_TOKEN on your VPS
@@ -75,7 +75,7 @@ Ensure all required env vars are set in Vercel's dashboard (Settings → Environ
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `NERV_ENCRYPTION_KEY`
+- `OFIERE_ENCRYPTION_KEY`
 - `NEXT_PUBLIC_OPENCLAW_WS_URL`
 - `NEXT_PUBLIC_OPENCLAW_HTTP_URL`
 - `OPENCLAW_AUTH_TOKEN`
@@ -245,15 +245,15 @@ del /q nul dashboard.db
 
 ### 4b. GitHub Repository is Public
 
-The repo `gilanggemar/NERV` is marked as **public** (`"githubRepoVisibility": "public"`). This means:
+The repo `gilanggemar/Ofiere` is marked as **public** (`"githubRepoVisibility": "public"`). This means:
 - All source code is visible to anyone
 - The `architecture/` and `docs/` directories expose internal design decisions
 - Commit messages reveal implementation details
 
 #### Solution
-If NERV.OS is a commercial product or contains proprietary logic:
+If Ofiere is a commercial product or contains proprietary logic:
 ```
-GitHub → gilanggemar/NERV → Settings → Danger Zone → Change visibility → Private
+GitHub → gilanggemar/Ofiere → Settings → Danger Zone → Change visibility → Private
 ```
 
 ---
@@ -276,7 +276,7 @@ The 3 failed deployments were all TypeScript build errors that were fixed in sub
 
 ### 5b. No Custom Domain
 
-The app is running on `nerv-one.vercel.app`. For a production release, you need a custom domain.
+The app is running on `ofiere.vercel.app`. For a production release, you need a custom domain.
 
 #### Solution
 1. Purchase a domain (e.g., `nerv-os.app` or `nerv.systems`)
@@ -469,7 +469,7 @@ Use Vercel's built-in WAF or add middleware-based rate limiting with a library l
 
 ### 🔴 Must Fix Before Launch
 
-- [ ] Set `NERV_ENCRYPTION_KEY` in Vercel env vars (and rotate existing encrypted data)
+- [ ] Set `OFIERE_ENCRYPTION_KEY` in Vercel env vars (and rotate existing encrypted data)
 - [ ] Rotate all exposed secrets (OpenClaw token, Agent Zero key/password, Composio key)
 - [ ] Add RLS policies to 9 tables that have none
 - [ ] Drop overly permissive `USING (true)` policies on 9 tables

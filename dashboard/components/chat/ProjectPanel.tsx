@@ -49,7 +49,7 @@ export function ProjectPanel({ agentId, agentName, className }: ProjectPanelProp
 
     // Restore active project from localStorage
     useEffect(() => {
-        const saved = typeof window !== 'undefined' ? localStorage.getItem('hecate_active_project') : null;
+        const saved = typeof window !== 'undefined' ? localStorage.getItem('ofiere_active_project') : null;
         if (saved && !activeProjectId) {
             setActiveProject(saved);
         }
@@ -117,7 +117,7 @@ export function ProjectPanel({ agentId, agentName, className }: ProjectPanelProp
                         <button
                             className="flex items-center h-7 px-2.5 rounded-sm text-xs gap-1.5 border border-border/50 hover:border-border transition-all"
                             style={{
-                                color: activeProjectId ? 'rgb(234, 120, 47)' : 'var(--hecate-text-tertiary)',
+                                color: activeProjectId ? 'rgb(234, 120, 47)' : 'var(--ofiere-text-tertiary)',
                                 borderColor: activeProjectId ? 'rgba(234, 120, 47, 0.3)' : undefined,
                                 background: activeProjectId ? 'rgba(234, 120, 47, 0.08)' : 'transparent',
                             }}
@@ -141,7 +141,7 @@ export function ProjectPanel({ agentId, agentName, className }: ProjectPanelProp
                                     <span className="truncate">{p.name}</span>
                                 </div>
                                 {p.id === activeProjectId && (
-                                    <Check className="w-3 h-3 ml-2 shrink-0" style={{ color: 'var(--hecate-success)' }} />
+                                    <Check className="w-3 h-3 ml-2 shrink-0" style={{ color: 'var(--ofiere-success)' }} />
                                 )}
                             </DropdownMenuItem>
                         ))}
@@ -168,7 +168,7 @@ export function ProjectPanel({ agentId, agentName, className }: ProjectPanelProp
                         className="p-1 rounded-md hover:bg-white/5 transition-colors"
                         title="Edit project settings"
                     >
-                        <Settings2 className="w-3.5 h-3.5" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                        <Settings2 className="w-3.5 h-3.5" style={{ color: 'var(--ofiere-text-tertiary)' }} />
                     </button>
                 )}
             </div>
@@ -303,8 +303,8 @@ export function ProjectPanel({ agentId, agentName, className }: ProjectPanelProp
                                                 {f.content_text && (
                                                     <span className="text-[8px] px-1 py-px rounded-full shrink-0"
                                                         style={{
-                                                            background: 'color-mix(in srgb, var(--hecate-success) 15%, transparent)',
-                                                            color: 'var(--hecate-success)',
+                                                            background: 'color-mix(in srgb, var(--ofiere-success) 15%, transparent)',
+                                                            color: 'var(--ofiere-success)',
                                                         }}
                                                     >
                                                         CTX

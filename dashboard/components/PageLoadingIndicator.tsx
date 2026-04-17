@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 /**
  * PageLoadingIndicator — Premium glassmorphic loading overlay
  * positioned in the bottom-left of the viewport. Features
- * animated orbital arcs and a glowing Hecate pulse.
+ * animated orbital arcs and a glowing Ofiere pulse.
  */
 export function PageLoadingIndicator() {
     const pathname = usePathname();
@@ -73,12 +73,12 @@ export function PageLoadingIndicator() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 12, scale: 0.95 }}
                     transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-                    className="hecate-page-loader"
+                    className="ofiere-page-loader"
                 >
                     {/* Animated SVG orbital ring */}
-                    <div className="hecate-page-loader__ring-wrap">
+                    <div className="ofiere-page-loader__ring-wrap">
                         <svg
-                            className="hecate-page-loader__ring"
+                            className="ofiere-page-loader__ring"
                             viewBox="0 0 80 80"
                             fill="none"
                         >
@@ -97,32 +97,32 @@ export function PageLoadingIndicator() {
                             {/* Sweeping arc — primary */}
                             <circle
                                 cx="40" cy="40" r="34"
-                                stroke="url(#hecate-loader-grad)"
+                                stroke="url(#ofiere-loader-grad)"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeDasharray="50 164"
-                                className="hecate-page-loader__arc hecate-page-loader__arc--primary"
+                                className="ofiere-page-loader__arc ofiere-page-loader__arc--primary"
                             />
                             {/* Sweeping arc — secondary (counter-rotate) */}
                             <circle
                                 cx="40" cy="40" r="24"
-                                stroke="url(#hecate-loader-grad2)"
+                                stroke="url(#ofiere-loader-grad2)"
                                 strokeWidth="1.5"
                                 strokeLinecap="round"
                                 strokeDasharray="30 121"
-                                className="hecate-page-loader__arc hecate-page-loader__arc--secondary"
+                                className="ofiere-page-loader__arc ofiere-page-loader__arc--secondary"
                             />
                             {/* Center glow dot */}
                             <circle
                                 cx="40" cy="40" r="3"
-                                className="hecate-page-loader__core"
+                                className="ofiere-page-loader__core"
                             />
                             <defs>
-                                <linearGradient id="hecate-loader-grad" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+                                <linearGradient id="ofiere-loader-grad" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
                                     <stop offset="0%" stopColor="oklch(0.78 0.18 55)" stopOpacity="1" />
                                     <stop offset="100%" stopColor="oklch(0.78 0.18 55)" stopOpacity="0" />
                                 </linearGradient>
-                                <linearGradient id="hecate-loader-grad2" x1="80" y1="0" x2="0" y2="80" gradientUnits="userSpaceOnUse">
+                                <linearGradient id="ofiere-loader-grad2" x1="80" y1="0" x2="0" y2="80" gradientUnits="userSpaceOnUse">
                                     <stop offset="0%" stopColor="oklch(0.72 0.14 30)" stopOpacity="0.8" />
                                     <stop offset="100%" stopColor="oklch(0.72 0.14 30)" stopOpacity="0" />
                                 </linearGradient>
@@ -131,8 +131,8 @@ export function PageLoadingIndicator() {
                     </div>
 
                     {/* Text block */}
-                    <div className="hecate-page-loader__info">
-                        <span className="hecate-page-loader__status">Loading module…</span>
+                    <div className="ofiere-page-loader__info">
+                        <span className="ofiere-page-loader__status">Loading module…</span>
                     </div>
                 </motion.div>
             )}

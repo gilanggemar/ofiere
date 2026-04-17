@@ -88,7 +88,7 @@ function parseGitHubUrl(url: string): RepoInfo | null {
 async function ghFetch(url: string, token?: string): Promise<Response> {
     const headers: Record<string, string> = {
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'hecate-OS-Dashboard/1.0',
+        'User-Agent': 'ofiere-OS-Dashboard/1.0',
     };
     if (token) {
         headers['Authorization'] = `token ${token}`;
@@ -104,7 +104,7 @@ async function ghFetch(url: string, token?: string): Promise<Response> {
 async function fetchRawContent(owner: string, repo: string, branch: string, path: string): Promise<string> {
     const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
     const res = await fetch(rawUrl, {
-        headers: { 'User-Agent': 'hecate-OS-Dashboard/1.0' },
+        headers: { 'User-Agent': 'ofiere-OS-Dashboard/1.0' },
         signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`);
@@ -336,7 +336,7 @@ export async function POST(req: NextRequest) {
         const response = await fetch(url, {
             headers: {
                 'Accept': 'text/plain, text/markdown, application/octet-stream, */*',
-                'User-Agent': 'hecate-OS-Dashboard/1.0',
+                'User-Agent': 'ofiere-OS-Dashboard/1.0',
             },
             signal: AbortSignal.timeout(15000),
         });

@@ -56,7 +56,7 @@ export const OutputAdaptationBar: React.FC<OutputAdaptationBarProps> = ({
                 className
             )}
         >
-            {isAdapting && <Loader2 className="w-3 h-3 animate-spin" style={{ color: 'var(--hecate-text-ghost)' }} />}
+            {isAdapting && <Loader2 className="w-3 h-3 animate-spin" style={{ color: 'var(--ofiere-text-ghost)' }} />}
 
             {/* Audience selector */}
             <div className="relative">
@@ -64,11 +64,11 @@ export const OutputAdaptationBar: React.FC<OutputAdaptationBarProps> = ({
                     onClick={() => { setShowAudience(!showAudience); setShowTone(false); }}
                     className="flex items-center gap-1 px-2 py-0.5 rounded text-[9px] transition-colors"
                     style={{
-                        color: 'var(--hecate-text-ghost)',
-                        background: showAudience ? 'var(--hecate-surface-4)' : 'transparent',
+                        color: 'var(--ofiere-text-ghost)',
+                        background: showAudience ? 'var(--ofiere-surface-4)' : 'transparent',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--hecate-text-secondary)')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--hecate-text-ghost)')}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--ofiere-text-secondary)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--ofiere-text-ghost)')}
                 >
                     <Users className="w-2.5 h-2.5" />
                     <span>Recast</span>
@@ -77,8 +77,8 @@ export const OutputAdaptationBar: React.FC<OutputAdaptationBarProps> = ({
                     <div
                         className="absolute bottom-full left-0 mb-1 z-50 rounded-lg overflow-hidden py-0.5"
                         style={{
-                            background: 'var(--hecate-surface-3)',
-                            border: '1px solid var(--hecate-border-default)',
+                            background: 'var(--ofiere-surface-3)',
+                            border: '1px solid var(--ofiere-border-default)',
                             minWidth: 130,
                         }}
                     >
@@ -87,8 +87,8 @@ export const OutputAdaptationBar: React.FC<OutputAdaptationBarProps> = ({
                                 key={a.key}
                                 onClick={() => handleAdapt(a.key, selectedTone)}
                                 className="block w-full text-left px-3 py-1.5 text-[10px] transition-colors"
-                                style={{ color: 'var(--hecate-text-secondary)' }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--hecate-surface-4)')}
+                                style={{ color: 'var(--ofiere-text-secondary)' }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--ofiere-surface-4)')}
                                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                             >
                                 {a.label}
@@ -104,11 +104,11 @@ export const OutputAdaptationBar: React.FC<OutputAdaptationBarProps> = ({
                     onClick={() => { setShowTone(!showTone); setShowAudience(false); }}
                     className="flex items-center gap-1 px-2 py-0.5 rounded text-[9px] transition-colors"
                     style={{
-                        color: 'var(--hecate-text-ghost)',
-                        background: showTone ? 'var(--hecate-surface-4)' : 'transparent',
+                        color: 'var(--ofiere-text-ghost)',
+                        background: showTone ? 'var(--ofiere-surface-4)' : 'transparent',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--hecate-text-secondary)')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--hecate-text-ghost)')}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--ofiere-text-secondary)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--ofiere-text-ghost)')}
                 >
                     <Volume2 className="w-2.5 h-2.5" />
                     <span>Tone</span>
@@ -117,8 +117,8 @@ export const OutputAdaptationBar: React.FC<OutputAdaptationBarProps> = ({
                     <div
                         className="absolute bottom-full left-0 mb-1 z-50 rounded-lg overflow-hidden py-0.5"
                         style={{
-                            background: 'var(--hecate-surface-3)',
-                            border: '1px solid var(--hecate-border-default)',
+                            background: 'var(--ofiere-surface-3)',
+                            border: '1px solid var(--ofiere-border-default)',
                             minWidth: 120,
                         }}
                     >
@@ -127,8 +127,8 @@ export const OutputAdaptationBar: React.FC<OutputAdaptationBarProps> = ({
                                 key={t.key}
                                 onClick={() => handleAdapt(selectedAudience, t.key)}
                                 className="block w-full text-left px-3 py-1.5 text-[10px] transition-colors"
-                                style={{ color: 'var(--hecate-text-secondary)' }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--hecate-surface-4)')}
+                                style={{ color: 'var(--ofiere-text-secondary)' }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--ofiere-surface-4)')}
                                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                             >
                                 {t.label}

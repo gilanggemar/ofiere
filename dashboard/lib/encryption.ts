@@ -2,9 +2,9 @@ import crypto from 'crypto';
 
 // The encryption key is derived from an environment variable.
 // If not set, falls back to a deterministic key derived from a default passphrase.
-// For production, ALWAYS set HECATE_ENCRYPTION_KEY in .env.local (32-byte hex string).
+// For production, ALWAYS set OFIERE_ENCRYPTION_KEY in .env.local (32-byte hex string).
 const ENCRYPTION_KEY_HEX =
-    process.env.HECATE_ENCRYPTION_KEY ||
+    process.env.OFIERE_ENCRYPTION_KEY ||
     crypto.createHash('sha256').update('nerv-os-default-key-change-me').digest('hex');
 const ENCRYPTION_KEY = Buffer.from(ENCRYPTION_KEY_HEX, 'hex');
 const IV_LENGTH = 12; // GCM standard

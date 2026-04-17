@@ -105,14 +105,14 @@ export const OperationsStreak = memo(({
                             {/* Counter Text */}
                             <div className="flex items-baseline gap-2">
                                 <motion.span
-                                    className="hecate-metric-xl tabular-nums leading-none"
+                                    className="ofiere-metric-xl tabular-nums leading-none"
                                     style={{ color: currentStreak > 0 ? 'var(--accent-base)' : 'var(--foreground)' }}
                                     animate={justIncremented ? { scale: [1, 1.2, 1] } : { scale: 1 }}
                                     transition={{ duration: 0.3 }}
                                 >
                                     {currentStreak}
                                 </motion.span>
-                                <span className="hecate-body-sm opacity-50 relative top-[-2px]">
+                                <span className="ofiere-body-sm opacity-50 relative top-[-2px]">
                                     {currentStreak === 1 ? 'day streak' : 'days streak'}
                                 </span>
                             </div>
@@ -158,7 +158,7 @@ export const OperationsStreak = memo(({
 
                             <div className="flex items-center gap-1.5 relative left-[-2px]">
                                 {weekDays.map((day, i) => (
-                                    <span key={i} className="hecate-caption opacity-40 w-[10px] text-center" style={{ fontSize: '9px' }}>
+                                    <span key={i} className="ofiere-caption opacity-40 w-[10px] text-center" style={{ fontSize: '9px' }}>
                                         {day}
                                     </span>
                                 ))}
@@ -169,11 +169,11 @@ export const OperationsStreak = memo(({
                         {!isEmpty && (
                             <div className="pl-1.5 mt-1">
                                 {isBest ? (
-                                    <span className="hecate-caption" style={{ color: 'var(--accent-lime)' }}>
+                                    <span className="ofiere-caption" style={{ color: 'var(--accent-lime)' }}>
                                         🏆 Personal best!
                                     </span>
                                 ) : (longestStreak > currentStreak && (
-                                    <span className="hecate-caption opacity-50">
+                                    <span className="ofiere-caption opacity-50">
                                         Best: {longestStreak} days
                                     </span>
                                 ))}
@@ -182,7 +182,7 @@ export const OperationsStreak = memo(({
 
                         {isEmpty && (
                             <div className="pl-1.5 mt-1">
-                                <span className="hecate-caption opacity-50">
+                                <span className="ofiere-caption opacity-50">
                                     Start a new streak by completing all tasks today
                                 </span>
                             </div>

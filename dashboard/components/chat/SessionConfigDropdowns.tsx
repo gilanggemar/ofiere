@@ -92,7 +92,7 @@ export const SessionConfigDropdowns: React.FC<SessionConfigDropdownsProps> = ({
                                 disabled={isUpdating}
                                 className={cn(
                                     "flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors duration-200 text-[10px] font-medium border bg-transparent hover:bg-white/5",
-                                    thinking !== 'inherit' ? "border-[var(--hecate-violet)] text-[var(--hecate-violet)]" : "border-border text-muted-foreground",
+                                    thinking !== 'inherit' ? "border-[var(--ofiere-violet)] text-[var(--ofiere-violet)]" : "border-border text-muted-foreground",
                                     isUpdating && "opacity-50 cursor-not-allowed"
                                 )}
                             >
@@ -101,7 +101,7 @@ export const SessionConfigDropdowns: React.FC<SessionConfigDropdownsProps> = ({
                                 <ChevronUp className="w-3 h-3 opacity-50" />
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent side="top" align="center" className="min-w-0 w-32 pb-1 mb-1 hecate-glass-3">
+                        <DropdownMenuContent side="top" align="center" className="min-w-0 w-32 pb-1 mb-1 ofiere-glass-3">
                             {THINKING_OPTIONS.map((opt) => (
                                 <DropdownMenuItem 
                                     key={opt} 
@@ -140,7 +140,7 @@ export const SessionConfigDropdowns: React.FC<SessionConfigDropdownsProps> = ({
                                 <ChevronUp className="w-3 h-3 opacity-50" />
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent side="top" align="center" className="min-w-0 w-32 pb-1 mb-1 hecate-glass-3">
+                        <DropdownMenuContent side="top" align="center" className="min-w-0 w-32 pb-1 mb-1 ofiere-glass-3">
                             {VERBOSE_OPTIONS.map((opt) => (
                                 <DropdownMenuItem 
                                     key={opt} 
@@ -179,7 +179,7 @@ export const SessionConfigDropdowns: React.FC<SessionConfigDropdownsProps> = ({
                                 <ChevronUp className="w-3 h-3 opacity-50" />
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent side="top" align="center" className="min-w-0 w-32 pb-1 mb-1 hecate-glass-3">
+                        <DropdownMenuContent side="top" align="center" className="min-w-0 w-32 pb-1 mb-1 ofiere-glass-3">
                             {REASONING_OPTIONS.map((opt) => (
                                 <DropdownMenuItem 
                                     key={opt} 

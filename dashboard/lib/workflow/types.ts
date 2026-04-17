@@ -1,5 +1,5 @@
 // ============================================================
-// Hecate Workflow V2 — Canonical Type Definitions
+// Ofiere Workflow V2 — Canonical Type Definitions
 // DO NOT MODIFY these interfaces without updating this document.
 // ============================================================
 

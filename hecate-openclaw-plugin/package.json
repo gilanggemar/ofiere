@@ -1,13 +1,13 @@
 {
-  "name": "@hecate-ai/openclaw-plugin",
+  "name": "@ofiere-ai/openclaw-plugin",
   "version": "1.0.0",
   "type": "module",
-  "description": "OpenClaw plugin for Hecate PM — manage tasks, agents, and projects from your agent",
-  "keywords": ["openclaw", "hecate", "project-management", "agents", "plugin"],
-  "homepage": "https://github.com/gilanggemar/Hecate",
+  "description": "OpenClaw plugin for Ofiere PM — manage tasks, agents, and projects from your agent",
+  "keywords": ["openclaw", "ofiere", "project-management", "agents", "plugin"],
+  "homepage": "https://github.com/gilanggemar/Ofiere",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gilanggemar/Hecate.git"
+    "url": "https://github.com/gilanggemar/Ofiere.git"
   },
   "license": "MIT",
   "files": [

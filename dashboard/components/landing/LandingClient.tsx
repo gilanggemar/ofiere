@@ -13,14 +13,14 @@ const CARD_DATA = {
         badge: "PROTOCOL ZERO",
         title: "Orchestrate The Future.",
         subtitle: "The Premiere Paradigm for Agent Swarms.",
-        description: "A highly optimized, deeply integrated orchestration layer for agent swarms. Build, deploy, and command without friction or limits. Hecate orchestrates multiple parallelized agents simultaneously, combining their outputs for complex problem-solving at unprecedented velocity."
+        description: "A highly optimized, deeply integrated orchestration layer for agent swarms. Build, deploy, and command without friction or limits. Ofiere orchestrates multiple parallelized agents simultaneously, combining their outputs for complex problem-solving at unprecedented velocity."
     },
     neural: {
         bgText: "NEURAL",
         badge: "COGNITIVE ARCHITECTURE",
         title: "Neural Execution",
         subtitle: "Parallelize Complex Reasoning.",
-        description: "Distribute thousands of specialized agents instantly. Hecate dynamically allocates ingestion, reasoning, and synthesis tasks across the swarm, dissolving the latency between human intent and machine execution."
+        description: "Distribute thousands of specialized agents instantly. Ofiere dynamically allocates ingestion, reasoning, and synthesis tasks across the swarm, dissolving the latency between human intent and machine execution."
     },
     edge: {
         bgText: "EDGE",
@@ -34,14 +34,14 @@ const CARD_DATA = {
         badge: "CRYPTOGRAPHIC LAYER",
         title: "Zero-Trust Security",
         subtitle: "Absolute Data Sovereignty.",
-        description: "Every agent operation is cryptographically signed and executed within sandboxed environments. Hecate enforces granular, role-based access controls and end-to-end encryption to ensure uncompromising security."
+        description: "Every agent operation is cryptographically signed and executed within sandboxed environments. Ofiere enforces granular, role-based access controls and end-to-end encryption to ensure uncompromising security."
     },
     ecology: {
         bgText: "EXPAND",
         badge: "DEVELOPER ECOLOGY",
         title: "Infinite Extensibility",
         subtitle: "API-First Interoperability.",
-        description: "Seamlessly connect the swarm to any foundational model, vector database, or external webhook. The Hecate SDK and robust REST APIs provide the absolute freedom to forge the exact ecosystem you demand."
+        description: "Seamlessly connect the swarm to any foundational model, vector database, or external webhook. The Ofiere SDK and robust REST APIs provide the absolute freedom to forge the exact ecosystem you demand."
     }
 }
 
@@ -103,7 +103,7 @@ export default function LandingClient() {
                             <Logo className="w-6 h-6 text-[#080706]" />
                         </div>
                         <span className="text-2xl font-bold tracking-tight text-[#F5F0EB]">
-                            HECATE
+                            OFIERE
                         </span>
                     </div>
 
@@ -361,7 +361,7 @@ export default function LandingClient() {
                                                 Continuous Evolution
                                             </h4>
                                             <p className="text-xl md:text-2xl text-neutral-400 leading-relaxed font-normal">
-                                                By leveraging deeply integrated orchestration protocols, Hecate ensures that your swarm continually adapts. From dynamic task routing to self-healing node repair, every parameter is optimized for an environment of rapid growth.
+                                                By leveraging deeply integrated orchestration protocols, Ofiere ensures that your swarm continually adapts. From dynamic task routing to self-healing node repair, every parameter is optimized for an environment of rapid growth.
                                                 <br /><br />
                                                 Eliminate static infrastructure. Embrace the swarm.
                                             </p>

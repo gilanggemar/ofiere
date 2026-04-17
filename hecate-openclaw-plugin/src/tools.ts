@@ -1,4 +1,4 @@
-// src/tools.ts — Tool registration for Hecate PM plugin
+// src/tools.ts — Tool registration for Ofiere PM plugin
 // Uses api.registerTool(tool, opts?) as documented:
 //   https://docs.openclaw.ai/plugins/sdk-overview#tools-and-commands
 //   https://docs.openclaw.ai/plugins/building-plugins#registering-agent-tools
@@ -7,7 +7,7 @@
 // - Optional tools: { optional: true } — user must allowlist or allowlist the plugin id
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { HecateConfig } from "./types.js";
+import type { OfiereConfig } from "./types.js";
 import { resolveAgentId } from "./agent-resolver.js";
 
 // ─── Tool result shape (matches OpenClaw SDK) ────────────────────────────────
@@ -50,7 +50,7 @@ function getCallingAgentName(api: any): string {
 export function registerTools(
   api: any, // OpenClawPluginApi — typed as any to avoid import-path issues at install time
   supabase: SupabaseClient,
-  config: HecateConfig,
+  config: OfiereConfig,
 ): void {
   const userId = config.userId;
   const fallbackAgentId = config.agentId; // May be empty — that's fine
@@ -73,17 +73,17 @@ export function registerTools(
       }
     }
 
-    // 3. Env var fallback (HECATE_AGENT_ID — legacy single-agent mode)
+    // 3. Env var fallback (OFIERE_AGENT_ID — legacy single-agent mode)
     return fallbackAgentId || null;
   }
 
-  // ── HECATE_LIST_TASKS — Required (read-only, no side effects) ────────
+  // ── OFIERE_LIST_TASKS — Required (read-only, no side effects) ────────
 
   api.registerTool({
-    name: "HECATE_LIST_TASKS",
-    label: "List Hecate Tasks",
+    name: "OFIERE_LIST_TASKS",
+    label: "List Ofiere Tasks",
     description:
-      "List tasks from the Hecate PM dashboard. " +
+      "List tasks from the Ofiere PM dashboard. " +
       "Optionally filter by space_id, folder_id, agent_id, or status. " +
       "Returns an array of task objects with their details.",
     parameters: {
@@ -126,14 +126,14 @@ export function registerTools(
     },
   });
 
-  // ── HECATE_CREATE_TASK — Optional (has side effects: writes to DB) ───
+  // ── OFIERE_CREATE_TASK — Optional (has side effects: writes to DB) ───
 
   api.registerTool(
     {
-      name: "HECATE_CREATE_TASK",
-      label: "Create Hecate Task",
+      name: "OFIERE_CREATE_TASK",
+      label: "Create Ofiere Task",
       description:
-        "Create a new task in the Hecate PM dashboard. " +
+        "Create a new task in the Ofiere PM dashboard. " +
         "If agent_id is not provided, the task is automatically assigned to you (the calling agent). " +
         "Pass agent_id as 'none' or 'unassigned' to create an unassigned task. " +
         "The task will appear in the dashboard immediately via real-time sync.",
@@ -148,7 +148,7 @@ export function registerTools(
             description:
               "Agent ID to assign the task to. If omitted, assigns to yourself. " +
               "Pass 'none' or 'unassigned' to create a task with no assignee. " +
-              "Use HECATE_LIST_AGENTS to see available agents.",
+              "Use OFIERE_LIST_AGENTS to see available agents.",
           },
           status: {
             type: "string",
@@ -235,14 +235,14 @@ export function registerTools(
     { optional: true },
   );
 
-  // ── HECATE_UPDATE_TASK — Optional (has side effects) ─────────────────
+  // ── OFIERE_UPDATE_TASK — Optional (has side effects) ─────────────────
 
   api.registerTool(
     {
-      name: "HECATE_UPDATE_TASK",
-      label: "Update Hecate Task",
+      name: "OFIERE_UPDATE_TASK",
+      label: "Update Ofiere Task",
       description:
-        "Update an existing task in the Hecate PM dashboard. Only provided fields are changed. " +
+        "Update an existing task in the Ofiere PM dashboard. Only provided fields are changed. " +
         "Changes appear in the dashboard immediately via real-time sync.",
       parameters: {
         type: "object",
@@ -300,14 +300,14 @@ export function registerTools(
     { optional: true },
   );
 
-  // ── HECATE_DELETE_TASK — Optional (destructive side effect) ──────────
+  // ── OFIERE_DELETE_TASK — Optional (destructive side effect) ──────────
 
   api.registerTool(
     {
-      name: "HECATE_DELETE_TASK",
-      label: "Delete Hecate Task",
+      name: "OFIERE_DELETE_TASK",
+      label: "Delete Ofiere Task",
       description:
-        "Delete a task from the Hecate PM dashboard. Also removes subtasks and linked scheduler events.",
+        "Delete a task from the Ofiere PM dashboard. Also removes subtasks and linked scheduler events.",
       parameters: {
         type: "object",
         required: ["task_id"],
@@ -355,13 +355,13 @@ export function registerTools(
     { optional: true },
   );
 
-  // ── HECATE_LIST_AGENTS — Required (read-only, no side effects) ───────
+  // ── OFIERE_LIST_AGENTS — Required (read-only, no side effects) ───────
 
   api.registerTool({
-    name: "HECATE_LIST_AGENTS",
-    label: "List Hecate Agents",
+    name: "OFIERE_LIST_AGENTS",
+    label: "List Ofiere Agents",
     description:
-      "List all available agents in the Hecate system. " +
+      "List all available agents in the Ofiere system. " +
       "Shows agent IDs, names, roles, and current status. " +
       "Use this to find the right agent_id for task assignment.",
     parameters: {
@@ -399,5 +399,5 @@ export function registerTools(
 
   const callerName = getCallingAgentName(api);
   const agentLabel = fallbackAgentId || callerName || "auto-detect";
-  api.logger.info(`[hecate] 5 tools registered (agent: ${agentLabel})`);
+  api.logger.info(`[ofiere] 5 tools registered (agent: ${agentLabel})`);
 }

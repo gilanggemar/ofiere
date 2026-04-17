@@ -36,7 +36,7 @@ function isSignificant(e: GameEvent): boolean {
 /** Strips content-viewport padding only. Top-rail & bottom-dock stay visible. */
 function useGameFullscreen() {
   useEffect(() => {
-    const viewport = document.querySelector<HTMLElement>(".hecate-content-viewport");
+    const viewport = document.querySelector<HTMLElement>(".ofiere-content-viewport");
     const orig = {
       padding: viewport?.style.padding,
       overflow: viewport?.style.overflow,

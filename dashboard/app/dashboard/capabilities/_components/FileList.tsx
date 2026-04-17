@@ -100,7 +100,7 @@ export function FileList({ files, selectedFileName, isLoading, onSelectFile }: F
             {/* Divider */}
             <div className="flex items-center gap-2 px-3 pt-2 pb-1">
                 <div className="flex-1 h-px bg-white/8" />
-                <span className="text-[9px] font-mono text-white/20 uppercase tracking-wider">HECATE</span>
+                <span className="text-[9px] font-mono text-white/20 uppercase tracking-wider">OFIERE</span>
                 <div className="flex-1 h-px bg-white/8" />
             </div>
 

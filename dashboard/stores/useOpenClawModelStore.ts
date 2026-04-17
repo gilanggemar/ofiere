@@ -181,7 +181,7 @@ function readDefaults(config: any): Record<ModelRole, string | null> {
     let companionDefaults: Record<string, string | null> = {};
     if (typeof window !== 'undefined') {
         try {
-            const stored = localStorage.getItem('hecate_companion_models');
+            const stored = localStorage.getItem('ofiere_companion_models');
             if (stored) {
                 const parsed = JSON.parse(stored);
                 companionDefaults = parsed?.defaults ?? {};
@@ -216,7 +216,7 @@ function readAgentModels(config: any, defaults: Record<ModelRole, string | null>
     let storedCompanionModels: Record<string, Record<string, string>> = {};
     if (typeof window !== 'undefined') {
         try {
-            const stored = localStorage.getItem('hecate_companion_models');
+            const stored = localStorage.getItem('ofiere_companion_models');
             if (stored) {
                 const parsed = JSON.parse(stored);
                 storedCompanionModels = parsed?.activeModels ?? {};
@@ -400,7 +400,7 @@ export const useOpenClawModelStore = create<OpenClawModelState & LegacyAliases>(
                     try {
                         let existing: any = {};
                         try {
-                            const stored = localStorage.getItem('hecate_companion_models');
+                            const stored = localStorage.getItem('ofiere_companion_models');
                             if (stored) existing = JSON.parse(stored);
                         } catch { /* ignore */ }
 
@@ -413,7 +413,7 @@ export const useOpenClawModelStore = create<OpenClawModelState & LegacyAliases>(
                             defaults: { ...existingDefaults, [role]: newDefaults[role] }
                         };
                         
-                        localStorage.setItem('hecate_companion_models', JSON.stringify(toStore));
+                        localStorage.setItem('ofiere_companion_models', JSON.stringify(toStore));
                     } catch (e) {
                         console.error('[ModelStore] failed to save companion models to localStorage:', e);
                     }

@@ -1,4 +1,4 @@
-// src/cli.ts — CLI registration for Hecate PM plugin
+// src/cli.ts — CLI registration for Ofiere PM plugin
 // Uses api.registerCli with descriptors as documented:
 //   https://docs.openclaw.ai/plugins/sdk-overview#cli-registration-metadata
 //
@@ -73,10 +73,10 @@ function getPluginConfig(): {
 } {
   const env = readEnvFile();
   return {
-    supabaseUrl: process.env.HECATE_SUPABASE_URL || env.HECATE_SUPABASE_URL || undefined,
-    serviceRoleKey: process.env.HECATE_SERVICE_ROLE_KEY || env.HECATE_SERVICE_ROLE_KEY || undefined,
-    userId: process.env.HECATE_USER_ID || env.HECATE_USER_ID || undefined,
-    agentId: process.env.HECATE_AGENT_ID || env.HECATE_AGENT_ID || undefined,
+    supabaseUrl: process.env.OFIERE_SUPABASE_URL || env.OFIERE_SUPABASE_URL || undefined,
+    serviceRoleKey: process.env.OFIERE_SERVICE_ROLE_KEY || env.OFIERE_SERVICE_ROLE_KEY || undefined,
+    userId: process.env.OFIERE_USER_ID || env.OFIERE_USER_ID || undefined,
+    agentId: process.env.OFIERE_AGENT_ID || env.OFIERE_AGENT_ID || undefined,
     enabled: true,
   };
 }
@@ -92,16 +92,16 @@ export function registerCli(api: any): void {
     // Async registrar — follows the pattern from the official Matrix plugin example
     async ({ program }: { program: any }) => {
       const cmd = program
-        .command("hecate")
-        .description("Hecate PM dashboard integration");
+        .command("ofiere")
+        .description("Ofiere PM dashboard integration");
 
       // ── setup ──────────────────────────────────────────────────────────
       cmd
         .command("setup")
-        .description("Configure Hecate PM connection (writes to .env, never touches openclaw.json)")
+        .description("Configure Ofiere PM connection (writes to .env, never touches openclaw.json)")
         .option("--supabase-url <url>", "Supabase project URL")
         .option("--service-key <key>", "Supabase service role key")
-        .option("--user-id <id>", "Hecate user UUID")
+        .option("--user-id <id>", "Ofiere user UUID")
         .action(async (opts: {
           supabaseUrl?: string;
           serviceKey?: string;
@@ -113,7 +113,7 @@ export function registerCli(api: any): void {
 
           // Interactive mode if any field is missing
           if (!supabaseUrl || !serviceKey || !userId) {
-            console.log("\nHecate PM Setup\n");
+            console.log("\nOfiere PM Setup\n");
             const rl = readline.createInterface({
               input: process.stdin,
               output: process.stdout,
@@ -139,9 +139,9 @@ export function registerCli(api: any): void {
 
           // Write to .env file (NEVER touches openclaw.json)
           setEnvVars({
-            HECATE_SUPABASE_URL: supabaseUrl,
-            HECATE_SERVICE_ROLE_KEY: serviceKey,
-            HECATE_USER_ID: userId,
+            OFIERE_SUPABASE_URL: supabaseUrl,
+            OFIERE_SERVICE_ROLE_KEY: serviceKey,
+            OFIERE_USER_ID: userId,
           });
 
           const envFile = getEnvFile();
@@ -155,13 +155,13 @@ export function registerCli(api: any): void {
       // ── status ─────────────────────────────────────────────────────────
       cmd
         .command("status")
-        .description("Show Hecate PM plugin configuration")
+        .description("Show Ofiere PM plugin configuration")
         .action(async () => {
           const cfg = getPluginConfig();
-          console.log("\nHecate PM Status\n");
+          console.log("\nOfiere PM Status\n");
 
           if (!cfg.supabaseUrl) {
-            console.log("  Not configured. Run: openclaw hecate setup\n");
+            console.log("  Not configured. Run: openclaw ofiere setup\n");
             return;
           }
 
@@ -180,13 +180,13 @@ export function registerCli(api: any): void {
       // ── doctor ─────────────────────────────────────────────────────────
       cmd
         .command("doctor")
-        .description("Test Hecate PM connection")
+        .description("Test Ofiere PM connection")
         .action(async () => {
           const cfg = getPluginConfig();
-          console.log("\nHecate PM Doctor\n");
+          console.log("\nOfiere PM Doctor\n");
 
           if (!cfg.supabaseUrl || !cfg.serviceRoleKey || !cfg.userId) {
-            console.log("  Not configured. Run: openclaw hecate setup\n");
+            console.log("  Not configured. Run: openclaw ofiere setup\n");
             return;
           }
 
@@ -237,8 +237,8 @@ export function registerCli(api: any): void {
     {
       descriptors: [
         {
-          name: "hecate",
-          description: "Manage Hecate PM dashboard integration (setup, status, diagnostics)",
+          name: "ofiere",
+          description: "Manage Ofiere PM dashboard integration (setup, status, diagnostics)",
           hasSubcommands: true,
         },
       ],

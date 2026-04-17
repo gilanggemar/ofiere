@@ -37,7 +37,7 @@ export const QuotedReplyBanner: React.FC<QuotedReplyBannerProps> = ({
                 </span>
                 <p
                     className="text-[11px] line-clamp-2 mt-0.5"
-                    style={{ color: 'var(--hecate-text-secondary)' }}
+                    style={{ color: 'var(--ofiere-text-secondary)' }}
                 >
                     {quotedText}
                 </p>
@@ -46,7 +46,7 @@ export const QuotedReplyBanner: React.FC<QuotedReplyBannerProps> = ({
                 onClick={onClear}
                 className="p-0.5 rounded hover:bg-white/5 transition-colors shrink-0"
             >
-                <X className="w-3 h-3" style={{ color: 'var(--hecate-text-tertiary)' }} />
+                <X className="w-3 h-3" style={{ color: 'var(--ofiere-text-tertiary)' }} />
             </button>
         </div>
     );

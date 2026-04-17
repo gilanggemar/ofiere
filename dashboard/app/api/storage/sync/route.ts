@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { AGENT_ROSTER } from '@/lib/agentRoster';
 import { getAuthUserId } from '@/lib/auth';
 
-const BUCKET = 'hecate-images';
+const BUCKET = 'ofiere-images';
 
 /**
  * Ensures an agent exists in the agents table

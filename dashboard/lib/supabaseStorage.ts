@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase'
 
-const BUCKET = 'hecate-images'
+const BUCKET = 'ofiere-images'
 
 /**
  * Upload a base64 data URI to Supabase Storage.
@@ -61,10 +61,10 @@ export function isStorageUrl(str: string): boolean {
 
 /**
  * Extract the storage path from a Supabase Storage public URL.
- * e.g., "https://xxx.supabase.co/storage/v1/object/public/hecate-images/heroes/abc.png"
+ * e.g., "https://xxx.supabase.co/storage/v1/object/public/ofiere-images/heroes/abc.png"
  * returns "heroes/abc.png"
  */
 export function extractStoragePath(url: string): string | null {
-    const match = url.match(/\/storage\/v1\/object\/public\/hecate-images\/(.+)$/)
+    const match = url.match(/\/storage\/v1\/object\/public\/ofiere-images\/(.+)$/)
     return match ? match[1] : null
 }

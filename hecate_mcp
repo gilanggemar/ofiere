@@ -1,8 +1,8 @@
-# Hecate Dashboard MCP Server — Implementation Plan
+# Ofiere Dashboard MCP Server — Implementation Plan
 
 ## Goal
 
-Build a standalone MCP server that exposes **every feature** of the Hecate dashboard as high-level, intention-driven tools. When installed by an OpenClaw agent, the agent gains full programmatic control over the dashboard — reading state, writing data, triggering actions — with the dashboard UI reacting in real-time via Supabase subscriptions.
+Build a standalone MCP server that exposes **every feature** of the Ofiere dashboard as high-level, intention-driven tools. When installed by an OpenClaw agent, the agent gains full programmatic control over the dashboard — reading state, writing data, triggering actions — with the dashboard UI reacting in real-time via Supabase subscriptions.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ Build a standalone MCP server that exposes **every feature** of the Hecate dashb
 OpenClaw Agent
      │
      ▼  MCP tool calls (JSON-RPC over stdio)
-Hecate Dashboard MCP Server  (standalone Node.js process)
+Ofiere Dashboard MCP Server  (standalone Node.js process)
      │
      ▼  reads / writes via Supabase JS SDK
 Supabase (Postgres + Realtime)
@@ -30,7 +30,7 @@ The MCP server is a **standalone Node.js/TypeScript package** that:
 ## User Review Required
 
 > [!IMPORTANT]
-> **Auth Strategy**: The MCP server will use the Supabase **service role key** to bypass RLS. This means agents have full access to all data for the configured user. The user's `user_id` will be set via environment variable `HECATE_USER_ID` so all reads/writes are scoped correctly.
+> **Auth Strategy**: The MCP server will use the Supabase **service role key** to bypass RLS. This means agents have full access to all data for the configured user. The user's `user_id` will be set via environment variable `OFIERE_USER_ID` so all reads/writes are scoped correctly.
 
 > [!WARNING]
 > **Scope Decision**: This plan covers **70+ tools across 15 domains**. This is a large implementation. I recommend building it in phases (see Delivery Plan below). Please confirm if you want all phases or a specific subset first.
@@ -39,183 +39,183 @@ The MCP server is a **standalone Node.js/TypeScript package** that:
 
 ## Tool Catalog (15 Domains, 70+ Tools)
 
-### 1. Tasks (`hecate_tasks_*`) — 7 tools
+### 1. Tasks (`ofiere_tasks_*`) — 7 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_tasks_list` | List all tasks, optionally filter by agent_id, status, priority |
-| `hecate_tasks_get` | Get a single task by ID with its logs |
-| `hecate_tasks_create` | Create a new task assigned to an agent |
-| `hecate_tasks_update` | Update task fields (title, description, status, priority) |
-| `hecate_tasks_delete` | Delete a task |
-| `hecate_tasks_append_log` | Append a log entry to a task |
-| `hecate_tasks_bulk_update_status` | Batch update status for multiple tasks |
+| `ofiere_tasks_list` | List all tasks, optionally filter by agent_id, status, priority |
+| `ofiere_tasks_get` | Get a single task by ID with its logs |
+| `ofiere_tasks_create` | Create a new task assigned to an agent |
+| `ofiere_tasks_update` | Update task fields (title, description, status, priority) |
+| `ofiere_tasks_delete` | Delete a task |
+| `ofiere_tasks_append_log` | Append a log entry to a task |
+| `ofiere_tasks_bulk_update_status` | Batch update status for multiple tasks |
 
 ---
 
-### 2. Agents (`hecate_agents_*`) — 6 tools
+### 2. Agents (`ofiere_agents_*`) — 6 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_agents_list` | List all agents with their status, model, role |
-| `hecate_agents_get` | Get detailed agent info by ID |
-| `hecate_agents_update` | Update agent fields (name, codename, role, status, temperature) |
-| `hecate_agents_set_status` | Quick status update (ONLINE/OFFLINE/WORKING/etc.) |
-| `hecate_agents_set_hero_image` | Set an agent's hero image |
-| `hecate_agents_get_xp` | Get XP, level, and rank for an agent |
+| `ofiere_agents_list` | List all agents with their status, model, role |
+| `ofiere_agents_get` | Get detailed agent info by ID |
+| `ofiere_agents_update` | Update agent fields (name, codename, role, status, temperature) |
+| `ofiere_agents_set_status` | Quick status update (ONLINE/OFFLINE/WORKING/etc.) |
+| `ofiere_agents_set_hero_image` | Set an agent's hero image |
+| `ofiere_agents_get_xp` | Get XP, level, and rank for an agent |
 
 ---
 
-### 3. Scheduler (`hecate_scheduler_*`) — 6 tools
+### 3. Scheduler (`ofiere_scheduler_*`) — 6 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_scheduler_list_events` | List scheduled events in a date range |
-| `hecate_scheduler_create_event` | Create a new scheduled event |
-| `hecate_scheduler_update_event` | Update event details |
-| `hecate_scheduler_delete_event` | Delete a scheduled event |
-| `hecate_scheduler_move_event` | Reschedule an event to a new date |
-| `hecate_scheduler_execute_event` | Manually trigger a scheduled event now |
+| `ofiere_scheduler_list_events` | List scheduled events in a date range |
+| `ofiere_scheduler_create_event` | Create a new scheduled event |
+| `ofiere_scheduler_update_event` | Update event details |
+| `ofiere_scheduler_delete_event` | Delete a scheduled event |
+| `ofiere_scheduler_move_event` | Reschedule an event to a new date |
+| `ofiere_scheduler_execute_event` | Manually trigger a scheduled event now |
 
 ---
 
-### 4. Workflows (`hecate_workflows_*`) — 8 tools
+### 4. Workflows (`ofiere_workflows_*`) — 8 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_workflows_list` | List all workflows |
-| `hecate_workflows_get` | Get full workflow definition (nodes, edges, steps) |
-| `hecate_workflows_create` | Create a new workflow |
-| `hecate_workflows_update` | Update workflow definition |
-| `hecate_workflows_delete` | Delete a workflow |
-| `hecate_workflows_trigger_run` | Execute a workflow |
-| `hecate_workflows_list_runs` | List workflow run history |
-| `hecate_workflows_get_run` | Get details of a specific run |
+| `ofiere_workflows_list` | List all workflows |
+| `ofiere_workflows_get` | Get full workflow definition (nodes, edges, steps) |
+| `ofiere_workflows_create` | Create a new workflow |
+| `ofiere_workflows_update` | Update workflow definition |
+| `ofiere_workflows_delete` | Delete a workflow |
+| `ofiere_workflows_trigger_run` | Execute a workflow |
+| `ofiere_workflows_list_runs` | List workflow run history |
+| `ofiere_workflows_get_run` | Get details of a specific run |
 
 ---
 
-### 5. Chat & Conversations (`hecate_chat_*`) — 6 tools
+### 5. Chat & Conversations (`ofiere_chat_*`) — 6 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_chat_list_conversations` | List conversations, optionally by agent |
-| `hecate_chat_get_messages` | Get messages for a conversation |
-| `hecate_chat_send_message` | Post a new message to a conversation |
-| `hecate_chat_create_conversation` | Start a new conversation with an agent |
-| `hecate_chat_pin_conversation` | Pin/unpin a conversation |
-| `hecate_chat_archive_conversation` | Archive a conversation |
+| `ofiere_chat_list_conversations` | List conversations, optionally by agent |
+| `ofiere_chat_get_messages` | Get messages for a conversation |
+| `ofiere_chat_send_message` | Post a new message to a conversation |
+| `ofiere_chat_create_conversation` | Start a new conversation with an agent |
+| `ofiere_chat_pin_conversation` | Pin/unpin a conversation |
+| `ofiere_chat_archive_conversation` | Archive a conversation |
 
 ---
 
-### 6. Summit Sessions (`hecate_summit_*`) — 5 tools
+### 6. Summit Sessions (`ofiere_summit_*`) — 5 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_summit_list_sessions` | List all summit sessions |
-| `hecate_summit_get_session` | Get session details with messages |
-| `hecate_summit_create_session` | Start a new multi-agent summit |
-| `hecate_summit_add_message` | Post a message into a summit |
-| `hecate_summit_update_status` | Resolve or archive a summit |
+| `ofiere_summit_list_sessions` | List all summit sessions |
+| `ofiere_summit_get_session` | Get session details with messages |
+| `ofiere_summit_create_session` | Start a new multi-agent summit |
+| `ofiere_summit_add_message` | Post a message into a summit |
+| `ofiere_summit_update_status` | Resolve or archive a summit |
 
 ---
 
-### 7. Projects (`hecate_projects_*`) — 5 tools
+### 7. Projects (`ofiere_projects_*`) — 5 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_projects_list` | List all projects |
-| `hecate_projects_get` | Get project details with files |
-| `hecate_projects_create` | Create a new project |
-| `hecate_projects_update` | Update project name, description, instructions |
-| `hecate_projects_delete` | Delete a project |
+| `ofiere_projects_list` | List all projects |
+| `ofiere_projects_get` | Get project details with files |
+| `ofiere_projects_create` | Create a new project |
+| `ofiere_projects_update` | Update project name, description, instructions |
+| `ofiere_projects_delete` | Delete a project |
 
 ---
 
-### 8. Notifications (`hecate_notifications_*`) — 5 tools
+### 8. Notifications (`ofiere_notifications_*`) — 5 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_notifications_list` | List recent notifications |
-| `hecate_notifications_create` | Create a new notification (visible in dashboard) |
-| `hecate_notifications_mark_read` | Mark a notification as read |
-| `hecate_notifications_mark_all_read` | Mark all as read |
-| `hecate_notifications_delete` | Delete a notification |
+| `ofiere_notifications_list` | List recent notifications |
+| `ofiere_notifications_create` | Create a new notification (visible in dashboard) |
+| `ofiere_notifications_mark_read` | Mark a notification as read |
+| `ofiere_notifications_mark_all_read` | Mark all as read |
+| `ofiere_notifications_delete` | Delete a notification |
 
 ---
 
-### 9. Telemetry & Usage (`hecate_telemetry_*`) — 3 tools
+### 9. Telemetry & Usage (`ofiere_telemetry_*`) — 3 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_telemetry_get_summary` | Get aggregated telemetry stats |
-| `hecate_telemetry_get_chart_data` | Get time-series chart data |
-| `hecate_telemetry_log_event` | Log a new telemetry event |
+| `ofiere_telemetry_get_summary` | Get aggregated telemetry stats |
+| `ofiere_telemetry_get_chart_data` | Get time-series chart data |
+| `ofiere_telemetry_log_event` | Log a new telemetry event |
 
 ---
 
-### 10. Gamification (`hecate_gamification_*`) — 5 tools
+### 10. Gamification (`ofiere_gamification_*`) — 5 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_gamification_get_overview` | Get XP, levels, streak, achievements summary |
-| `hecate_gamification_award_xp` | Award XP to an agent |
-| `hecate_gamification_get_missions` | List daily missions |
-| `hecate_gamification_update_mission_progress` | Increment mission progress |
-| `hecate_gamification_get_streak` | Get current & longest streak |
+| `ofiere_gamification_get_overview` | Get XP, levels, streak, achievements summary |
+| `ofiere_gamification_award_xp` | Award XP to an agent |
+| `ofiere_gamification_get_missions` | List daily missions |
+| `ofiere_gamification_update_mission_progress` | Increment mission progress |
+| `ofiere_gamification_get_streak` | Get current & longest streak |
 
 ---
 
-### 11. Knowledge Base (`hecate_knowledge_*`) — 5 tools
+### 11. Knowledge Base (`ofiere_knowledge_*`) — 5 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_knowledge_list_documents` | List knowledge documents, optionally by agent |
-| `hecate_knowledge_get_document` | Get document content |
-| `hecate_knowledge_create_document` | Upload/create a knowledge document |
-| `hecate_knowledge_delete_document` | Delete a knowledge document |
-| `hecate_knowledge_search` | Search knowledge fragments by query |
+| `ofiere_knowledge_list_documents` | List knowledge documents, optionally by agent |
+| `ofiere_knowledge_get_document` | Get document content |
+| `ofiere_knowledge_create_document` | Upload/create a knowledge document |
+| `ofiere_knowledge_delete_document` | Delete a knowledge document |
+| `ofiere_knowledge_search` | Search knowledge fragments by query |
 
 ---
 
-### 12. Audit Log (`hecate_audit_*`) — 2 tools
+### 12. Audit Log (`ofiere_audit_*`) — 2 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_audit_list` | List audit log entries with filters |
-| `hecate_audit_create` | Write a new audit log entry |
+| `ofiere_audit_list` | List audit log entries with filters |
+| `ofiere_audit_create` | Write a new audit log entry |
 
 ---
 
-### 13. Prompt Chunks (`hecate_prompt_chunks_*`) — 4 tools
+### 13. Prompt Chunks (`ofiere_prompt_chunks_*`) — 4 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_prompt_chunks_list` | List all prompt chunks |
-| `hecate_prompt_chunks_create` | Create a new prompt chunk |
-| `hecate_prompt_chunks_update` | Update a prompt chunk |
-| `hecate_prompt_chunks_delete` | Delete a prompt chunk |
+| `ofiere_prompt_chunks_list` | List all prompt chunks |
+| `ofiere_prompt_chunks_create` | Create a new prompt chunk |
+| `ofiere_prompt_chunks_update` | Update a prompt chunk |
+| `ofiere_prompt_chunks_delete` | Delete a prompt chunk |
 
 ---
 
-### 14. MCP Server Management (`hecate_mcp_servers_*`) — 4 tools
+### 14. MCP Server Management (`ofiere_mcp_servers_*`) — 4 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_mcp_servers_list` | List registered MCP servers |
-| `hecate_mcp_servers_add` | Register a new MCP server |
-| `hecate_mcp_servers_update` | Update MCP server config |
-| `hecate_mcp_servers_delete` | Remove a registered MCP server |
+| `ofiere_mcp_servers_list` | List registered MCP servers |
+| `ofiere_mcp_servers_add` | Register a new MCP server |
+| `ofiere_mcp_servers_update` | Update MCP server config |
+| `ofiere_mcp_servers_delete` | Remove a registered MCP server |
 
 ---
 
-### 15. Connection Profiles (`hecate_connections_*`) — 4 tools
+### 15. Connection Profiles (`ofiere_connections_*`) — 4 tools
 
 | Tool | Description |
 |------|-------------|
-| `hecate_connections_list` | List connection profiles |
-| `hecate_connections_create` | Create a new connection profile |
-| `hecate_connections_activate` | Activate a profile |
-| `hecate_connections_test` | Test a profile's connectivity |
+| `ofiere_connections_list` | List connection profiles |
+| `ofiere_connections_create` | Create a new connection profile |
+| `ofiere_connections_activate` | Activate a profile |
+| `ofiere_connections_test` | Test a profile's connectivity |
 
 ---
 
@@ -227,7 +227,7 @@ The MCP server is a **standalone Node.js/TypeScript package** that:
 Node.js package with dependencies: `@modelcontextprotocol/sdk`, `@supabase/supabase-js`, `dotenv`, `zod`
 
 #### [NEW] `dashboard-mcp/.env.example`
-Required env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `HECATE_USER_ID`
+Required env vars: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OFIERE_USER_ID`
 
 #### [NEW] `dashboard-mcp/tsconfig.json`
 TypeScript config targeting ES2022 with Node module resolution
@@ -292,13 +292,13 @@ Once built, agents install the MCP server via their config:
 ```json
 {
   "mcpServers": {
-    "hecate-dashboard": {
+    "ofiere-dashboard": {
       "command": "node",
-      "args": ["d:/AI Model/2-Antigravity Projects/Hecate/dashboard-mcp/dist/index.js"],
+      "args": ["d:/AI Model/2-Antigravity Projects/hecate/dashboard-mcp/dist/index.js"],
       "env": {
         "SUPABASE_URL": "https://wcpqanwpngqnsstcvvis.supabase.co",
         "SUPABASE_SERVICE_ROLE_KEY": "...",
-        "HECATE_USER_ID": "..."
+        "OFIERE_USER_ID": "..."
       }
     }
   }

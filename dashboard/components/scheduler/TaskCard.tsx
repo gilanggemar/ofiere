@@ -83,7 +83,7 @@ export function TaskCard({
             {isCompact ? (
                 <div className="flex flex-col gap-0.5 min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                        <span className="hecate-body-sm font-medium truncate flex-1">
+                        <span className="ofiere-body-sm font-medium truncate flex-1">
                             {title}
                         </span>
                         {/* Status indicator */}
@@ -98,7 +98,7 @@ export function TaskCard({
                         )}
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <span className="hecate-caption truncate">{agentName}</span>
+                        <span className="ofiere-caption truncate">{agentName}</span>
                         <span
                             className="w-1.5 h-1.5 rounded-full shrink-0"
                             style={{ backgroundColor: priorityColor }}
@@ -107,7 +107,7 @@ export function TaskCard({
                     {scheduledTime && (
                         <div className="flex items-center gap-1 mt-0.5">
                             <Clock className="w-2.5 h-2.5 opacity-40" />
-                            <span className="hecate-mono-sm opacity-60">{scheduledTime}</span>
+                            <span className="ofiere-mono-sm opacity-60">{scheduledTime}</span>
                         </div>
                     )}
                     {isRecurring && (
@@ -116,7 +116,7 @@ export function TaskCard({
                                 <TooltipTrigger asChild>
                                     <Repeat className="w-3 h-3 opacity-40 mt-0.5" />
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="hecate-glass-3">
+                                <TooltipContent side="top" className="ofiere-glass-3">
                                     {getRecurrenceLabel(recurrenceType)}
                                 </TooltipContent>
                             </Tooltip>
@@ -127,7 +127,7 @@ export function TaskCard({
                 /* ─── Full mode (tray) — compact ─── */
                 <div className="flex flex-col gap-0.5 min-w-0">
                     <div className="flex items-center justify-between gap-1.5">
-                        <span className="hecate-body-sm font-medium truncate flex-1">
+                        <span className="ofiere-body-sm font-medium truncate flex-1">
                             {title}
                         </span>
                         {status === 'running' && (
@@ -140,15 +140,15 @@ export function TaskCard({
                             className="w-3 h-3 rounded-full shrink-0"
                             style={{ backgroundColor: agentColor }}
                         />
-                        <span className="hecate-caption opacity-70 truncate">{agentName}</span>
+                        <span className="ofiere-caption opacity-70 truncate">{agentName}</span>
                         <span className="text-white/20">·</span>
                         <span
                             className="w-1.5 h-1.5 rounded-full shrink-0"
                             style={{ backgroundColor: priorityColor }}
                         />
-                        <span className="hecate-caption capitalize">{priority}</span>
+                        <span className="ofiere-caption capitalize">{priority}</span>
                         {isRecurring && (
-                            <span className="flex items-center gap-0.5 hecate-caption opacity-50">
+                            <span className="flex items-center gap-0.5 ofiere-caption opacity-50">
                                 <Repeat className="w-2.5 h-2.5" />
                             </span>
                         )}

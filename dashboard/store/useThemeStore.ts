@@ -8,7 +8,7 @@ export interface ThemeStore {
 
 const getInitialTheme = (): 'dark' | 'light' | 'system' => {
     if (typeof window !== 'undefined') {
-        return (localStorage.getItem('hecate-theme') as 'dark' | 'light' | 'system') ?? 'dark';
+        return (localStorage.getItem('ofiere-theme') as 'dark' | 'light' | 'system') ?? 'dark';
     }
     return 'dark';
 };
@@ -36,7 +36,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
         }
 
         if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('hecate-theme', theme);
+            localStorage.setItem('ofiere-theme', theme);
         }
 
         set({ theme, resolvedTheme: resolved });

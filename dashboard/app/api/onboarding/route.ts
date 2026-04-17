@@ -31,7 +31,7 @@ export async function POST() {
         // Seed a welcome notification
         await db.from('notifications').insert({
             type: 'system',
-            title: 'Welcome to Hecate',
+            title: 'Welcome to Ofiere',
             message: 'Your dashboard is ready. Start by creating your first agent in the Command Center.',
             is_read: false,
             user_id: userId,

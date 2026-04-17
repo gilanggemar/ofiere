@@ -84,21 +84,21 @@ function DraggableWorkflowCard({ workflow }: { workflow: any }) {
             >
                 <div className="flex flex-col gap-1 min-w-0">
                     <div className="flex items-start justify-between gap-1.5">
-                        <span className="hecate-body font-medium line-clamp-2 flex-1">
+                        <span className="ofiere-body font-medium line-clamp-2 flex-1">
                             {workflow.name}
                         </span>
                         <GitBranch className="w-3.5 h-3.5 shrink-0 opacity-40 mt-0.5" />
                     </div>
                     {workflow.description && (
-                        <p className="hecate-caption truncate">{workflow.description}</p>
+                        <p className="ofiere-caption truncate">{workflow.description}</p>
                     )}
                     <div className="flex items-center gap-2 mt-0.5">
-                        <span className="flex items-center gap-1 hecate-caption opacity-60">
+                        <span className="flex items-center gap-1 ofiere-caption opacity-60">
                             <Zap className="w-3 h-3" />
                             {stepCount} step{stepCount !== 1 ? 's' : ''}
                         </span>
                         <span className={cn(
-                            'hecate-badge-text px-1.5 py-0.5 rounded-sm text-[9px]',
+                            'ofiere-badge-text px-1.5 py-0.5 rounded-sm text-[9px]',
                             workflow.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/[0.08]',
                         )}>
                             {workflow.status || 'draft'}
@@ -150,12 +150,12 @@ export function TaskCardTray() {
     }, [workflows, searchQuery]);
 
     return (
-        <div className="hecate-glass-1 w-64 border-r border-white/[0.06] flex flex-col h-full shrink-0">
+        <div className="ofiere-glass-1 w-64 border-r border-white/[0.06] flex flex-col h-full shrink-0">
             {/* Header */}
             <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
                 <div className="flex items-center justify-between mb-2">
-                    <h3 className="hecate-section-prominent">Unscheduled</h3>
-                    <span className="hecate-badge-text bg-white/[0.08] px-2 py-0.5 rounded-sm">
+                    <h3 className="ofiere-section-prominent">Unscheduled</h3>
+                    <span className="ofiere-badge-text bg-white/[0.08] px-2 py-0.5 rounded-sm">
                         {unscheduledTasks.length + filteredWorkflows.length}
                     </span>
                 </div>
@@ -201,7 +201,7 @@ export function TaskCardTray() {
                 {unscheduledTasks.length === 0 && filteredWorkflows.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full gap-2 opacity-40">
                         <InboxIcon className="w-8 h-8" />
-                        <div className="hecate-caption text-center">
+                        <div className="ofiere-caption text-center">
                             {searchQuery ? 'No matching items' : 'All tasks scheduled! 🎯'}
                         </div>
                     </div>

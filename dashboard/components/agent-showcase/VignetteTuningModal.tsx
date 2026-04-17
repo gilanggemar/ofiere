@@ -44,7 +44,7 @@ export function VignetteTuningModal({ isOpen, onClose }: VignetteTuningModalProp
                     initial={{ opacity: 0, scale: 0.95, y: '-40%', x: '-50%' }}
                     animate={{ opacity: 1, scale: 1, y: '-50%', x: '-50%' }}
                     exit={{ opacity: 0, scale: 0.95, y: '-45%', x: '-50%' }}
-                    className="fixed top-1/2 left-1/2 z-[9999] pointer-events-auto w-[400px] hecate-glass-3 bg-black/90 p-6 rounded-md border border-[#FF6D29]/50 shadow-[0_0_30px_rgba(255,40,0,0.2)] text-white font-mono"
+                    className="fixed top-1/2 left-1/2 z-[9999] pointer-events-auto w-[400px] ofiere-glass-3 bg-black/90 p-6 rounded-md border border-[#FF6D29]/50 shadow-[0_0_30px_rgba(255,40,0,0.2)] text-white font-mono"
                     style={{ transform: 'translate(-50%, -50%)' }} // Fallback if framer-motion delays
                 >
                     <h3 className="text-[#FF6D29] text-[10px] font-black uppercase tracking-[0.3em] mb-6 text-center">

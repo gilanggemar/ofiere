@@ -39,7 +39,7 @@ const VpsIndicator = memo(({ label, connected, connecting }: {
                 animate={connecting ? { opacity: [1, 0.4, 1] } : {}}
                 transition={{ duration: 1, repeat: Infinity }}
             />
-            <span className="hecate-caption text-muted-foreground">{label}</span>
+            <span className="ofiere-caption text-muted-foreground">{label}</span>
         </div>
     );
 });
@@ -69,7 +69,7 @@ export const SystemHealthBar = memo(({ agents, className, showVpsIndicators = tr
             <div className={cn("flex flex-col gap-2 w-full", className)}>
                 <div className="h-1.5 w-full rounded-full bg-accent-base/10 animate-pulse" />
                 <div className="flex items-center justify-between">
-                    <span className="hecate-caption text-muted-foreground opacity-50">Awaiting telemetry...</span>
+                    <span className="ofiere-caption text-muted-foreground opacity-50">Awaiting telemetry...</span>
                     {showVpsIndicators && (
                         <div className="flex items-center gap-3">
                             <VpsIndicator
@@ -122,9 +122,9 @@ export const SystemHealthBar = memo(({ agents, className, showVpsIndicators = tr
             <div className="flex items-center justify-between">
                 <div>
                     {isAllHealthy ? (
-                        <span className="hecate-caption" style={{ color: 'var(--accent-lime)' }}>All systems nominal</span>
+                        <span className="ofiere-caption" style={{ color: 'var(--accent-lime)' }}>All systems nominal</span>
                     ) : (
-                        <span className="hecate-caption" style={{ color: 'var(--accent-coral)' }}>
+                        <span className="ofiere-caption" style={{ color: 'var(--accent-coral)' }}>
                             {errorAgents.length} {errorAgents.length === 1 ? 'agent' : 'agents'} with warnings
                         </span>
                     )}

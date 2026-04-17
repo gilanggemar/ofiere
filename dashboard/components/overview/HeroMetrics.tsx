@@ -59,7 +59,7 @@ export function HeroMetrics() {
                     key={card.id}
                     variants={fadeInUp}
                     whileHover={{ translateY: -2 }}
-                    className="group hecate-glass-2 rounded-md p-4 flex flex-col relative overflow-hidden transition-all duration-300"
+                    className="group ofiere-glass-2 rounded-md p-4 flex flex-col relative overflow-hidden transition-all duration-300"
                     style={{ '--hover-border-color': card.color } as React.CSSProperties}
                 >
                     <div className="absolute inset-0 border-2 border-transparent group-hover:border-[var(--hover-border-color)] opacity-0 group-hover:opacity-30 rounded-md transition-all duration-300 pointer-events-none" />
@@ -72,11 +72,11 @@ export function HeroMetrics() {
                     </div>
 
                     <div className="mt-2">
-                        <div className="hecate-metric-xl" style={{ color: card.color }}>
+                        <div className="ofiere-metric-xl" style={{ color: card.color }}>
                             <AnimatedNumber value={card.value} />
                             {card.suffix && <span className="text-xl ml-1">{card.suffix}</span>}
                         </div>
-                        <div className="hecate-section mt-1">
+                        <div className="ofiere-section mt-1">
                             {card.label}
                         </div>
                     </div>

@@ -1,8 +1,8 @@
-# Hecate Maintenance Log
+# Ofiere Maintenance Log
 
 ## Project Architecture Overview
 
-Hecate is a Next.js (React) front-end web dashboard that acts as the Command and Control center for the **OpenClaw** gateway. It connects to the OpenClaw backend exclusively via WebSockets to stream agent interactions, tool calls, and health telemetry.
+Ofiere is a Next.js (React) front-end web dashboard that acts as the Command and Control center for the **OpenClaw** gateway. It connects to the OpenClaw backend exclusively via WebSockets to stream agent interactions, tool calls, and health telemetry.
 
 ### Core Stack
 *   **Next.js 15+** (App Router)
@@ -22,7 +22,7 @@ Hecate is a Next.js (React) front-end web dashboard that acts as the Command and
 ## Known Issues & Workarounds
 
 *   **WebSocket Payload Changes**: The OpenClaw websocket payload structures (especially `tool_call` arrays vs inline XML elements) can be volatile. Currently, the dashboard parses a dual-standard, supporting both the newer `.state === 'tool_call'` blocks AND legacy XML trailing tags inside text content chunks. If tool display starts breaking, start debugging the `renderMessageContent` function located in Chat, Summit, and Tasks pages.
-*   **Agent Identity Sync**: Hecate expects certain agent identities defined in `openclaw.json` (e.g., `ivy-slack`, `daisy-slack`). The `useSocket` discovers active sessions dynamically, but if the gateway drops these sessions, messages will default to routing into a "system" scope until the initial chat handshake restores the `sessionKey`.
+*   **Agent Identity Sync**: Ofiere expects certain agent identities defined in `openclaw.json` (e.g., `ivy-slack`, `daisy-slack`). The `useSocket` discovers active sessions dynamically, but if the gateway drops these sessions, messages will default to routing into a "system" scope until the initial chat handshake restores the `sessionKey`.
 
 ## Recent Modifications (Phase 4 & 5)
 *   **Execution Monitor Integration**: We enhanced the Operations Pipeline to natively slide out a "Live Monitor", bridging `useTaskStore` execution triggers (`sendChatMessage`) directly into `useSocket` responses without leaving the page.

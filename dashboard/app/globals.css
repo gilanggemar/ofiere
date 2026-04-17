@@ -112,31 +112,31 @@ html {
   --color-agent-thalia: var(--agent-thalia);
   --color-agent-zero: var(--agent-zero);
 
-  /* --- Hecate Chat Extended Palette (Tailwind v4 mappings) --- */
-  --color-hecate-cyan: var(--hecate-cyan);
-  --color-hecate-cyan-dim: var(--hecate-cyan-dim);
-  --color-hecate-cyan-glow: var(--hecate-cyan-glow);
-  --color-hecate-cyan-muted: var(--hecate-cyan-muted);
-  --color-hecate-violet: var(--hecate-violet);
-  --color-hecate-violet-dim: var(--hecate-violet-dim);
-  --color-hecate-violet-glow: var(--hecate-violet-glow);
-  --color-hecate-warn: var(--hecate-warn);
-  --color-hecate-warn-dim: var(--hecate-warn-dim);
-  --color-hecate-danger: var(--hecate-danger);
-  --color-hecate-danger-dim: var(--hecate-danger-dim);
-  --color-hecate-success: var(--hecate-success);
-  --color-hecate-success-dim: var(--hecate-success-dim);
-  --color-hecate-surface-0: var(--hecate-surface-0);
-  --color-hecate-surface-2: var(--hecate-surface-2);
-  --color-hecate-surface-3: var(--hecate-surface-3);
-  --color-hecate-surface-4: var(--hecate-surface-4);
-  --color-hecate-border-subtle: var(--hecate-border-subtle);
-  --color-hecate-border-default: var(--hecate-border-default);
-  --color-hecate-border-strong: var(--hecate-border-strong);
-  --color-hecate-text-primary: var(--hecate-text-primary);
-  --color-hecate-text-secondary: var(--hecate-text-secondary);
-  --color-hecate-text-tertiary: var(--hecate-text-tertiary);
-  --color-hecate-text-ghost: var(--hecate-text-ghost);
+  /* --- OFIERE CHAT Extended Palette (Tailwind v4 mappings) --- */
+  --color-ofiere-cyan: var(--ofiere-cyan);
+  --color-ofiere-cyan-dim: var(--ofiere-cyan-dim);
+  --color-ofiere-cyan-glow: var(--ofiere-cyan-glow);
+  --color-ofiere-cyan-muted: var(--ofiere-cyan-muted);
+  --color-ofiere-violet: var(--ofiere-violet);
+  --color-ofiere-violet-dim: var(--ofiere-violet-dim);
+  --color-ofiere-violet-glow: var(--ofiere-violet-glow);
+  --color-ofiere-warn: var(--ofiere-warn);
+  --color-ofiere-warn-dim: var(--ofiere-warn-dim);
+  --color-ofiere-danger: var(--ofiere-danger);
+  --color-ofiere-danger-dim: var(--ofiere-danger-dim);
+  --color-ofiere-success: var(--ofiere-success);
+  --color-ofiere-success-dim: var(--ofiere-success-dim);
+  --color-ofiere-surface-0: var(--ofiere-surface-0);
+  --color-ofiere-surface-2: var(--ofiere-surface-2);
+  --color-ofiere-surface-3: var(--ofiere-surface-3);
+  --color-ofiere-surface-4: var(--ofiere-surface-4);
+  --color-ofiere-border-subtle: var(--ofiere-border-subtle);
+  --color-ofiere-border-default: var(--ofiere-border-default);
+  --color-ofiere-border-strong: var(--ofiere-border-strong);
+  --color-ofiere-text-primary: var(--ofiere-text-primary);
+  --color-ofiere-text-secondary: var(--ofiere-text-secondary);
+  --color-ofiere-text-tertiary: var(--ofiere-text-tertiary);
+  --color-ofiere-text-ghost: var(--ofiere-text-ghost);
 }
 
 :root {
@@ -453,48 +453,48 @@ html {
   --focus-ring: var(--accent-base);
   --focus-ring-offset: var(--bg-base);
 
-  /* ═══ HECATE CHAT — Extended Palette (Additive Only) ═══ */
+  /* ═══ OFIERE CHAT — Extended Palette (Additive Only) ═══ */
 
   /* --- Secondary Accent: Electric Cyan --- */
-  --hecate-cyan: #00e5cc;
-  --hecate-cyan-dim: #00e5cc33;
-  --hecate-cyan-glow: #00e5cc66;
-  --hecate-cyan-muted: #0a7a6e;
+  --ofiere-cyan: #00e5cc;
+  --ofiere-cyan-dim: #00e5cc33;
+  --ofiere-cyan-glow: #00e5cc66;
+  --ofiere-cyan-muted: #0a7a6e;
 
   /* --- Tertiary Accent: Helio Violet --- */
-  --hecate-violet: #a78bfa;
-  --hecate-violet-dim: #a78bfa22;
-  --hecate-violet-glow: #a78bfa55;
+  --ofiere-violet: #a78bfa;
+  --ofiere-violet-dim: #a78bfa22;
+  --ofiere-violet-glow: #a78bfa55;
 
   /* --- Semantic: Warning / Drift --- */
-  --hecate-warn: #f59e0b;
-  --hecate-warn-dim: #f59e0b1a;
+  --ofiere-warn: #f59e0b;
+  --ofiere-warn-dim: #f59e0b1a;
 
   /* --- Semantic: Danger / Critical --- */
-  --hecate-danger: #ef4444;
-  --hecate-danger-dim: #ef44441a;
+  --ofiere-danger: #ef4444;
+  --ofiere-danger-dim: #ef44441a;
 
   /* --- Semantic: Success / Locked / Ship-Ready --- */
-  --hecate-success: #34d399;
-  --hecate-success-dim: #34d3991a;
+  --ofiere-success: #34d399;
+  --ofiere-success-dim: #34d3991a;
 
   /* --- Surface Layers (panels, modals, drawers) --- */
-  --hecate-surface-0: #09090b;
-  --hecate-surface-1: #111113;  /* reference only — existing main bg */
-  --hecate-surface-2: #18181b;
-  --hecate-surface-3: #1f1f23;
-  --hecate-surface-4: #27272a;
+  --ofiere-surface-0: #09090b;
+  --ofiere-surface-1: #111113;  /* reference only — existing main bg */
+  --ofiere-surface-2: #18181b;
+  --ofiere-surface-3: #1f1f23;
+  --ofiere-surface-4: #27272a;
 
   /* --- Border variants --- */
-  --hecate-border-subtle: #ffffff08;
-  --hecate-border-default: #ffffff12;
-  --hecate-border-strong: #ffffff22;
+  --ofiere-border-subtle: #ffffff08;
+  --ofiere-border-default: #ffffff12;
+  --ofiere-border-strong: #ffffff22;
 
   /* --- Text hierarchy --- */
-  --hecate-text-primary: #f5f0eb;
-  --hecate-text-secondary: #a89a8c;
-  --hecate-text-tertiary: #6b5e52;
-  --hecate-text-ghost: #4a3f35;
+  --ofiere-text-primary: #f5f0eb;
+  --ofiere-text-secondary: #a89a8c;
+  --ofiere-text-tertiary: #6b5e52;
+  --ofiere-text-ghost: #4a3f35;
 }
 
 @layer base {
@@ -524,7 +524,7 @@ html {
 }
 
 /* ─── Page Loading Indicator ─── */
-.hecate-page-loader {
+.ofiere-page-loader {
   position: fixed;
   bottom: 24px;
   left: 24px;
@@ -552,46 +552,46 @@ html {
 }
 
 /* Orbital ring container */
-.hecate-page-loader__ring-wrap {
+.ofiere-page-loader__ring-wrap {
   width: 64px;
   height: 64px;
   flex-shrink: 0;
   position: relative;
 }
 
-.hecate-page-loader__ring {
+.ofiere-page-loader__ring {
   width: 100%;
   height: 100%;
 }
 
 /* Primary arc — clockwise */
-.hecate-page-loader__arc--primary {
+.ofiere-page-loader__arc--primary {
   transform-origin: 40px 40px;
-  animation: hecate-orbit-cw 2.4s linear infinite;
+  animation: ofiere-orbit-cw 2.4s linear infinite;
 }
 
 /* Secondary arc — counter-clockwise */
-.hecate-page-loader__arc--secondary {
+.ofiere-page-loader__arc--secondary {
   transform-origin: 40px 40px;
-  animation: hecate-orbit-ccw 3.2s linear infinite;
+  animation: ofiere-orbit-ccw 3.2s linear infinite;
 }
 
 /* Glowing core */
-.hecate-page-loader__core {
+.ofiere-page-loader__core {
   fill: oklch(0.78 0.18 55);
   filter: drop-shadow(0 0 6px oklch(0.78 0.18 55 / 0.7)) drop-shadow(0 0 12px oklch(0.78 0.18 55 / 0.3));
-  animation: hecate-core-pulse 2s ease-in-out infinite;
+  animation: ofiere-core-pulse 2s ease-in-out infinite;
 }
 
 /* Info text block */
-.hecate-page-loader__info {
+.ofiere-page-loader__info {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
 }
 
-.hecate-page-loader__label {
+.ofiere-page-loader__label {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -599,36 +599,36 @@ html {
   color: oklch(0.78 0.18 55);
 }
 
-.hecate-page-loader__status {
+.ofiere-page-loader__status {
   font-size: 12px;
   font-weight: 400;
   color: oklch(0.75 0 0);
   letter-spacing: -0.01em;
-  animation: hecate-text-fade 2s ease-in-out infinite;
+  animation: ofiere-text-fade 2s ease-in-out infinite;
 }
 
-@keyframes hecate-orbit-cw {
+@keyframes ofiere-orbit-cw {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 
-@keyframes hecate-orbit-ccw {
+@keyframes ofiere-orbit-ccw {
   from { transform: rotate(0deg); }
   to   { transform: rotate(-360deg); }
 }
 
-@keyframes hecate-core-pulse {
+@keyframes ofiere-core-pulse {
   0%, 100% { r: 3; opacity: 1; }
   50%      { r: 4; opacity: 0.7; }
 }
 
-@keyframes hecate-text-fade {
+@keyframes ofiere-text-fade {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.5; }
 }
 
 /* ─── Chat Bubble Slide-Up Animation ─── */
-@keyframes hecate-chat-slide-in {
+@keyframes ofiere-chat-slide-in {
   0% {
     opacity: 0;
     transform: translateY(12px);
@@ -639,11 +639,11 @@ html {
   }
 }
 
-.hecate-chat-bubble-enter {
-  animation: hecate-chat-slide-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+.ofiere-chat-bubble-enter {
+  animation: ofiere-chat-slide-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
-@keyframes hecateProcessingGlow {
+@keyframes ofiereProcessingGlow {
   0%, 100% {
     box-shadow:
       0 0 12px rgba(249, 115, 22, 0.12),
@@ -661,7 +661,7 @@ html {
 }
 
 /* ── Thinking placeholder: shimmer text + blinking cursor ── */
-.hecate-shimmer-text {
+.ofiere-shimmer-text {
   background: linear-gradient(
     90deg,
     rgba(249, 115, 22, 0.4) 0%,
@@ -674,25 +674,25 @@ html {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: hecateShimmerText 2s linear infinite;
+  animation: ofiereShimmerText 2s linear infinite;
 }
 
-@keyframes hecateShimmerText {
+@keyframes ofiereShimmerText {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 
-@keyframes hecateDot1 {
+@keyframes ofiereDot1 {
   0%, 100% { opacity: 0; }
   25%, 95% { opacity: 1; }
 }
 
-@keyframes hecateDot2 {
+@keyframes ofiereDot2 {
   0%, 25%, 100% { opacity: 0; }
   50%, 95% { opacity: 1; }
 }
 
-@keyframes hecateDot3 {
+@keyframes ofiereDot3 {
   0%, 50%, 100% { opacity: 0; }
   75%, 95% { opacity: 1; }
 }
@@ -749,7 +749,7 @@ html {
 }
 
 /* ============================================
-   Hecate Typography System — Inter
+   Ofiere Typography System — Inter
    
    Weight Hierarchy:
      800  → Display / Hero text (agent names, splash)
@@ -761,7 +761,7 @@ html {
    ============================================ */
 
 /* --- Page-Level Headings --- */
-.hecate-h1 {
+.ofiere-h1 {
   font-size: 1.75rem;
   /* 28px */
   font-weight: 600;
@@ -769,7 +769,7 @@ html {
   line-height: 1.2;
 }
 
-.hecate-h2 {
+.ofiere-h2 {
   font-size: 1.375rem;
   /* 22px */
   font-weight: 600;
@@ -777,7 +777,7 @@ html {
   line-height: 1.25;
 }
 
-.hecate-h3 {
+.ofiere-h3 {
   font-size: 1.125rem;
   /* 18px */
   font-weight: 500;
@@ -786,7 +786,7 @@ html {
 }
 
 /* --- Section Headers --- */
-.hecate-section {
+.ofiere-section {
   font-size: 0.6875rem;
   /* 11px */
   font-weight: 600;
@@ -797,7 +797,7 @@ html {
 }
 
 /* Variant: section header with normal opacity */
-.hecate-section-prominent {
+.ofiere-section-prominent {
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -806,7 +806,7 @@ html {
 }
 
 /* --- Metric Numbers --- */
-.hecate-metric-xl {
+.ofiere-metric-xl {
   font-size: 2.5rem;
   /* 40px */
   font-weight: 700;
@@ -815,7 +815,7 @@ html {
   line-height: 1;
 }
 
-.hecate-metric-lg {
+.ofiere-metric-lg {
   font-size: 2rem;
   /* 32px */
   font-weight: 700;
@@ -824,7 +824,7 @@ html {
   line-height: 1;
 }
 
-.hecate-metric-md {
+.ofiere-metric-md {
   font-size: 1.25rem;
   /* 20px */
   font-weight: 600;
@@ -833,7 +833,7 @@ html {
   line-height: 1;
 }
 
-.hecate-metric-sm {
+.ofiere-metric-sm {
   font-size: 0.9375rem;
   /* 15px */
   font-weight: 600;
@@ -843,7 +843,7 @@ html {
 }
 
 /* --- Body Text --- */
-.hecate-body {
+.ofiere-body {
   font-size: 0.875rem;
   /* 14px */
   font-weight: 400;
@@ -851,7 +851,7 @@ html {
   letter-spacing: -0.006em;
 }
 
-.hecate-body-sm {
+.ofiere-body-sm {
   font-size: 0.8125rem;
   /* 13px */
   font-weight: 400;
@@ -860,7 +860,7 @@ html {
 }
 
 /* --- Captions / Timestamps / Tertiary Text --- */
-.hecate-caption {
+.ofiere-caption {
   font-size: 0.75rem;
   /* 12px */
   font-weight: 400;
@@ -870,7 +870,7 @@ html {
 }
 
 /* --- Badge / Chip Labels --- */
-.hecate-badge-text {
+.ofiere-badge-text {
   font-size: 0.625rem;
   /* 10px */
   font-weight: 600;
@@ -880,7 +880,7 @@ html {
 }
 
 /* --- Mono / Code Text --- */
-.hecate-mono {
+.ofiere-mono {
   font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code',
     ui-monospace, monospace;
   font-size: 0.8125rem;
@@ -890,7 +890,7 @@ html {
   font-variant-ligatures: none;
 }
 
-.hecate-mono-sm {
+.ofiere-mono-sm {
   font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code',
     ui-monospace, monospace;
   font-size: 0.6875rem;
@@ -914,7 +914,7 @@ time,
 /* --- Glassmorphism Elevation System --- */
 
 /* Level 1: Subtle glass — for secondary panels, sidebars */
-.hecate-glass-1 {
+.ofiere-glass-1 {
   background: oklch(0.15 0.005 0 / 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -922,7 +922,7 @@ time,
 }
 
 /* Level 2: Medium glass — for primary cards, hero sections */
-.hecate-glass-2 {
+.ofiere-glass-2 {
   background: oklch(0.13 0.005 0 / 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -933,7 +933,7 @@ time,
 }
 
 /* Level 3: Heavy glass — for modals, floating panels, command palette */
-.hecate-glass-3 {
+.ofiere-glass-3 {
   background: oklch(0.11 0.005 0 / 0.8);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -945,12 +945,12 @@ time,
 }
 
 /* Light mode variants */
-[data-theme="light"] .hecate-glass-1 {
+[data-theme="light"] .ofiere-glass-1 {
   background: oklch(0.99 0.005 0 / 0.6);
   border: 1px solid oklch(0 0 0 / 0.06);
 }
 
-[data-theme="light"] .hecate-glass-2 {
+[data-theme="light"] .ofiere-glass-2 {
   background: oklch(0.99 0.005 0 / 0.75);
   border: 1px solid oklch(0 0 0 / 0.08);
   box-shadow:
@@ -958,7 +958,7 @@ time,
     inset 0 1px 0 oklch(1 0 0 / 0.5);
 }
 
-[data-theme="light"] .hecate-glass-3 {
+[data-theme="light"] .ofiere-glass-3 {
   background: oklch(0.99 0.005 0 / 0.85);
   border: 1px solid oklch(0 0 0 / 0.10);
   box-shadow:
@@ -969,11 +969,11 @@ time,
 
 /* --- Accent Border Glow --- */
 
-.hecate-glow-border {
+.ofiere-glow-border {
   position: relative;
 }
 
-.hecate-glow-border::after {
+.ofiere-glow-border::after {
   content: '';
   position: absolute;
   inset: -1px;
@@ -994,20 +994,20 @@ time,
 
 /* --- Phase 5: Final Polish --- */
 
-.hecate-card-interactive {
+.ofiere-card-interactive {
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
-.hecate-card-interactive:hover {
+.ofiere-card-interactive:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 20px oklch(0 0 0 / 0.15);
 }
 
-.hecate-card-interactive:active {
+.ofiere-card-interactive:active {
   transform: translateY(0px);
 }
 
-@keyframes hecate-shimmer {
+@keyframes ofiere-shimmer {
   0% {
     background-position: 200% 0;
   }
@@ -1017,7 +1017,7 @@ time,
   }
 }
 
-/* Match Hecate global focus style */
+/* Match Ofiere global focus style */
 *:focus-visible {
   outline: 2px solid var(--accent-base);
   outline-offset: 2px;
@@ -1076,7 +1076,7 @@ div:has([contenteditable]):focus-within {
 }
 
 /* ═══ GAMIFICATION TYPOGRAPHY & GLASS ═══ */
-.hecate-rank {
+.ofiere-rank {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1084,7 +1084,7 @@ div:has([contenteditable]):focus-within {
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
 }
 
-.hecate-xp {
+.ofiere-xp {
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1092,13 +1092,13 @@ div:has([contenteditable]):focus-within {
   color: var(--xp-text);
 }
 
-.hecate-mission-title {
+.ofiere-mission-title {
   font-size: 13px;
   font-weight: 500;
   line-height: 1.3;
 }
 
-.hecate-timer {
+.ofiere-timer {
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1106,13 +1106,13 @@ div:has([contenteditable]):focus-within {
   color: var(--text-secondary);
 }
 
-.hecate-achievement-name {
+.ofiere-achievement-name {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.hecate-power-score {
+.ofiere-power-score {
   font-size: 36px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -1124,33 +1124,33 @@ div:has([contenteditable]):focus-within {
 }
 
 /* ═══ REFINED GLASS LEVELS ═══ */
-.hecate-glass-0 {
+.ofiere-glass-0 {
   background: oklch(0.15 0.005 0 / 0.35);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
-.hecate-glass-agent-daisy {
+.ofiere-glass-agent-daisy {
   background: oklch(0.14 0.015 135 / 0.65);
   backdrop-filter: blur(12px);
   border: 1px solid oklch(0.78 0.17 135 / 0.1);
 }
-.hecate-glass-agent-ivy {
+.ofiere-glass-agent-ivy {
   background: oklch(0.14 0.015 195 / 0.65);
   backdrop-filter: blur(12px);
   border: 1px solid oklch(0.72 0.14 195 / 0.1);
 }
-.hecate-glass-agent-celia {
+.ofiere-glass-agent-celia {
   background: oklch(0.14 0.015 290 / 0.65);
   backdrop-filter: blur(12px);
   border: 1px solid oklch(0.55 0.14 290 / 0.1);
 }
-.hecate-glass-agent-thalia {
+.ofiere-glass-agent-thalia {
   background: oklch(0.14 0.015 25 / 0.65);
   backdrop-filter: blur(12px);
   border: 1px solid oklch(0.65 0.19 25 / 0.1);
 }
-.hecate-glass-agent-zero {
+.ofiere-glass-agent-zero {
   background: oklch(0.14 0.015 232 / 0.65);
   backdrop-filter: blur(12px);
   border: 1px solid oklch(0.55 0.15 232 / 0.1);
@@ -1165,8 +1165,8 @@ div:has([contenteditable]):focus-within {
   border-radius: 8px;
 }
 
-/* ═══ HECATE HUD PANEL — Premium game-UI side panel ═══ */
-.hecate-hud-panel {
+/* ═══ OFIERE HUD PANEL — Premium game-UI side panel ═══ */
+.ofiere-hud-panel {
   position: relative;
   background: linear-gradient(
     180deg,
@@ -1185,7 +1185,7 @@ div:has([contenteditable]):focus-within {
 }
 
 /* Top accent bar — uses agent color via CSS variable */
-.hecate-hud-panel::before {
+.ofiere-hud-panel::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1204,7 +1204,7 @@ div:has([contenteditable]):focus-within {
 }
 
 /* Subtle inner glow at top */
-.hecate-hud-panel::after {
+.ofiere-hud-panel::after {
   content: '';
   position: absolute;
   top: 0;
@@ -1221,7 +1221,7 @@ div:has([contenteditable]):focus-within {
 }
 
 /* Corner accents — elegant L-shaped brackets */
-.hecate-hud-corner {
+.ofiere-hud-corner {
   position: absolute;
   width: 16px;
   height: 16px;
@@ -1229,7 +1229,7 @@ div:has([contenteditable]):focus-within {
   z-index: 5;
 }
 
-.hecate-hud-corner--tl {
+.ofiere-hud-corner--tl {
   top: 4px;
   left: 4px;
   border-top: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
@@ -1238,7 +1238,7 @@ div:has([contenteditable]):focus-within {
   opacity: 0.5;
 }
 
-.hecate-hud-corner--tr {
+.ofiere-hud-corner--tr {
   top: 4px;
   right: 4px;
   border-top: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
@@ -1247,7 +1247,7 @@ div:has([contenteditable]):focus-within {
   opacity: 0.5;
 }
 
-.hecate-hud-corner--bl {
+.ofiere-hud-corner--bl {
   bottom: 4px;
   left: 4px;
   border-bottom: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
@@ -1256,7 +1256,7 @@ div:has([contenteditable]):focus-within {
   opacity: 0.3;
 }
 
-.hecate-hud-corner--br {
+.ofiere-hud-corner--br {
   bottom: 4px;
   right: 4px;
   border-bottom: 1.5px solid var(--panel-accent, var(--accent-base, #FF6D29));
@@ -1266,11 +1266,11 @@ div:has([contenteditable]):focus-within {
 }
 
 /* Breathing border glow animation */
-.hecate-hud-panel--breathing {
-  animation: hecate-hud-breathe 6s ease-in-out infinite;
+.ofiere-hud-panel--breathing {
+  animation: ofiere-hud-breathe 6s ease-in-out infinite;
 }
 
-@keyframes hecate-hud-breathe {
+@keyframes ofiere-hud-breathe {
   0%, 100% {
     border-color: rgba(255, 255, 255, 0.06);
     box-shadow:
@@ -1313,7 +1313,7 @@ div:has([contenteditable]):focus-within {
    ═══════════════════════════════════════════════════ */
 
 /* ─── App Shell: Full-viewport container ─── */
-.hecate-app-shell {
+.ofiere-app-shell {
   position: relative;
   width: 100vw;
   height: 100vh;
@@ -1323,7 +1323,7 @@ div:has([contenteditable]):focus-within {
 }
 
 /* ─── Top-Left Brand ─── */
-.hecate-top-left {
+.ofiere-top-left {
   position: fixed;
   top: 14px;
   left: 20px;
@@ -1334,14 +1334,14 @@ div:has([contenteditable]):focus-within {
 }
 
 /* ─── Top-Right User Menu ─── */
-.hecate-top-right {
+.ofiere-top-right {
   position: fixed;
   top: 10px;
   right: 17px;
   z-index: 25;
 }
 
-.hecate-avatar-btn {
+.ofiere-avatar-btn {
   width: 36px;
   height: 36px;
   display: flex;
@@ -1356,12 +1356,12 @@ div:has([contenteditable]):focus-within {
   transition: all 150ms ease;
 }
 
-.hecate-avatar-btn:hover {
+.ofiere-avatar-btn:hover {
   color: var(--foreground);
   transform: scale(1.1);
 }
 
-.hecate-user-dropdown {
+.ofiere-user-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -1372,15 +1372,15 @@ div:has([contenteditable]):focus-within {
   box-shadow: var(--shadow-elevated);
   overflow: hidden;
   z-index: 50;
-  animation: hecate-dropdown-in 150ms ease;
+  animation: ofiere-dropdown-in 150ms ease;
 }
 
-@keyframes hecate-dropdown-in {
+@keyframes ofiere-dropdown-in {
   from { opacity: 0; transform: translateY(-4px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.hecate-dropdown-item {
+.ofiere-dropdown-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1395,13 +1395,13 @@ div:has([contenteditable]):focus-within {
   text-align: left;
 }
 
-.hecate-dropdown-item:hover {
+.ofiere-dropdown-item:hover {
   background: var(--accent-subtle);
   color: var(--foreground);
 }
 
 /* ─── Shell Frame: SVG arch border wrapper ─── */
-.hecate-shell-frame {
+.ofiere-shell-frame {
   position: relative;
   flex: 1;
   margin: 10px;
@@ -1410,7 +1410,7 @@ div:has([contenteditable]):focus-within {
   flex-direction: column;
 }
 
-.hecate-shell-frame__svg {
+.ofiere-shell-frame__svg {
   position: fixed;
   top: 0;
   left: 0;
@@ -1418,27 +1418,27 @@ div:has([contenteditable]):focus-within {
   z-index: 15;
 }
 
-.hecate-shell-frame__fill {
+.ofiere-shell-frame__fill {
   fill: var(--bg-base);
 }
 
-.hecate-shell-frame__path {
+.ofiere-shell-frame__path {
   stroke: rgba(255, 140, 50, 0.15);
 }
 
-.dark .hecate-shell-frame__path {
+.dark .ofiere-shell-frame__path {
   stroke: rgba(255, 140, 50, 0.15);
 }
 
-:root:not(.dark) .hecate-shell-frame__path {
+:root:not(.dark) .ofiere-shell-frame__path {
   stroke: rgba(69, 48, 39, 0.18);
 }
 
-:root:not(.dark) .hecate-shell-frame__fill {
+:root:not(.dark) .ofiere-shell-frame__fill {
   fill: var(--bg-base);
 }
 
-.hecate-shell-frame__content {
+.ofiere-shell-frame__content {
   position: relative;
   flex: 1;
   display: flex;
@@ -1448,14 +1448,14 @@ div:has([contenteditable]):focus-within {
 }
 
 /* ─── Top Rail: Contextual sub-navigation ─── */
-.hecate-top-rail {
+.ofiere-top-rail {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 40px;
 }
 
-.hecate-rail-items {
+.ofiere-rail-items {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -1465,7 +1465,7 @@ div:has([contenteditable]):focus-within {
   border: none;
 }
 
-.hecate-rail-item {
+.ofiere-rail-item {
   position: relative;
   padding: 3px;
   font-size: 13px;
@@ -1479,37 +1479,37 @@ div:has([contenteditable]):focus-within {
   align-items: center;
 }
 
-.hecate-rail-label {
+.ofiere-rail-label {
   overflow: hidden;
   white-space: nowrap;
   display: inline-block;
 }
 
-.hecate-rail-item:hover {
+.ofiere-rail-item:hover {
   color: var(--foreground);
   background: rgba(255, 255, 255, 0.04);
 }
 
-.dark .hecate-rail-item:hover {
+.dark .ofiere-rail-item:hover {
   background: rgba(255, 255, 255, 0.04);
 }
 
-:root:not(.dark) .hecate-rail-item:hover {
+:root:not(.dark) .ofiere-rail-item:hover {
   background: rgba(0, 0, 0, 0.04);
 }
 
-.hecate-rail-item--active {
+.ofiere-rail-item--active {
   color: var(--accent-base);
   background: transparent;
   font-weight: 600;
 }
 
-.hecate-rail-item--active:hover {
+.ofiere-rail-item--active:hover {
   background: transparent;
 }
 
 /* ─── Content Viewport ─── */
-.hecate-content-viewport {
+.ofiere-content-viewport {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -1519,7 +1519,7 @@ div:has([contenteditable]):focus-within {
 }
 
 /* Fullbleed mode — removes content padding so canvas fills the shell area */
-.hecate-content-viewport.hecate-content-fullbleed {
+.ofiere-content-viewport.ofiere-content-fullbleed {
   padding: 0;
   overflow: hidden;
 }
@@ -1528,12 +1528,12 @@ div:has([contenteditable]):focus-within {
 
 
 /* ─── Bottom Dock: Sits inside the notch at the bottom ─── */
-.hecate-bottom-dock {
+.ofiere-bottom-dock {
   display: flex;
   justify-content: center;
 }
 
-.hecate-dock-pill {
+.ofiere-dock-pill {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1543,7 +1543,7 @@ div:has([contenteditable]):focus-within {
   border: none;
 }
 
-.hecate-dock-btn {
+.ofiere-dock-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1558,56 +1558,56 @@ div:has([contenteditable]):focus-within {
   position: relative;
 }
 
-:root:not(.dark) .hecate-dock-btn {
+:root:not(.dark) .ofiere-dock-btn {
   color: rgba(26, 20, 18, 0.4);
 }
 
-.hecate-dock-btn:hover {
+.ofiere-dock-btn:hover {
   color: #c47a3a;
   background: transparent;
   transform: scale(1.08);
 }
 
-:root:not(.dark) .hecate-dock-btn:hover {
+:root:not(.dark) .ofiere-dock-btn:hover {
   color: rgba(26, 20, 18, 0.85);
   background: transparent;
 }
 
-.hecate-dock-btn--active {
+.ofiere-dock-btn--active {
   color: var(--accent-base) !important;
   background: transparent;
   box-shadow: none;
 }
 
-.hecate-dock-btn--active:hover {
+.ofiere-dock-btn--active:hover {
   background: transparent;
   transform: scale(1.08);
 }
 
 /* ─── Dock Bloom Rail ─── */
 
-.hecate-dock-stack {
+.ofiere-dock-stack {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
 }
 
-.hecate-dock-anchor {
+.ofiere-dock-anchor {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.hecate-bloom-rail {
+.ofiere-bloom-rail {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
 }
 
-.hecate-bloom-label {
+.ofiere-bloom-label {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1618,7 +1618,7 @@ div:has([contenteditable]):focus-within {
   border-radius: 6px;
 }
 
-.hecate-bloom-items {
+.ofiere-bloom-items {
   display: flex;
   align-items: stretch;
   gap: 2px;
@@ -1635,7 +1635,7 @@ div:has([contenteditable]):focus-within {
   white-space: nowrap;
 }
 
-:root:not(.dark) .hecate-bloom-items {
+:root:not(.dark) .ofiere-bloom-items {
   background: oklch(0.98 0.005 0 / 0.88);
   border: 1px solid oklch(0 0 0 / 0.08);
   box-shadow:
@@ -1644,7 +1644,7 @@ div:has([contenteditable]):focus-within {
     inset 0 1px 0 oklch(1 0 0 / 0.6);
 }
 
-.hecate-bloom-tile {
+.ofiere-bloom-tile {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1659,30 +1659,30 @@ div:has([contenteditable]):focus-within {
   min-width: 52px;
 }
 
-:root:not(.dark) .hecate-bloom-tile {
+:root:not(.dark) .ofiere-bloom-tile {
   color: rgba(26, 20, 18, 0.4);
 }
 
-.hecate-bloom-tile:hover {
+.ofiere-bloom-tile:hover {
   color: #c47a3a;
   background: color-mix(in oklch, var(--accent-base) 6%, transparent);
 }
 
-:root:not(.dark) .hecate-bloom-tile:hover {
+:root:not(.dark) .ofiere-bloom-tile:hover {
   color: #b06828;
   background: transparent;
 }
 
-.hecate-bloom-tile--active {
+.ofiere-bloom-tile--active {
   color: var(--accent-base) !important;
   background: color-mix(in oklch, var(--accent-base) 10%, transparent);
 }
 
-.hecate-bloom-tile--active:hover {
+.ofiere-bloom-tile--active:hover {
   background: color-mix(in oklch, var(--accent-base) 10%, transparent);
 }
 
-.hecate-bloom-tile__icon {
+.ofiere-bloom-tile__icon {
   position: relative;
   display: flex;
   align-items: center;
@@ -1690,7 +1690,7 @@ div:has([contenteditable]):focus-within {
   flex-shrink: 0;
 }
 
-.hecate-bloom-tile__label {
+.ofiere-bloom-tile__label {
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -1698,62 +1698,62 @@ div:has([contenteditable]):focus-within {
   opacity: 0.85;
 }
 
-.hecate-dock-btn--blooming {
+.ofiere-dock-btn--blooming {
   color: var(--accent-base) !important;
   filter: drop-shadow(0 0 6px color-mix(in oklch, var(--accent-base) 40%, transparent));
 }
 
 /* ─── Responsive Adjustments ─── */
 @media (max-width: 768px) {
-  .hecate-shell-frame {
+  .ofiere-shell-frame {
     margin: 4px 8px 0;
   }
 
-  .hecate-dock-btn {
+  .ofiere-dock-btn {
     width: 36px;
     height: 36px;
   }
 
-  .hecate-dock-btn svg {
+  .ofiere-dock-btn svg {
     width: 16px;
     height: 16px;
   }
 
-  .hecate-dock-pill {
+  .ofiere-dock-pill {
     padding: 4px 8px;
     gap: 4px;
   }
 
-  .hecate-rail-items {
+  .ofiere-rail-items {
     overflow-x: auto;
     max-width: calc(100vw - 160px);
     scrollbar-width: none;
   }
 
-  .hecate-rail-items::-webkit-scrollbar {
+  .ofiere-rail-items::-webkit-scrollbar {
     display: none;
   }
 
-  .hecate-rail-item {
+  .ofiere-rail-item {
     font-size: 12px;
     padding: 5px 8px;
   }
 
-  .hecate-content-viewport {
+  .ofiere-content-viewport {
     padding: 8px 12px;
   }
 
-  .hecate-top-left {
+  .ofiere-top-left {
     top: 10px;
     left: 12px;
   }
 
-  .hecate-top-right {
+  .ofiere-top-right {
     top: 8px;
     right: 12px;
   }
 
-  .hecate-bottom-dock {
+  .ofiere-bottom-dock {
     padding: 0 0 8px;
   }
 }

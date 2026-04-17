@@ -157,7 +157,7 @@ export const MessageRenderer = React.memo(function MessageRenderer({ content }: 
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                                color: 'var(--hecate-cyan)',
+                                color: 'var(--ofiere-cyan)',
                                 textDecoration: 'underline',
                                 textUnderlineOffset: '2px',
                             }}

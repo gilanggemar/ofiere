@@ -1,5 +1,5 @@
 // ============================================================
-// Hecate Workflow V2 — Agent Zero Workflow Adapter
+// Ofiere Workflow V2 — Agent Zero Workflow Adapter
 // Uses HTTP POST/poll pattern. Does NOT modify useAgentZeroStore.
 // ============================================================
 

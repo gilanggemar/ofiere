@@ -1,5 +1,5 @@
 // ============================================================
-// Hecate Workflow V2 — Step Executors
+// Ofiere Workflow V2 — Step Executors
 // Each function handles a single node type in the V2 workflow.
 // ============================================================
 

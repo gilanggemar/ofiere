@@ -178,7 +178,7 @@ export function CoreFilesPanel() {
                 <div className="flex items-start gap-3 rounded-md border border-pink-500/15 bg-pink-500/5 px-4 py-3">
                     <Heart className="mt-0.5 size-4 shrink-0 text-pink-400/60" />
                     <p className="text-xs font-mono text-pink-400/60 leading-relaxed">
-                        Companion profiles are stored locally in your Hecate dashboard (Supabase).
+                        Companion profiles are stored locally in your Ofiere dashboard (Supabase).
                         They are independent from OpenClaw and activate when Companion Mode is toggled.
                     </p>
                 </div>

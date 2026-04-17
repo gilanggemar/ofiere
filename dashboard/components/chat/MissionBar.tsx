@@ -28,11 +28,11 @@ export interface MissionConfig {
 }
 
 const CONSTRAINT_TYPES: { type: ConstraintType; icon: React.ReactNode; label: string; color: string }[] = [
-    { type: 'budget', icon: <DollarSign className="w-3 h-3" />, label: 'Budget', color: 'var(--hecate-warn)' },
-    { type: 'stack', icon: <Code2 className="w-3 h-3" />, label: 'Stack', color: 'var(--hecate-cyan)' },
-    { type: 'legal', icon: <Scale className="w-3 h-3" />, label: 'Legal', color: 'var(--hecate-violet)' },
-    { type: 'deadline', icon: <Clock className="w-3 h-3" />, label: 'Deadline', color: 'var(--hecate-danger)' },
-    { type: 'custom', icon: <Shield className="w-3 h-3" />, label: 'Custom', color: 'var(--hecate-text-secondary)' },
+    { type: 'budget', icon: <DollarSign className="w-3 h-3" />, label: 'Budget', color: 'var(--ofiere-warn)' },
+    { type: 'stack', icon: <Code2 className="w-3 h-3" />, label: 'Stack', color: 'var(--ofiere-cyan)' },
+    { type: 'legal', icon: <Scale className="w-3 h-3" />, label: 'Legal', color: 'var(--ofiere-violet)' },
+    { type: 'deadline', icon: <Clock className="w-3 h-3" />, label: 'Deadline', color: 'var(--ofiere-danger)' },
+    { type: 'custom', icon: <Shield className="w-3 h-3" />, label: 'Custom', color: 'var(--ofiere-text-secondary)' },
 ];
 
 interface MissionBarProps {
@@ -105,7 +105,7 @@ function PresetPopover({
             <div className="p-3 space-y-2">
                 <span
                     className="text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--hecate-text-tertiary)' }}
+                    style={{ color: 'var(--ofiere-text-tertiary)' }}
                 >
                     {title}
                 </span>
@@ -157,7 +157,7 @@ function PresetPopover({
                 <button
                     onClick={handleAddNewPreset}
                     className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] transition-all hover:bg-white/5"
-                    style={{ border: '1px dashed var(--border)', color: 'var(--hecate-text-ghost)' }}>
+                    style={{ border: '1px dashed var(--border)', color: 'var(--ofiere-text-ghost)' }}>
                     <Plus className="w-3.5 h-3.5" />
                 </button>
 
@@ -167,7 +167,7 @@ function PresetPopover({
                 {/* Quick add (once) */}
                 <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                        <span className="shrink-0 opacity-60" style={{ color: 'var(--hecate-text-secondary)' }}>
+                        <span className="shrink-0 opacity-60" style={{ color: 'var(--ofiere-text-secondary)' }}>
                             <Plus className="w-3 h-3" />
                         </span>
                         <span className="text-[10px] text-muted-foreground">Quick add (once)</span>
@@ -408,7 +408,7 @@ export const MissionBar: React.FC<MissionBarProps> = ({
             )}
             style={{
                 background: isEmpty ? 'transparent' : 'rgba(234, 120, 47, 0.06)',
-                border: isEmpty ? '1px dashed var(--hecate-border-subtle)' : '1px solid rgba(234, 120, 47, 0.2)',
+                border: isEmpty ? '1px dashed var(--ofiere-border-subtle)' : '1px solid rgba(234, 120, 47, 0.2)',
             }}
         >
             {/* ─── Goal Summary Button ─── */}
@@ -419,9 +419,9 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                         onClick={() => { setShowGoalDropup(!showGoalDropup); setShowConstraintDropup(false); }}
                         className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-wide uppercase transition-all duration-200 hover:brightness-125"
                         style={{
-                            background: 'color-mix(in srgb, var(--hecate-cyan) 12%, transparent)',
-                            border: '1px solid color-mix(in srgb, var(--hecate-cyan) 25%, transparent)',
-                            color: 'var(--hecate-cyan)',
+                            background: 'color-mix(in srgb, var(--ofiere-cyan) 12%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--ofiere-cyan) 25%, transparent)',
+                            color: 'var(--ofiere-cyan)',
                         }}
                     >
                         <Target className="w-2.5 h-2.5" />
@@ -441,7 +441,7 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                             }}
                         >
                             <div className="p-2.5 space-y-1">
-                                <span className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--hecate-text-tertiary)' }}>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--ofiere-text-tertiary)' }}>
                                     Active Goals
                                 </span>
                                 {goals.map(g => (
@@ -450,7 +450,7 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                                         className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-all hover:bg-white/5 group"
                                         style={{ color: 'var(--foreground)' }}
                                     >
-                                        <Target className="w-3 h-3 shrink-0" style={{ color: 'var(--hecate-cyan)' }} />
+                                        <Target className="w-3 h-3 shrink-0" style={{ color: 'var(--ofiere-cyan)' }} />
                                         <span className="flex-1 truncate">{g.label}</span>
                                         <button
                                             onClick={() => { removeGoal(g.id); if (goals.length <= 1) setShowGoalDropup(false); }}
@@ -473,9 +473,9 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                     ref={goalBtnRef}
                     onClick={() => { setShowGoalPopover(!showGoalPopover); setShowConstraintPopover(false); setShowGoalDropup(false); setShowConstraintDropup(false); }}
                     className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[10px] transition-all duration-200 hover:bg-white/5"
-                    style={{ color: 'var(--hecate-text-ghost)' }}
+                    style={{ color: 'var(--ofiere-text-ghost)' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgb(234, 120, 47)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--hecate-text-ghost)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--ofiere-text-ghost)'; }}
                 >
                     <Plus className="w-2.5 h-2.5" />
                     <span>Goal</span>
@@ -504,9 +504,9 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                         onClick={() => { setShowConstraintDropup(!showConstraintDropup); setShowGoalDropup(false); }}
                         className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-wide uppercase transition-all duration-200 hover:brightness-125"
                         style={{
-                            background: 'color-mix(in srgb, var(--hecate-danger) 12%, transparent)',
-                            border: '1px solid color-mix(in srgb, var(--hecate-danger) 25%, transparent)',
-                            color: 'var(--hecate-danger)',
+                            background: 'color-mix(in srgb, var(--ofiere-danger) 12%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--ofiere-danger) 25%, transparent)',
+                            color: 'var(--ofiere-danger)',
                         }}
                     >
                         <Shield className="w-2.5 h-2.5" />
@@ -526,7 +526,7 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                             }}
                         >
                             <div className="p-2.5 space-y-1">
-                                <span className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--hecate-text-tertiary)' }}>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--ofiere-text-tertiary)' }}>
                                     Active Constraints
                                 </span>
                                 {constraints.map(c => (
@@ -535,7 +535,7 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                                         className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-all hover:bg-white/5 group"
                                         style={{ color: 'var(--foreground)' }}
                                     >
-                                        <Shield className="w-3 h-3 shrink-0" style={{ color: 'var(--hecate-danger)' }} />
+                                        <Shield className="w-3 h-3 shrink-0" style={{ color: 'var(--ofiere-danger)' }} />
                                         <span className="flex-1 truncate">{c.label}</span>
                                         <button
                                             onClick={() => { removeConstraint(c.id); if (constraints.length <= 1) setShowConstraintDropup(false); }}
@@ -558,9 +558,9 @@ export const MissionBar: React.FC<MissionBarProps> = ({
                     ref={addBtnRef}
                     onClick={() => { setShowConstraintPopover(!showConstraintPopover); setShowGoalPopover(false); setShowGoalDropup(false); setShowConstraintDropup(false); }}
                     className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[10px] transition-all duration-200 hover:bg-white/5"
-                    style={{ color: 'var(--hecate-text-ghost)' }}
+                    style={{ color: 'var(--ofiere-text-ghost)' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgb(234, 120, 47)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--hecate-text-ghost)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--ofiere-text-ghost)'; }}
                 >
                     <Plus className="w-2.5 h-2.5" />
                     <span>Constraint</span>

@@ -1,5 +1,5 @@
 // ============================================================
-// Hecate Workflow V2 — OpenClaw Workflow Adapter
+// Ofiere Workflow V2 — OpenClaw Workflow Adapter
 // Uses server-side WebSocket (ws module) with proper HMAC handshake.
 // Mirrors the same protocol used by the browser OpenClawGateway.
 // ============================================================
@@ -209,7 +209,7 @@ export class OpenClawWorkflowAdapter implements WorkflowAgentAdapter {
                   permissions: {},
                   auth: { token: this.wsToken },
                   locale: "en-US",
-                  userAgent: "hecate-workflow/0.1.0"
+                  userAgent: "ofiere-workflow/0.1.0"
                 },
               };
               ws.send(JSON.stringify(connectFrame));

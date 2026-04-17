@@ -226,7 +226,7 @@ export function AgentShowcase({ agentProfile, level, currentXp, xpToNext, rank, 
                         {/* Initiate Button */}
                         <button
                             onClick={() => {
-                                localStorage.setItem('hecate_active_agent', agentProfile.id);
+                                localStorage.setItem('ofiere_active_agent', agentProfile.id);
                                 router.push('/chat');
                             }}
                             className="w-full py-4 mb-10 font-black tracking-[0.2em] font-mono text-[16px] transition-all duration-300 pointer-events-auto flex items-center justify-center relative overflow-hidden group rounded-sm"

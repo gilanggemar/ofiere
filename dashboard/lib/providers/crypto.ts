@@ -11,7 +11,7 @@ const AUTH_TAG_LENGTH = 16;
 const SALT = 'nerv-os-provider-salt'; // static salt for key derivation
 
 function getEncryptionKey(): Buffer {
-    const secret = process.env.HECATE_ENCRYPTION_KEY || 'nerv-dev-key-do-not-use-in-prod';
+    const secret = process.env.OFIERE_ENCRYPTION_KEY || 'nerv-dev-key-do-not-use-in-prod';
     return scryptSync(secret, SALT, 32);
 }
 

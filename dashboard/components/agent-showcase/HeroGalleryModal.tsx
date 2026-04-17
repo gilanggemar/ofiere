@@ -168,7 +168,7 @@ export function HeroGalleryModal({
         <>
             <Dialog open onOpenChange={() => !isUploading && !pendingFile && !pendingBgFile && onClose()}>
                 <DialogContent 
-                    className="max-w-2xl hecate-glass-3 border-white/10 text-white"
+                    className="max-w-2xl ofiere-glass-3 border-white/10 text-white"
                     onInteractOutside={(e) => {
                         if (pendingFile || pendingBgFile) {
                             e.preventDefault();

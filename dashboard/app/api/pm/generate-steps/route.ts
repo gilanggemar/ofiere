@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         }
 
         // ── Build prompt ──
-        const systemPrompt = `You are a task decomposition assistant for a project management system called Hecate.
+        const systemPrompt = `You are a task decomposition assistant for a project management system called Ofiere.
 Given a user instruction, break it down into clear, actionable execution steps.
 
 Rules:

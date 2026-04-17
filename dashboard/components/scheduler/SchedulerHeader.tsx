@@ -85,13 +85,13 @@ export function SchedulerHeader() {
     ];
 
     return (
-        <div className="hecate-glass-2 sticky top-0 z-10 px-6 py-3 border-b border-white/[0.06]">
+        <div className="ofiere-glass-2 sticky top-0 z-10 px-6 py-3 border-b border-white/[0.06]">
             {/* ─── Top Row ─── */}
             <div className="flex items-center justify-between gap-4">
                 {/* Left: Title */}
                 <div className="flex items-center gap-3">
                     <CalendarDays className="w-5 h-5 text-[var(--accent-base)]" />
-                    <h1 className="hecate-h2">Mission Scheduler</h1>
+                    <h1 className="ofiere-h2">Mission Scheduler</h1>
                     {/* Streak badge */}
                     {streak > 0 && (
                         <span className="bg-[var(--accent-base)]/20 text-[var(--accent-base)] rounded-sm px-3 py-1 text-xs font-semibold flex items-center gap-1">
@@ -118,7 +118,7 @@ export function SchedulerHeader() {
                     >
                         <ChevronLeft className="w-4 h-4" />
                     </Button>
-                    <span className="hecate-body-sm font-medium min-w-[180px] text-center">
+                    <span className="ofiere-body-sm font-medium min-w-[180px] text-center">
                         {rangeLabel}
                     </span>
                     <Button
@@ -165,7 +165,7 @@ export function SchedulerHeader() {
                                     'flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-medium transition-all duration-150 shrink-0',
                                     isActive
                                         ? 'text-white'
-                                        : 'hecate-glass-1 opacity-60 hover:opacity-100',
+                                        : 'ofiere-glass-1 opacity-60 hover:opacity-100',
                                 )}
                                 style={isActive ? { backgroundColor: color } : undefined}
                             >
@@ -181,7 +181,7 @@ export function SchedulerHeader() {
                     {filterAgentIds.length > 0 && (
                         <button
                             onClick={() => useSchedulerStore.getState().clearAgentFilters()}
-                            className="hecate-caption px-2 py-1 rounded-sm hover:bg-white/[0.06] transition-colors"
+                            className="ofiere-caption px-2 py-1 rounded-sm hover:bg-white/[0.06] transition-colors"
                         >
                             Clear
                         </button>

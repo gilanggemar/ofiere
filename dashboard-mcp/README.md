@@ -1,6 +1,6 @@
-# Hecate Dashboard MCP Server
+# Ofiere Dashboard MCP Server
 
-A Model Context Protocol (MCP) server that gives AI agents **full programmatic control** over the Hecate dashboard.
+A Model Context Protocol (MCP) server that gives AI agents **full programmatic control** over the Ofiere dashboard.
 
 ## 🔮 What It Does
 
@@ -60,13 +60,13 @@ Add to your agent's MCP config (e.g. `mcp_settings.json`):
 ```json
 {
   "mcpServers": {
-    "hecate-dashboard": {
+    "ofiere-dashboard": {
       "command": "npx",
-      "args": ["-y", "@hecate-ai/dashboard-mcp"],
+      "args": ["-y", "@ofiere-ai/dashboard-mcp"],
       "env": {
         "SUPABASE_URL": "https://your-project.supabase.co",
         "SUPABASE_SERVICE_ROLE_KEY": "your-service-role-key",
-        "HECATE_USER_ID": "your-user-uuid"
+        "OFIERE_USER_ID": "your-user-uuid"
       }
     }
   }
@@ -108,11 +108,11 @@ import "./tools/my-domain.js";
 
 ## 🔄 Rebranding
 
-To change the tool prefix (e.g. `hecate_tasks_list` → `hecate_tasks_list`):
+To change the tool prefix (e.g. `ofiere_tasks_list` → `ofiere_tasks_list`):
 
 Edit **one line** in `src/config.ts`:
 ```typescript
-export const TOOL_PREFIX = "hecate"; // was "hecate"
+export const TOOL_PREFIX = "ofiere"; // was "hecate"
 ```
 
 Rebuild, and all 70+ tools are rebranded.

@@ -131,8 +131,8 @@ export const HandoffPacketModal: React.FC<HandoffPacketModalProps> = ({
                 onClick: () => router.push('/summit'),
             },
             style: {
-                background: 'var(--hecate-surface-2, #141414)',
-                border: '1px solid var(--hecate-border-subtle, #262626)',
+                background: 'var(--ofiere-surface-2, #141414)',
+                border: '1px solid var(--ofiere-border-subtle, #262626)',
                 color: 'var(--foreground)',
             },
         });
@@ -151,9 +151,9 @@ export const HandoffPacketModal: React.FC<HandoffPacketModalProps> = ({
 
     const getStatusIcon = (status: ReadinessItem['status']) => {
         switch (status) {
-            case 'ready': return <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--hecate-success)' }} />;
-            case 'warning': return <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--hecate-warn)' }} />;
-            case 'blocked': return <Shield className="w-3.5 h-3.5" style={{ color: 'var(--hecate-danger)' }} />;
+            case 'ready': return <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--ofiere-success)' }} />;
+            case 'warning': return <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--ofiere-warn)' }} />;
+            case 'blocked': return <Shield className="w-3.5 h-3.5" style={{ color: 'var(--ofiere-danger)' }} />;
         }
     };
 
@@ -241,7 +241,7 @@ export const HandoffPacketModal: React.FC<HandoffPacketModalProps> = ({
                                                 className="h-full rounded-full transition-all duration-500"
                                                 style={{
                                                     width: `${readinessPercent}%`,
-                                                    background: readinessPercent === 100 ? 'var(--hecate-success)' : readinessPercent > 50 ? 'var(--hecate-warn)' : 'var(--hecate-danger)',
+                                                    background: readinessPercent === 100 ? 'var(--ofiere-success)' : readinessPercent > 50 ? 'var(--ofiere-warn)' : 'var(--ofiere-danger)',
                                                 }}
                                             />
                                         </div>

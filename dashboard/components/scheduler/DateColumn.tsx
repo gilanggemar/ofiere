@@ -114,7 +114,7 @@ export const DateColumn = memo(function DateColumn({
             {/* Month boundary separator */}
             {isMonthStart && (
                 <div className="absolute -top-0.5 left-0 z-10 border-l-2 border-[var(--accent-base)]/30 h-full pointer-events-none">
-                    <span className="absolute -top-5 left-1 hecate-badge-text text-[var(--accent-base)] bg-[var(--accent-base)]/10 px-1.5 py-0.5 rounded-sm">
+                    <span className="absolute -top-5 left-1 ofiere-badge-text text-[var(--accent-base)] bg-[var(--accent-base)]/10 px-1.5 py-0.5 rounded-sm">
                         {monthLabel}
                     </span>
                 </div>
@@ -128,18 +128,18 @@ export const DateColumn = memo(function DateColumn({
                 )}
             >
                 <div className={cn(
-                    'hecate-caption uppercase',
+                    'ofiere-caption uppercase',
                     isToday ? 'text-[var(--accent-base)] font-semibold' : 'opacity-50',
                 )}>
                     {dayName}
                 </div>
                 <div className={cn(
-                    isToday ? 'hecate-metric-md text-[var(--accent-base)]' : 'hecate-body font-medium',
+                    isToday ? 'ofiere-metric-md text-[var(--accent-base)]' : 'ofiere-body font-medium',
                 )}>
                     {dayNum}
                 </div>
                 {(isMonthStart || isToday) && (
-                    <div className="hecate-caption mt-0.5 opacity-60">{monthLabel}</div>
+                    <div className="ofiere-caption mt-0.5 opacity-60">{monthLabel}</div>
                 )}
 
                 {/* Day score bar (gamification) */}
@@ -166,7 +166,7 @@ export const DateColumn = memo(function DateColumn({
                     <DraggableEventCard key={`${event.id}-${event.virtualDate || event.scheduledDate}`} event={event} agents={agents} />
                 ))}
                 {events.length > 5 && (
-                    <div className="hecate-caption text-center py-1 opacity-60">
+                    <div className="ofiere-caption text-center py-1 opacity-60">
                         +{events.length - 5} more
                     </div>
                 )}
@@ -176,7 +176,7 @@ export const DateColumn = memo(function DateColumn({
             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-1 shrink-0">
                 <button
                     onClick={() => setCreateModalOpen(true, dateStr)}
-                    className="w-full flex items-center justify-center gap-1 py-1 rounded-md text-[var(--accent-base)] hover:bg-[var(--accent-base)]/10 transition-colors hecate-caption"
+                    className="w-full flex items-center justify-center gap-1 py-1 rounded-md text-[var(--accent-base)] hover:bg-[var(--accent-base)]/10 transition-colors ofiere-caption"
                 >
                     <Plus className="w-3 h-3" />
                     Add

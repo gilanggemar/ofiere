@@ -34,7 +34,7 @@ export function AgentIconSelector({ agentId, colorHex }: AgentIconSelectorProps)
 
     // Load from localStorage on mount
     useEffect(() => {
-        const saved = localStorage.getItem(`hecate_agent_icon_${agentId}`);
+        const saved = localStorage.getItem(`ofiere_agent_icon_${agentId}`);
         if (saved && AVAILABLE_ICONS.some(icon => icon.id === saved)) {
             setSelectedIconId(saved);
         } else {
@@ -63,7 +63,7 @@ export function AgentIconSelector({ agentId, colorHex }: AgentIconSelectorProps)
 
     const handleSelect = (id: string) => {
         setSelectedIconId(id);
-        localStorage.setItem(`hecate_agent_icon_${agentId}`, id);
+        localStorage.setItem(`ofiere_agent_icon_${agentId}`, id);
         setIsOpen(false);
     };
 

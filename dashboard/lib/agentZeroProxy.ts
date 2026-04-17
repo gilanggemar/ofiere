@@ -219,7 +219,7 @@ export async function probeAgentZeroHealth(
             },
             body: JSON.stringify({
                 message: 'ping',
-                context_id: `hecate-health-${Date.now()}`,
+                context_id: `ofiere-health-${Date.now()}`,
                 lifetime_hours: 0,
             }),
             signal: controller.signal,

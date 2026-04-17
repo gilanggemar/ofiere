@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ─── Hecate Dashboard MCP Server ────────────────────────────────────────────
+// ─── Ofiere Dashboard MCP Server ────────────────────────────────────────────
 // Entry point. Auto-discovers all tool domains and serves them over stdio.
 // ──────────────────────────────────────────────────────────────────────────────
 

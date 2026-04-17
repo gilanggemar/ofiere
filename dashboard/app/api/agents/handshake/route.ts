@@ -129,7 +129,7 @@ Write the following JSON to \`/data/.openclaw/extensions/n-tools-handshake/openc
   "id": "n-tools-handshake",
   "name": "n-tools-handshake",
   "version": "1.0.0",
-  "description": "Hecate Tools Handshake Auto-Configured",
+  "description": "Ofiere Tools Handshake Auto-Configured",
   "configSchema": {
     "type": "object",
     "properties": {

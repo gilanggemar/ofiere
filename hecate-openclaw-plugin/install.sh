@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Hecate PM Plugin — Foolproof Installer for OpenClaw
+# Ofiere PM Plugin — Foolproof Installer for OpenClaw
 #
 # This script NEVER modifies openclaw.json. It only:
 #   1. Downloads plugin files to the extensions directory
@@ -9,7 +9,7 @@
 # OpenClaw auto-discovers plugins in the extensions directory.
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/gilanggemar/Hecate/main/hecate-openclaw-plugin/install.sh | bash -s -- \
+#   curl -sSL https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/install.sh | bash -s -- \
 #     --supabase-url "https://xxx.supabase.co" \
 #     --service-key "eyJ..." \
 #     --user-id "your-uuid"
@@ -17,8 +17,8 @@
 
 set -euo pipefail
 
-REPO_URL="https://github.com/gilanggemar/Hecate.git"
-PLUGIN_SUBDIR="hecate-openclaw-plugin"
+REPO_URL="https://github.com/gilanggemar/Ofiere.git"
+PLUGIN_SUBDIR="ofiere-openclaw-plugin"
 
 # ── Auto-detect OpenClaw home ────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ detect_openclaw_home() {
 
 OPENCLAW_HOME="$(detect_openclaw_home)"
 EXTENSIONS_DIR="$OPENCLAW_HOME/extensions"
-PLUGIN_DIR="$EXTENSIONS_DIR/hecate"
+PLUGIN_DIR="$EXTENSIONS_DIR/ofiere"
 ENV_FILE="$OPENCLAW_HOME/.env"
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
@@ -63,10 +63,10 @@ done
 
 if [[ -z "$SUPABASE_URL" || -z "$SERVICE_KEY" || -z "$USER_ID" ]]; then
   echo ""
-  echo "Hecate PM Plugin — Foolproof Installer"
+  echo "Ofiere PM Plugin — Foolproof Installer"
   echo ""
   echo "Usage:"
-  echo "  curl -sSL https://raw.githubusercontent.com/gilanggemar/Hecate/main/hecate-openclaw-plugin/install.sh | bash -s -- \\"
+  echo "  curl -sSL https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/install.sh | bash -s -- \\"
   echo "    --supabase-url \"https://xxx.supabase.co\" \\"
   echo "    --service-key \"eyJ...\" \\"
   echo "    --user-id \"your-uuid\""
@@ -78,7 +78,7 @@ fi
 
 echo ""
 echo "╔═══════════════════════════════════════════════╗"
-echo "║   Hecate PM Plugin — Installing...            ║"
+echo "║   Ofiere PM Plugin — Installing...            ║"
 echo "╚═══════════════════════════════════════════════╝"
 echo ""
 echo "  OpenClaw Home:  $OPENCLAW_HOME"
@@ -101,13 +101,13 @@ if [[ -d "$PLUGIN_DIR/.git" ]] || [[ -d "$PLUGIN_DIR/src" ]]; then
     # Re-download via tarball
     TMP_DIR=$(mktemp -d)
     if command -v git &>/dev/null; then
-      git clone --depth 1 --single-branch --branch main "$REPO_URL" "$TMP_DIR/hecate-repo" 2>/dev/null
+      git clone --depth 1 --single-branch --branch main "$REPO_URL" "$TMP_DIR/ofiere-repo" 2>/dev/null
       rm -rf "$PLUGIN_DIR"
-      cp -r "$TMP_DIR/hecate-repo/$PLUGIN_SUBDIR" "$PLUGIN_DIR"
+      cp -r "$TMP_DIR/ofiere-repo/$PLUGIN_SUBDIR" "$PLUGIN_DIR"
     elif command -v curl &>/dev/null; then
-      curl -sSL "https://github.com/gilanggemar/Hecate/archive/refs/heads/main.tar.gz" | tar xz -C "$TMP_DIR"
+      curl -sSL "https://github.com/gilanggemar/Ofiere/archive/refs/heads/main.tar.gz" | tar xz -C "$TMP_DIR"
       rm -rf "$PLUGIN_DIR"
-      cp -r "$TMP_DIR/Hecate-main/$PLUGIN_SUBDIR" "$PLUGIN_DIR"
+      cp -r "$TMP_DIR/Ofiere-main/$PLUGIN_SUBDIR" "$PLUGIN_DIR"
     else
       echo "  ✗ Neither git nor curl found. Cannot download plugin."
       exit 1
@@ -119,11 +119,11 @@ else
   echo "→ Downloading plugin..."
   TMP_DIR=$(mktemp -d)
   if command -v git &>/dev/null; then
-    git clone --depth 1 --single-branch --branch main "$REPO_URL" "$TMP_DIR/hecate-repo" 2>/dev/null
-    cp -r "$TMP_DIR/hecate-repo/$PLUGIN_SUBDIR" "$PLUGIN_DIR"
+    git clone --depth 1 --single-branch --branch main "$REPO_URL" "$TMP_DIR/ofiere-repo" 2>/dev/null
+    cp -r "$TMP_DIR/ofiere-repo/$PLUGIN_SUBDIR" "$PLUGIN_DIR"
   elif command -v curl &>/dev/null; then
-    curl -sSL "https://github.com/gilanggemar/Hecate/archive/refs/heads/main.tar.gz" | tar xz -C "$TMP_DIR"
-    cp -r "$TMP_DIR/Hecate-main/$PLUGIN_SUBDIR" "$PLUGIN_DIR"
+    curl -sSL "https://github.com/gilanggemar/Ofiere/archive/refs/heads/main.tar.gz" | tar xz -C "$TMP_DIR"
+    cp -r "$TMP_DIR/Ofiere-main/$PLUGIN_SUBDIR" "$PLUGIN_DIR"
   else
     echo "  ✗ Neither git nor curl found. Cannot download plugin."
     exit 1
@@ -154,24 +154,24 @@ append_env() {
   fi
 }
 
-append_env "HECATE_SUPABASE_URL" "$SUPABASE_URL"
-append_env "HECATE_SERVICE_ROLE_KEY" "$SERVICE_KEY"
-append_env "HECATE_USER_ID" "$USER_ID"
+append_env "OFIERE_SUPABASE_URL" "$SUPABASE_URL"
+append_env "OFIERE_SERVICE_ROLE_KEY" "$SERVICE_KEY"
+append_env "OFIERE_USER_ID" "$USER_ID"
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 
 echo ""
 echo "╔═══════════════════════════════════════════════╗"
-echo "║   ✓ Hecate PM Plugin Installed!               ║"
+echo "║   ✓ Ofiere PM Plugin Installed!               ║"
 echo "║                                               ║"
 echo "║   Plugin:  $PLUGIN_DIR"
 echo "║   Env:     $ENV_FILE"
 echo "║                                               ║"
-echo "║   Tools: HECATE_LIST_TASKS                    ║"
-echo "║          HECATE_CREATE_TASK                    ║"
-echo "║          HECATE_UPDATE_TASK                    ║"
-echo "║          HECATE_DELETE_TASK                    ║"
-echo "║          HECATE_LIST_AGENTS                    ║"
+echo "║   Tools: OFIERE_LIST_TASKS                    ║"
+echo "║          OFIERE_CREATE_TASK                    ║"
+echo "║          OFIERE_UPDATE_TASK                    ║"
+echo "║          OFIERE_DELETE_TASK                    ║"
+echo "║          OFIERE_LIST_AGENTS                    ║"
 echo "║                                               ║"
 echo "║   All agents get these tools automatically.   ║"
 echo "║                                               ║"

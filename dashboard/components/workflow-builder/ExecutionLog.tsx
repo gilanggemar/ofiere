@@ -128,7 +128,7 @@ export default function ExecutionLog() {
                     {/* Log entries */}
                     <div
                         ref={scrollRef}
-                        className="hecate-mono"
+                        className="ofiere-mono"
                         style={{
                             flex: 1,
                             overflowY: "auto",

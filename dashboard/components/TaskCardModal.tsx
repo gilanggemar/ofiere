@@ -24,11 +24,11 @@ import { AnimatePresence, motion, Reorder } from "framer-motion";
 type ItemType = 'budget' | 'stack' | 'legal' | 'deadline' | 'custom';
 
 const TYPE_CONFIG: Record<ItemType, { icon: React.ReactNode; label: string; color: string }> = {
-    budget:   { icon: <DollarSign className="w-3 h-3" />, label: 'Budget',   color: 'var(--hecate-warn)' },
-    stack:    { icon: <Code2 className="w-3 h-3" />,      label: 'Stack',    color: 'var(--hecate-cyan)' },
-    legal:    { icon: <Scale className="w-3 h-3" />,      label: 'Legal',    color: 'var(--hecate-violet)' },
-    deadline: { icon: <Clock className="w-3 h-3" />,      label: 'Deadline', color: 'var(--hecate-danger)' },
-    custom:   { icon: <Shield className="w-3 h-3" />,     label: 'Custom',   color: 'var(--hecate-text-secondary)' },
+    budget:   { icon: <DollarSign className="w-3 h-3" />, label: 'Budget',   color: 'var(--ofiere-warn)' },
+    stack:    { icon: <Code2 className="w-3 h-3" />,      label: 'Stack',    color: 'var(--ofiere-cyan)' },
+    legal:    { icon: <Scale className="w-3 h-3" />,      label: 'Legal',    color: 'var(--ofiere-violet)' },
+    deadline: { icon: <Clock className="w-3 h-3" />,      label: 'Deadline', color: 'var(--ofiere-danger)' },
+    custom:   { icon: <Shield className="w-3 h-3" />,     label: 'Custom',   color: 'var(--ofiere-text-secondary)' },
 };
 
 /* ─── Agent Avatar Small ─── */
@@ -106,7 +106,7 @@ function PresetPopover({
         <div ref={ref} className="absolute bottom-full left-0 mb-2 z-50 rounded-md overflow-hidden shadow-lg"
             style={{ background: 'var(--card)', border: '1px solid var(--border)', minWidth: 260 }}>
             <div className="p-3 space-y-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hecate-text-tertiary)' }}>
+                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ofiere-text-tertiary)' }}>
                     {title}
                 </span>
 
@@ -155,7 +155,7 @@ function PresetPopover({
                 <button
                     onClick={handleAddNewPreset}
                     className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] transition-all hover:bg-white/5"
-                    style={{ border: '1px dashed var(--border)', color: 'var(--hecate-text-ghost)' }}>
+                    style={{ border: '1px dashed var(--border)', color: 'var(--ofiere-text-ghost)' }}>
                     <Plus className="w-3.5 h-3.5" />
                 </button>
 
@@ -165,7 +165,7 @@ function PresetPopover({
                 {/* Quick add (once) — adds directly without saving as preset */}
                 <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                        <span className="shrink-0 opacity-60" style={{ color: 'var(--hecate-text-secondary)' }}>
+                        <span className="shrink-0 opacity-60" style={{ color: 'var(--ofiere-text-secondary)' }}>
                             <Plus className="w-3 h-3" />
                         </span>
                         <span className="text-[10px] text-muted-foreground">Quick add (once)</span>
@@ -329,7 +329,7 @@ export function TaskCardModal({
                 {isAutoGenerating && (
                     <div className="px-5 py-2.5" style={{ borderBottom: '1px solid color-mix(in srgb, var(--border) 30%, transparent)' }}>
                         <div className="flex items-center gap-2 text-[11px] text-muted-foreground animate-pulse">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--hecate-warn)' }} />
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--ofiere-warn)' }} />
                             <span>Agent is analyzing conversation…</span>
                         </div>
                     </div>
@@ -367,7 +367,7 @@ export function TaskCardModal({
                                                 className={cn("w-full flex items-center gap-2.5 px-3 py-2 text-[12px] transition-colors hover:bg-white/5", a.id === agentId && "bg-white/5")}>
                                                 <SmallAgentAvatar agentId={a.id} size={18} />
                                                 <span className="text-foreground">{a.name}</span>
-                                                {a.id === agentId && <Check className="w-3 h-3 ml-auto" style={{ color: 'var(--hecate-success)' }} />}
+                                                {a.id === agentId && <Check className="w-3 h-3 ml-auto" style={{ color: 'var(--ofiere-success)' }} />}
                                             </button>
                                         ))}
                                     </motion.div>
@@ -380,7 +380,7 @@ export function TaskCardModal({
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                             <label className="text-[11px] text-muted-foreground font-medium">Execution Plan</label>
-                            <button onClick={addStep} className="flex items-center gap-1 text-[10px] transition-colors px-1.5 py-0.5 rounded-sm hover:bg-white/5" style={{ color: 'var(--hecate-cyan)' }}>
+                            <button onClick={addStep} className="flex items-center gap-1 text-[10px] transition-colors px-1.5 py-0.5 rounded-sm hover:bg-white/5" style={{ color: 'var(--ofiere-cyan)' }}>
                                 <Plus className="w-3 h-3" /> Add Step
                             </button>
                         </div>
@@ -406,7 +406,7 @@ export function TaskCardModal({
                             </Reorder.Group>
                             {steps.length === 0 && (
                                 <button onClick={addStep} className="w-full flex items-center justify-center gap-1.5 py-3 rounded-md text-[11px] transition-all hover:bg-white/3"
-                                    style={{ border: '1px dashed var(--border)', color: 'var(--hecate-text-ghost)' }}><Plus className="w-3 h-3" /> Add execution steps</button>
+                                    style={{ border: '1px dashed var(--border)', color: 'var(--ofiere-text-ghost)' }}><Plus className="w-3 h-3" /> Add execution steps</button>
                             )}
                         </div>
                     </div>
@@ -440,9 +440,9 @@ export function TaskCardModal({
                         <div className="relative">
                             <button onClick={() => setShowGoalPopover(!showGoalPopover)}
                                 className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[10px] transition-all hover:bg-white/5"
-                                style={{ color: 'var(--hecate-text-ghost)' }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--hecate-cyan)'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--hecate-text-ghost)'; }}>
+                                style={{ color: 'var(--ofiere-text-ghost)' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--ofiere-cyan)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--ofiere-text-ghost)'; }}>
                                 <Plus className="w-2.5 h-2.5" /><span>Goal</span>
                             </button>
                             {showGoalPopover && (
@@ -457,9 +457,9 @@ export function TaskCardModal({
                         <div className="relative">
                             <button onClick={() => setShowConstraintPopover(!showConstraintPopover)}
                                 className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-sm text-[10px] transition-all hover:bg-white/5"
-                                style={{ color: 'var(--hecate-text-ghost)' }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--hecate-warn)'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--hecate-text-ghost)'; }}>
+                                style={{ color: 'var(--ofiere-text-ghost)' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--ofiere-warn)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--ofiere-text-ghost)'; }}>
                                 <Plus className="w-2.5 h-2.5" /><span>Constraint</span>
                             </button>
                             {showConstraintPopover && (
@@ -479,7 +479,7 @@ export function TaskCardModal({
                     <Button size="sm" onClick={handleHandoff}
                         disabled={!title.trim() || !agentId || isSubmitting || isAutoGenerating}
                         className="h-8 px-5 rounded-md text-[11px] gap-1.5 font-semibold transition-all disabled:opacity-30"
-                        style={{ background: isSubmitting ? 'var(--hecate-success)' : 'rgb(234, 120, 47)', color: '#fff' }}>
+                        style={{ background: isSubmitting ? 'var(--ofiere-success)' : 'rgb(234, 120, 47)', color: '#fff' }}>
                         {isSubmitting ? (<><Check className="w-3 h-3" /> Added</>) : (<><Send className="w-3 h-3" /> {mode === 'edit' ? 'Save Task' : 'Hand Off'}</>)}
                     </Button>
                 </div>

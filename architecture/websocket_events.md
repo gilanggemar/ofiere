@@ -19,7 +19,7 @@ Must be the first message sent after connection.
     "minProtocol": 3,
     "maxProtocol": 3,
     "client": {
-      "id": "hecate-dashboard",
+      "id": "ofiere-dashboard",
       "version": "1.0",
       "platform": "browser",
       "mode": "gui"
@@ -42,7 +42,7 @@ The primary method to instruct agents.
   "method": "chat.send",
   "params": {
     "message": "Analyze the logs",
-    "sessionKey": "agent:daisy-slack:hecate:v1",
+    "sessionKey": "agent:daisy-slack:ofiere:v1",
     "idempotencyKey": "uuid-v4"
   }
 }
@@ -77,7 +77,7 @@ Real-time typing effect.
     "data": {
       "delta": "Checking directory..."
     },
-    "sessionKey": "agent:daisy-slack:hecate:v1"
+    "sessionKey": "agent:daisy-slack:ofiere:v1"
   }
 }
 ```

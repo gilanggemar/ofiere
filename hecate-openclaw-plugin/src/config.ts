@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { HecateConfig } from "./types.js";
+import type { OfiereConfig } from "./types.js";
 
-export const HecateConfigSchema = z.object({
+export const OfiereConfigSchema = z.object({
   enabled: z.boolean().default(true),
   supabaseUrl: z.string().default(""),
   serviceRoleKey: z.string().default(""),
@@ -9,7 +9,7 @@ export const HecateConfigSchema = z.object({
   agentId: z.string().default(""),
 });
 
-export function parseHecateConfig(value: unknown): HecateConfig {
+export function parseOfiereConfig(value: unknown): OfiereConfig {
   const raw =
     value && typeof value === "object" && !Array.isArray(value)
       ? (value as Record<string, unknown>)
@@ -22,30 +22,30 @@ export function parseHecateConfig(value: unknown): HecateConfig {
   const supabaseUrl =
     (typeof configObj?.supabaseUrl === "string" && configObj.supabaseUrl.trim()) ||
     (typeof raw.supabaseUrl === "string" && raw.supabaseUrl.trim()) ||
-    process.env.HECATE_SUPABASE_URL ||
+    process.env.OFIERE_SUPABASE_URL ||
     process.env.SUPABASE_URL ||
     "";
 
   const serviceRoleKey =
     (typeof configObj?.serviceRoleKey === "string" && configObj.serviceRoleKey.trim()) ||
     (typeof raw.serviceRoleKey === "string" && raw.serviceRoleKey.trim()) ||
-    process.env.HECATE_SERVICE_ROLE_KEY ||
+    process.env.OFIERE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     "";
 
   const userId =
     (typeof configObj?.userId === "string" && configObj.userId.trim()) ||
     (typeof raw.userId === "string" && raw.userId.trim()) ||
-    process.env.HECATE_USER_ID ||
+    process.env.OFIERE_USER_ID ||
     "";
 
   const agentId =
     (typeof configObj?.agentId === "string" && configObj.agentId.trim()) ||
     (typeof raw.agentId === "string" && raw.agentId.trim()) ||
-    process.env.HECATE_AGENT_ID ||
+    process.env.OFIERE_AGENT_ID ||
     "";
 
-  return HecateConfigSchema.parse({
+  return OfiereConfigSchema.parse({
     ...raw,
     supabaseUrl,
     serviceRoleKey,

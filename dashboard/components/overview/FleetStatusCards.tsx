@@ -39,7 +39,7 @@ export function FleetStatusCards() {
 
     return (
         <div className="flex flex-col gap-4">
-            <h3 className="hecate-section flex items-center gap-2 px-1">
+            <h3 className="ofiere-section flex items-center gap-2 px-1">
                 <Shield size={14} className="text-accent-base" />
                 Fleet Status
             </h3>
@@ -64,7 +64,7 @@ export function FleetStatusCards() {
                             whileHover={{ translateY: -2, scale: 1.01 }}
                             className={cn(
                                 "group relative overflow-hidden rounded-md p-4 transition-all duration-300",
-                                `hecate-glass-agent-${agentId}`
+                                `ofiere-glass-agent-${agentId}`
                             )}
                             style={{ borderLeftColor: colorVar, borderLeftWidth: '3px' }}
                         >
@@ -87,7 +87,7 @@ export function FleetStatusCards() {
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2 mt-1">
                                             <span
-                                                className="hecate-rank"
+                                                className="ofiere-rank"
                                                 style={{ color: RANK_COLORS[xpData.rank] || RANK_COLORS.INITIATE }}
                                             >
                                                 {xpData.rank}
@@ -113,7 +113,7 @@ export function FleetStatusCards() {
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="opacity-0">-</span>
-                                    <span className="hecate-xp">{xpData.totalXp} / {xpData.totalXp + xpData.xpToNextLevel} XP</span>
+                                    <span className="ofiere-xp">{xpData.totalXp} / {xpData.totalXp + xpData.xpToNextLevel} XP</span>
                                 </div>
                             </div>
 

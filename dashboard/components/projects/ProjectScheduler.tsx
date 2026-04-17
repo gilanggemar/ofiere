@@ -147,18 +147,18 @@ function DraggableWorkflowCard({ workflow }: { workflow: any }) {
             >
                 <div className="flex flex-col gap-0.5 min-w-0">
                     <div className="flex items-center justify-between gap-1.5">
-                        <span className="hecate-body-sm font-medium truncate flex-1">
+                        <span className="ofiere-body-sm font-medium truncate flex-1">
                             {workflow.name}
                         </span>
                         <GitBranch className="w-3 h-3 shrink-0 opacity-40" />
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1 hecate-caption opacity-60">
+                        <span className="flex items-center gap-1 ofiere-caption opacity-60">
                             <Zap className="w-2.5 h-2.5" />
                             {stepCount} step{stepCount !== 1 ? 's' : ''}
                         </span>
                         <span className={cn(
-                            'hecate-badge-text px-1.5 py-0 rounded-sm text-[9px]',
+                            'ofiere-badge-text px-1.5 py-0 rounded-sm text-[9px]',
                             workflow.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/[0.08]',
                         )}>
                             {workflow.status || 'draft'}

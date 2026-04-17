@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hecate",
+  title: "Ofiere",
   description: "Agent Orchestration System",
 };
 

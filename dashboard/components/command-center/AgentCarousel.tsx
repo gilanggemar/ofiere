@@ -26,7 +26,7 @@ function CarouselItem({
     onSelect: () => void
 }) {
     const { avatarUri } = useAgentAvatar(agent.id);
-    // Use a default orange Hecate color if the socket agent doesn't provide a hex code
+    // Use a default orange Ofiere color if the socket agent doesn't provide a hex code
     const badgeColor = agent.colorHex || '#FF6B00';
 
     return (

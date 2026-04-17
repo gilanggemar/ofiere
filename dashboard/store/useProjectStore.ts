@@ -63,19 +63,19 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     setActiveProject: async (projectId: string | null) => {
         if (!projectId) {
             set({ activeProjectId: null, activeProject: null });
-            if (typeof window !== 'undefined') localStorage.removeItem('hecate_active_project');
+            if (typeof window !== 'undefined') localStorage.removeItem('ofiere_active_project');
             return;
         }
 
         set({ activeProjectId: projectId, isLoading: true });
-        if (typeof window !== 'undefined') localStorage.setItem('hecate_active_project', projectId);
+        if (typeof window !== 'undefined') localStorage.setItem('ofiere_active_project', projectId);
 
         try {
             const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}`);
             if (res.status === 404) {
                 // Project no longer exists — clear selection
                 set({ activeProjectId: null, activeProject: null, isLoading: false });
-                if (typeof window !== 'undefined') localStorage.removeItem('hecate_active_project');
+                if (typeof window !== 'undefined') localStorage.removeItem('ofiere_active_project');
                 return;
             }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -84,7 +84,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         } catch (err: any) {
             console.error('[useProjectStore] setActiveProject:', err);
             set({ activeProjectId: null, activeProject: null, isLoading: false, lastError: err.message });
-            if (typeof window !== 'undefined') localStorage.removeItem('hecate_active_project');
+            if (typeof window !== 'undefined') localStorage.removeItem('ofiere_active_project');
         }
     },
 

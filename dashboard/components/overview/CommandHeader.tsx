@@ -36,14 +36,14 @@ export function CommandHeader() {
     }, []);
 
     return (
-        <div className="w-full h-14 hecate-glass-1 border-b border-border/40 flex items-center justify-between px-6 sticky top-0 z-40">
+        <div className="w-full h-14 ofiere-glass-1 border-b border-border/40 flex items-center justify-between px-6 sticky top-0 z-40">
             <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center hecate-glow-border">
+                <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center ofiere-glow-border">
                     <Zap size={16} className="text-accent" />
                 </div>
                 <div className="flex items-baseline gap-2">
                     <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Fleet Power</span>
-                    <motion.span className="hecate-power-score text-2xl relative">
+                    <motion.span className="ofiere-power-score text-2xl relative">
                         {count}
                     </motion.span>
                 </div>
@@ -64,7 +64,7 @@ export function CommandHeader() {
             </div>
 
             <div className="flex items-center">
-                <span className="hecate-mono text-muted-foreground/80 text-[11px] tracking-wider">
+                <span className="ofiere-mono text-muted-foreground/80 text-[11px] tracking-wider">
                     {timeStr}
                 </span>
             </div>

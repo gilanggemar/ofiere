@@ -86,7 +86,7 @@ export const QuickActionsDock = () => {
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5, type: 'spring', stiffness: 300, damping: 25 }}
-            className="hidden md:flex fixed bottom-[20px] left-1/2 -translate-x-1/2 z-50 rounded-full px-3 py-1.5 hecate-glass-3 gap-1 shadow-[inset_0_1px_0_oklch(1_0_0/0.08)]"
+            className="hidden md:flex fixed bottom-[20px] left-1/2 -translate-x-1/2 z-50 rounded-full px-3 py-1.5 ofiere-glass-3 gap-1 shadow-[inset_0_1px_0_oklch(1_0_0/0.08)]"
         >
             <TooltipProvider delayDuration={200}>
 
@@ -101,7 +101,7 @@ export const QuickActionsDock = () => {
                             <MessageCircle size={18} />
                         </motion.button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="hidden lg:block hecate-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
+                    <TooltipContent side="top" className="hidden lg:block ofiere-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
                         Quick Chat <span className="text-muted-foreground ml-1">(Alt+C)</span>
                     </TooltipContent>
                 </Tooltip>
@@ -117,7 +117,7 @@ export const QuickActionsDock = () => {
                             <Users size={18} />
                         </motion.button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="hidden lg:block hecate-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
+                    <TooltipContent side="top" className="hidden lg:block ofiere-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
                         Start Summit <span className="text-muted-foreground ml-1">(Alt+S)</span>
                     </TooltipContent>
                 </Tooltip>
@@ -133,7 +133,7 @@ export const QuickActionsDock = () => {
                             <ListPlus size={18} />
                         </motion.button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="hidden lg:block hecate-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
+                    <TooltipContent side="top" className="hidden lg:block ofiere-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
                         New Task <span className="text-muted-foreground ml-1">(Alt+T)</span>
                     </TooltipContent>
                 </Tooltip>
@@ -154,7 +154,7 @@ export const QuickActionsDock = () => {
                             <Search size={18} />
                         </motion.button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="hidden lg:block hecate-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
+                    <TooltipContent side="top" className="hidden lg:block ofiere-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
                         Command Palette <span className="text-muted-foreground ml-1">(⌘K)</span>
                     </TooltipContent>
                 </Tooltip>
@@ -172,7 +172,7 @@ export const QuickActionsDock = () => {
                             <Activity size={18} />
                         </motion.button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="hidden lg:block hecate-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
+                    <TooltipContent side="top" className="hidden lg:block ofiere-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
                         Status Check <span className="text-muted-foreground ml-1">(Alt+H)</span>
                     </TooltipContent>
                 </Tooltip>
@@ -190,18 +190,18 @@ export const QuickActionsDock = () => {
                                 </motion.button>
                             </AlertDialogTrigger>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="hidden lg:block hecate-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
+                        <TooltipContent side="top" className="hidden lg:block ofiere-caption text-foreground bg-popover/90 backdrop-blur-md mb-2">
                             Emergency Shutdown <span className="text-muted-foreground ml-1">(Alt+Shift+E)</span>
                         </TooltipContent>
                     </Tooltip>
 
-                    <AlertDialogContent className="hecate-glass-3 border-[var(--accent-coral-soft)] shadow-[0_0_40px_oklch(from_var(--accent-coral)_l_c_h/0.2)]">
+                    <AlertDialogContent className="ofiere-glass-3 border-[var(--accent-coral-soft)] shadow-[0_0_40px_oklch(from_var(--accent-coral)_l_c_h/0.2)]">
                         <AlertDialogHeader>
-                            <AlertDialogTitle className="hecate-h2 flex items-center gap-2 text-[var(--accent-coral)]">
+                            <AlertDialogTitle className="ofiere-h2 flex items-center gap-2 text-[var(--accent-coral)]">
                                 <ShieldAlert size={24} />
                                 Emergency Shutdown
                             </AlertDialogTitle>
-                            <AlertDialogDescription className="hecate-body text-foreground/80">
+                            <AlertDialogDescription className="ofiere-body text-foreground/80">
                                 Are you sure? This will halt all active operations from connected agents and sever WebSocket communication temporarily.
                             </AlertDialogDescription>
                         </AlertDialogHeader>

@@ -1,6 +1,6 @@
-# Hecate User Guide
+# Ofiere User Guide
 
-Welcome to the Hecate Multi-Agent System Control Dashboard. 
+Welcome to the Ofiere Multi-Agent System Control Dashboard. 
 
 This environment connects directly to your OpenClaw Gateway instance, providing real-time oversight, deliberation management, and manual overrides for your autonomous agents.
 
@@ -31,7 +31,7 @@ This environment connects directly to your OpenClaw Gateway instance, providing 
 6. You can interject into the conversation manually using the bottom command terminal.
 
 ### Identifying Tools in the UI
-Whenever an agent utilizes an internal MCP system tool (like searching a document or checking the weather) through the OpenClaw back-end, Hecate will capture this and display an **Amber/Orange Tool Card**. It will say `[IN_PROGRESS]` while awaiting a response, and resolve to `[COMPLETED]` with a JSON dump of the output when successfully executed.
+Whenever an agent utilizes an internal MCP system tool (like searching a document or checking the weather) through the OpenClaw back-end, Ofiere will capture this and display an **Amber/Orange Tool Card**. It will say `[IN_PROGRESS]` while awaiting a response, and resolve to `[COMPLETED]` with a JSON dump of the output when successfully executed.
 
 ## Troubleshooting
 

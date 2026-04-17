@@ -104,7 +104,7 @@ export function BackgroundCropModal({ file, onClose, onApply }: BackgroundCropMo
     return (
         <Dialog open modal={false}>
             <DialogContent 
-                className="max-w-5xl w-[95vw] max-h-[85vh] flex flex-col hecate-glass-3 border-white/10 text-white"
+                className="max-w-5xl w-[95vw] max-h-[85vh] flex flex-col ofiere-glass-3 border-white/10 text-white"
                 onInteractOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
             >

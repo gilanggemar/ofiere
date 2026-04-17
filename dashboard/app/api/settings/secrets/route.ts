@@ -13,7 +13,7 @@ import { getAuthUserId } from '@/lib/auth';
 // Simple encryption using AES-256-GCM
 // In production, use a proper key management system
 const ENCRYPTION_KEY = process.env.SECRETS_ENCRYPTION_KEY ??
-    crypto.createHash('sha256').update('hecate-default-key').digest();
+    crypto.createHash('sha256').update('ofiere-default-key').digest();
 
 function encrypt(text: string): string {
     const iv = crypto.randomBytes(16);

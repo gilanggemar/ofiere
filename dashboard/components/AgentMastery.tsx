@@ -106,7 +106,7 @@ export const AgentMastery = memo(({
                                 <Icon size={16} className="shrink-0" style={{ color: currentTier.color }} />
 
                                 <span
-                                    className={cn("hecate-badge-text truncate", isArchitect && "relative overflow-hidden")}
+                                    className={cn("ofiere-badge-text truncate", isArchitect && "relative overflow-hidden")}
                                     style={!isArchitect ? { color: currentTier.color } : {
                                         background: `linear-gradient(90deg, ${currentTier.color} 0%, #ffffff 50%, ${currentTier.color} 100%)`,
                                         backgroundSize: '200% auto',
@@ -120,7 +120,7 @@ export const AgentMastery = memo(({
                                 </span>
 
                                 <div className="flex items-center gap-0.5 ml-1 shrink-0">
-                                    <span className="hecate-metric-sm text-foreground/80">Lv.{level}</span>
+                                    <span className="ofiere-metric-sm text-foreground/80">Lv.{level}</span>
                                     {hasPrecisionBonus && (
                                         <motion.span
                                             initial={{ opacity: 0.5, scale: 0.9 }}
@@ -134,7 +134,7 @@ export const AgentMastery = memo(({
                                 </div>
                             </div>
 
-                            <span className="hecate-caption opacity-70 tabular-nums shrink-0 ml-2">
+                            <span className="ofiere-caption opacity-70 tabular-nums shrink-0 ml-2">
                                 {Math.floor(progress)}%
                             </span>
                         </div>
@@ -152,7 +152,7 @@ export const AgentMastery = memo(({
 
                         {/* Bottom Row */}
                         <div className="text-right">
-                            <span className="hecate-caption opacity-50 tabular-nums">
+                            <span className="ofiere-caption opacity-50 tabular-nums">
                                 {finalXP.toLocaleString()} {nextTier && `/ ${nextTier.minXP.toLocaleString()}`} XP
                             </span>
                         </div>

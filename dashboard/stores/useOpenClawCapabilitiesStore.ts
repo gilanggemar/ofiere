@@ -235,7 +235,7 @@ export const useOpenClawCapabilitiesStore = create<OpenClawCapabilitiesState>((s
     skillGroups: [],
     _installedSkillsMeta: (() => {
         try {
-            const stored = typeof window !== 'undefined' ? localStorage.getItem('hecate_installed_skills') : null;
+            const stored = typeof window !== 'undefined' ? localStorage.getItem('ofiere_installed_skills') : null;
             return stored ? JSON.parse(stored) : {};
         } catch { return {}; }
     })(),
@@ -839,7 +839,7 @@ export const useOpenClawCapabilitiesStore = create<OpenClawCapabilitiesState>((s
                 enabled: true,
             },
         };
-        try { localStorage.setItem('hecate_installed_skills', JSON.stringify(updatedMeta)); } catch {}
+        try { localStorage.setItem('ofiere_installed_skills', JSON.stringify(updatedMeta)); } catch {}
 
         // Update UI cache
         const alreadyInCache = skillStatusesCache.some((s: any) => s.key === skill.key);
@@ -872,7 +872,7 @@ export const useOpenClawCapabilitiesStore = create<OpenClawCapabilitiesState>((s
                 agentId,
             },
         };
-        try { localStorage.setItem('hecate_installed_skills', JSON.stringify(updatedMeta)); } catch {}
+        try { localStorage.setItem('ofiere_installed_skills', JSON.stringify(updatedMeta)); } catch {}
 
         // Update UI caches
         const alreadyInGlobalCache = skillStatusesCache.some((s: any) => s.key === skill.key);
@@ -919,7 +919,7 @@ export const useOpenClawCapabilitiesStore = create<OpenClawCapabilitiesState>((s
                 updatedMeta[key] = { ...updatedMeta[key], confirmed: true };
             }
         }
-        try { localStorage.setItem('hecate_installed_skills', JSON.stringify(updatedMeta)); } catch {}
+        try { localStorage.setItem('ofiere_installed_skills', JSON.stringify(updatedMeta)); } catch {}
         set({ _installedSkillsMeta: updatedMeta });
         _rederiveLocalState();
         console.log(`[Capabilities] ✓ Agent ${agentId} confirmed installation of: ${installedKeys.join(', ')}`);
@@ -937,7 +937,7 @@ export const useOpenClawCapabilitiesStore = create<OpenClawCapabilitiesState>((s
         // Remove from _installedSkillsMeta + localStorage
         const updatedMeta = { ..._installedSkillsMeta };
         delete updatedMeta[skillKey];
-        try { localStorage.setItem('hecate_installed_skills', JSON.stringify(updatedMeta)); } catch {}
+        try { localStorage.setItem('ofiere_installed_skills', JSON.stringify(updatedMeta)); } catch {}
 
         // Remove from cache
         set({

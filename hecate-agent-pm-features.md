@@ -1,6 +1,6 @@
-# 🧠 Hecate — Agent-First Project Management Features
+# 🧠 Ofiere — Agent-First Project Management Features
 
-> A feature blueprint for building a project management tool inside Hecate, designed around **OpenClaw agents** (not humans).
+> A feature blueprint for building a project management tool inside Ofiere, designed around **OpenClaw agents** (not humans).
 > Inspired by structural patterns from ClickUp & Wrike, rebuilt for agent execution.
 
 ---
@@ -250,5 +250,5 @@ Build for constraints and context, and you'll have a system that actually orches
 
 ---
 
-*Generated for Hecate — Agent-First Project Management*
+*Generated for Ofiere — Agent-First Project Management*
 *Based on ClickUp & Wrike feature analysis, adapted for OpenClaw agent orchestration*

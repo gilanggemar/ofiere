@@ -169,7 +169,7 @@ export const useSocketStore = create<SocketStore>((set) => ({
 
 // ─── Constants ───
 
-const SESSIONS_LIST_ID = 'hecate-sessions-list';
+const SESSIONS_LIST_ID = 'ofiere-sessions-list';
 
 /** Generate a short unique ID for idempotency keys and request tracking */
 function uid(): string {
@@ -1268,7 +1268,7 @@ export function useSocket() {
     const sendEmergencyShutdown = useCallback(() => {
         const gw = getGateway();
         if (gw.isConnected) {
-            gw.request('system.shutdown', { force: true, reason: 'Emergency shutdown triggered from Hecate' }).then(() => {
+            gw.request('system.shutdown', { force: true, reason: 'Emergency shutdown triggered from Ofiere' }).then(() => {
                 addLog(`🚨 EMERGENCY SHUTDOWN INITIATED`);
             }).catch((err) => {
                 addLog(`❌ Shutdown failed: ${err?.message || err}`);
