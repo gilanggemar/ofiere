@@ -7,13 +7,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useSocketStore } from "@/lib/useSocket";
+import { useSocketStore, useSocket } from "@/lib/useSocket";
 import { toast } from "sonner";
 
 type InstallStatus = "idle" | "installing" | "success" | "error";
 
 export function PluginInstall() {
     const { agents } = useSocketStore();
+    const { sendChatMessage } = useSocket();
     const [status, setStatus] = useState<InstallStatus>("idle");
     const [errorMsg, setErrorMsg] = useState("");
     const [copied, setCopied] = useState(false);
@@ -38,6 +39,7 @@ export function PluginInstall() {
         setErrorMsg("");
 
         try {
+            // 1. Fetch the install prompt from the server (contains embedded credentials)
             const res = await fetch("/api/plugin/handshake", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -47,20 +49,29 @@ export function PluginInstall() {
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.error || "Install failed");
+                throw new Error(data.error || "Failed to generate install instructions");
             }
+
+            if (!data.prompt) {
+                throw new Error("Server returned empty install prompt");
+            }
+
+            // 2. Send the prompt to the agent via the BROWSER's existing WebSocket
+            // This works because the browser IS on the user's network (Tailscale, LAN, etc.)
+            const sessionKey = `agent:${effectiveAgent}:nchat`;
+            sendChatMessage(effectiveAgent, data.prompt, sessionKey, undefined, true);
 
             setStatus("success");
             toast.success("Plugin install sent! Your agent is configuring it now.");
 
             // Reset after a bit
-            setTimeout(() => setStatus("idle"), 8000);
+            setTimeout(() => setStatus("idle"), 12000);
         } catch (err: any) {
             setStatus("error");
             setErrorMsg(err.message || "Unknown error");
             toast.error(`Install failed: ${err.message}`);
         }
-    }, [effectiveAgent]);
+    }, [effectiveAgent, sendChatMessage]);
 
     const handleCopyCommand = useCallback(async () => {
         const cmd = `curl -sSL https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/install.sh | bash -s -- --supabase-url "$SUPABASE_URL" --service-key "$SERVICE_ROLE_KEY" --user-id "$USER_ID"`;
