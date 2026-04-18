@@ -106,6 +106,17 @@ export function probeApiForAgentName(api: any, logger?: any): string {
 
 // ─── Shared: Agent ID Resolution ─────────────────────────────────────────────
 
+// System/plugin names that should never be treated as real agent identifiers.
+// These come from the OpenClaw gateway registration context, not from actual agents.
+const SYSTEM_NAME_BLOCKLIST = new Set([
+  "ofiere pm", "ofiere", "openclaw", "system", "plugin", "gateway", "admin",
+  "ofiere pm plugin", "ofiere-openclaw-plugin",
+]);
+
+function isSystemName(name: string): boolean {
+  return SYSTEM_NAME_BLOCKLIST.has(name.toLowerCase().trim());
+}
+
 function createAgentResolver(
   api: any,
   supabase: SupabaseClient,
@@ -114,47 +125,38 @@ function createAgentResolver(
 ) {
   /**
    * Resolve the agent ID for the calling agent.
-   * Priority: explicit param > runtime context > registration-time detection > env var > DB fallback
+   * Priority: explicit param > env var > DB fallback
+   *
+   * NOTE: We intentionally skip runtime/registration detection because the
+   * OpenClaw api object returns the PLUGIN name ("Ofiere PM"), not the
+   * calling agent's name. Each agent must pass its own name via agent_id.
    */
   return async function resolveAgent(explicitId?: string): Promise<string | null> {
-    // 1. Explicit agent_id passed by the LLM (e.g. "ivy", "daisy", or a UUID)
+    // 1. Explicit agent_id passed by the LLM (e.g. "ivy", "celia", or a UUID)
     if (explicitId && explicitId.trim()) {
       const trimmed = explicitId.trim();
-      // If it looks like a UUID or our ID format, use directly
-      if (trimmed.match(/^[0-9a-f]{8}-/) || trimmed.match(/^agent-/)) {
+
+      // Block system names from being used as agent IDs
+      if (isSystemName(trimmed)) {
+        // Fall through to DB fallback
+      } else if (trimmed.match(/^[0-9a-f]{8}-/) || trimmed.match(/^agent-/)) {
+        // Looks like a UUID or our ID format — use directly
         return trimmed;
-      }
-      // Otherwise treat as a name and resolve to the actual agent ID
-      try {
-        return await resolveAgentId(trimmed, userId, supabase);
-      } catch {
-        return trimmed; // fallback: use as-is
-      }
-    }
-
-    // 2. Runtime: read calling agent's name from OpenClaw context
-    const callerName = getCallingAgentName(api);
-    if (callerName) {
-      try {
-        return await resolveAgentId(callerName, userId, supabase);
-      } catch {
-        // Fall through
+      } else {
+        // Treat as a name and resolve to the actual agent ID
+        try {
+          const resolved = await resolveAgentId(trimmed, userId, supabase);
+          if (resolved && !isSystemName(resolved)) return resolved;
+        } catch {
+          // Fall through
+        }
       }
     }
 
-    // 3. Registration-time detection (set when plugin was loaded)
-    if (_registrationAgentName) {
-      try {
-        return await resolveAgentId(_registrationAgentName, userId, supabase);
-      } catch {
-        // Fall through
-      }
-    }
-
-    // 4. Env var fallback (OFIERE_AGENT_ID — legacy single-agent mode)
+    // 2. Env var fallback (OFIERE_AGENT_ID — legacy single-agent mode)
     if (fallbackAgentId) return fallbackAgentId;
 
-    // 5. Nuclear fallback: query the FIRST agent for this user
+    // 3. Nuclear fallback: query the FIRST agent for this user
     try {
       const { data } = await supabase
         .from("agents")

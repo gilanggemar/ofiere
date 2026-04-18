@@ -11,7 +11,8 @@
 const TOOL_DOCS: Record<string, string> = {
   OFIERE_TASK_OPS: `- **OFIERE_TASK_OPS** — Manage tasks (action: "list", "create", "update", "delete")
     - list: Filter by status, agent_id, space_id, folder_id, limit. Returns execution_plan, goals, constraints if present
-    - create: Requires title. Optional: agent_id, description, instructions, execution_plan, goals, constraints, system_prompt, priority, tags, dates
+    - create: Requires title. IMPORTANT: Always pass agent_id with your own name to self-assign (e.g. agent_id: "celia")
+      - Optional: description, instructions, execution_plan, goals, constraints, system_prompt, priority, tags, dates
       - For COMPLEX tasks: include execution_plan (step-by-step), goals, constraints, and system_prompt
       - For SIMPLE tasks: just title and optionally description
     - update: Requires task_id. All create fields + progress
@@ -93,6 +94,7 @@ Each tool uses an "action" parameter to select the operation. Always include act
 ${toolDocs}
 
 ## Rules
+- ALWAYS pass agent_id with your own name when creating tasks (e.g. agent_id: "ivy"). Auto-detection is NOT reliable.
 - ${assignRule}
 - To create an unassigned task, pass agent_id as "none" or "unassigned".
 - When the user says "create a task for [agent name]", use OFIERE_AGENT_OPS action:"list" to find the agent ID, then use OFIERE_TASK_OPS action:"create" with that agent_id.
