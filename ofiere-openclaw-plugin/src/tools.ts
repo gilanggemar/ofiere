@@ -172,7 +172,9 @@ function createAgentResolver(
   };
 }
 
-// ─── META-TOOL: OFIERE_TASK_OPS ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 1: OFIERE_TASK_OPS — Task Management
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function registerTaskOps(
   api: any,
@@ -186,13 +188,14 @@ function registerTaskOps(
     description:
       `Manage tasks in the Ofiere PM dashboard. All task operations go through this tool.\n\n` +
       `Actions:\n` +
-      `- "list": List/filter tasks. Optional params: status, agent_id, space_id, folder_id, limit\n` +
-      `- "create": Create a new task. Required: title, agent_id. Optional: description, status, priority, space_id, folder_id, start_date, due_date, tags\n` +
-      `- "update": Update an existing task. Required: task_id. Optional: title, description, status, priority, progress, agent_id, start_date, due_date, tags\n` +
-      `- "delete": Delete a task and its subtasks. Required: task_id\n\n` +
-      `agent_id for create: Pass your own name (e.g. 'ivy') to self-assign, another agent's name to assign to them, or 'none'/'unassigned' for no assignee.\n` +
-      `Status values: PENDING, IN_PROGRESS, DONE, FAILED\n` +
-      `Priority values: 0=LOW, 1=MEDIUM, 2=HIGH, 3=CRITICAL`,
+      `- "list": List/filter tasks. Optional: status, agent_id, space_id, folder_id, limit\n` +
+      `- "create": Create a task. Required: title. Optional: agent_id, description, status, priority, space_id, folder_id, start_date, due_date, tags, instructions, execution_plan, goals, constraints, system_prompt\n` +
+      `- "update": Update a task. Required: task_id. Optional: all create fields + progress\n` +
+      `- "delete": Delete task + subtasks. Required: task_id\n\n` +
+      `For complex tasks, fill in execution_plan (step-by-step plan), goals, constraints, and system_prompt to help the executing agent.\n` +
+      `For simple tasks, just provide title and optionally description.\n` +
+      `agent_id: Pass your name to self-assign, another agent's name, or 'none'.\n` +
+      `Status: PENDING, IN_PROGRESS, DONE, FAILED | Priority: 0=LOW, 1=MEDIUM, 2=HIGH, 3=CRITICAL`,
     parameters: {
       type: "object",
       required: ["action"],
@@ -202,14 +205,13 @@ function registerTaskOps(
           description: "The operation to perform",
           enum: ["list", "create", "update", "delete"],
         },
-        // ── Shared / contextual params ──
         task_id: { type: "string", description: "Task ID (required for update, delete)" },
         title: { type: "string", description: "Task title (required for create)" },
         description: { type: "string", description: "Task description" },
+        instructions: { type: "string", description: "Detailed instructions for the agent executing this task" },
         agent_id: {
           type: "string",
-          description:
-            "Agent name or ID. For create: your name to self-assign, another name to delegate, 'none' for unassigned. For list: filter by agent.",
+          description: "Agent name or ID. Your name to self-assign, 'none' for unassigned.",
         },
         status: {
           type: "string",
@@ -227,6 +229,42 @@ function registerTaskOps(
           items: { type: "string" },
           description: "Tags for the task",
         },
+        execution_plan: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              text: { type: "string", description: "Step description" },
+            },
+            required: ["text"],
+          },
+          description: "Ordered execution steps for complex tasks. Each step: { text: '...' }",
+        },
+        goals: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              type: { type: "string", enum: ["budget", "stack", "legal", "deadline", "custom"], description: "Goal category" },
+              label: { type: "string", description: "Goal description" },
+            },
+            required: ["label"],
+          },
+          description: "Task goals. Each: { type?: 'budget'|'stack'|'legal'|'deadline'|'custom', label: '...' }",
+        },
+        constraints: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              type: { type: "string", enum: ["budget", "stack", "legal", "deadline", "custom"], description: "Constraint category" },
+              label: { type: "string", description: "Constraint description" },
+            },
+            required: ["label"],
+          },
+          description: "Task constraints. Each: { type?: 'budget'|'stack'|'legal'|'deadline'|'custom', label: '...' }",
+        },
+        system_prompt: { type: "string", description: "Custom system prompt injection for the executing agent" },
         limit: { type: "number", description: "Max results for list (default 50)" },
       },
     },
@@ -263,7 +301,7 @@ async function handleListTasks(
       .from("tasks")
       .select(
         "id, title, description, status, priority, agent_id, space_id, folder_id, " +
-        "start_date, due_date, progress, created_at, updated_at",
+        "start_date, due_date, progress, tags, custom_fields, created_at, updated_at",
       )
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
@@ -276,7 +314,21 @@ async function handleListTasks(
 
     const { data, error } = await query;
     if (error) return err(error.message);
-    return ok({ tasks: data || [], count: (data || []).length });
+
+    // Unpack custom_fields for readability
+    const tasks = (data || []).map((t: any) => {
+      const cf = t.custom_fields || {};
+      return {
+        ...t,
+        execution_plan: cf.execution_plan || undefined,
+        goals: cf.goals || undefined,
+        constraints: cf.constraints || undefined,
+        system_prompt: cf.system_prompt || undefined,
+        instructions: cf.instructions || t.description || undefined,
+      };
+    });
+
+    return ok({ tasks, count: tasks.length });
   } catch (e) {
     return err(e instanceof Error ? e.message : String(e));
   }
@@ -302,11 +354,41 @@ async function handleCreateTask(
 
     const assignee = isUnassigned ? null : await resolveAgent(rawAgentId);
 
+    // Build custom_fields from task-ops extended fields
+    const cf: Record<string, unknown> = {};
+
+    if (params.execution_plan && Array.isArray(params.execution_plan) && (params.execution_plan as any[]).length > 0) {
+      cf.execution_plan = (params.execution_plan as any[]).map((step: any, i: number) => ({
+        id: `step-${Date.now()}-${i}`,
+        text: typeof step === "string" ? step : step.text || String(step),
+        order: i,
+      }));
+    }
+
+    if (params.goals && Array.isArray(params.goals) && (params.goals as any[]).length > 0) {
+      cf.goals = (params.goals as any[]).map((g: any, i: number) => ({
+        id: `goal-${Date.now()}-${i}`,
+        type: g.type || "custom",
+        label: typeof g === "string" ? g : g.label || String(g),
+      }));
+    }
+
+    if (params.constraints && Array.isArray(params.constraints) && (params.constraints as any[]).length > 0) {
+      cf.constraints = (params.constraints as any[]).map((c: any, i: number) => ({
+        id: `cstr-${Date.now()}-${i}`,
+        type: c.type || "custom",
+        label: typeof c === "string" ? c : c.label || String(c),
+      }));
+    }
+
+    if (params.system_prompt) cf.system_prompt = params.system_prompt;
+    if (params.instructions) cf.instructions = params.instructions;
+
     const insertData: Record<string, unknown> = {
       id,
       user_id: userId,
       title: params.title,
-      description: (params.description as string) || null,
+      description: (params.description as string) || (params.instructions as string) || null,
       agent_id: assignee,
       assignee_type: "agent",
       status: (params.status as string) || "PENDING",
@@ -318,7 +400,7 @@ async function handleCreateTask(
       tags: (params.tags as string[]) || [],
       progress: 0,
       sort_order: 0,
-      custom_fields: {},
+      custom_fields: Object.keys(cf).length > 0 ? cf : {},
       created_at: now,
       updated_at: now,
     };
@@ -339,9 +421,16 @@ async function handleCreateTask(
       return err(error.message);
     }
 
+    const extras = [];
+    if (cf.execution_plan) extras.push(`${(cf.execution_plan as any[]).length} execution steps`);
+    if (cf.goals) extras.push(`${(cf.goals as any[]).length} goals`);
+    if (cf.constraints) extras.push(`${(cf.constraints as any[]).length} constraints`);
+    if (cf.system_prompt) extras.push("custom system prompt");
+    const extrasStr = extras.length > 0 ? ` with ${extras.join(", ")}` : "";
+
     return ok({
       id,
-      message: `Task "${params.title}" created and assigned to ${assignee || "no one"}`,
+      message: `Task "${params.title}" created and assigned to ${assignee || "no one"}${extrasStr}`,
       task: insertData,
     });
   } catch (e) {
@@ -366,6 +455,61 @@ async function handleUpdateTask(
       if (params[f] !== undefined) updates[f] = params[f];
     }
     if (params.status === "DONE") updates.completed_at = new Date().toISOString();
+
+    // Handle custom_fields updates (execution_plan, goals, constraints, system_prompt, instructions)
+    const hasCustomFields = params.execution_plan !== undefined ||
+      params.goals !== undefined ||
+      params.constraints !== undefined ||
+      params.system_prompt !== undefined ||
+      params.instructions !== undefined;
+
+    if (hasCustomFields) {
+      // Fetch existing custom_fields to merge
+      const { data: existing } = await supabase
+        .from("tasks")
+        .select("custom_fields")
+        .eq("id", params.task_id as string)
+        .eq("user_id", userId)
+        .single();
+
+      const existingCf = (existing?.custom_fields || {}) as Record<string, any>;
+      const mergedCf = { ...existingCf };
+
+      if (params.execution_plan !== undefined) {
+        mergedCf.execution_plan = Array.isArray(params.execution_plan)
+          ? (params.execution_plan as any[]).map((step: any, i: number) => ({
+              id: step.id || `step-${Date.now()}-${i}`,
+              text: typeof step === "string" ? step : step.text || String(step),
+              order: i,
+            }))
+          : [];
+      }
+
+      if (params.goals !== undefined) {
+        mergedCf.goals = Array.isArray(params.goals)
+          ? (params.goals as any[]).map((g: any, i: number) => ({
+              id: g.id || `goal-${Date.now()}-${i}`,
+              type: g.type || "custom",
+              label: typeof g === "string" ? g : g.label || String(g),
+            }))
+          : [];
+      }
+
+      if (params.constraints !== undefined) {
+        mergedCf.constraints = Array.isArray(params.constraints)
+          ? (params.constraints as any[]).map((c: any, i: number) => ({
+              id: c.id || `cstr-${Date.now()}-${i}`,
+              type: c.type || "custom",
+              label: typeof c === "string" ? c : c.label || String(c),
+            }))
+          : [];
+      }
+
+      if (params.system_prompt !== undefined) mergedCf.system_prompt = params.system_prompt;
+      if (params.instructions !== undefined) mergedCf.instructions = params.instructions;
+
+      updates.custom_fields = mergedCf;
+    }
 
     const { data, error } = await supabase
       .from("tasks")
@@ -423,7 +567,9 @@ async function handleDeleteTask(
   }
 }
 
-// ─── META-TOOL: OFIERE_AGENT_OPS ────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 2: OFIERE_AGENT_OPS — Agent Management
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function registerAgentOps(
   api: any,
@@ -495,11 +641,768 @@ async function handleListAgents(
   }
 }
 
-// ─── Public: Register All Meta-Tools ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 3: OFIERE_PROJECT_OPS — Spaces, Folders & Dependencies
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function registerProjectOps(
+  api: any,
+  supabase: SupabaseClient,
+  userId: string,
+): void {
+  api.registerTool({
+    name: "OFIERE_PROJECT_OPS",
+    label: "Ofiere Project Operations",
+    description:
+      `Manage PM hierarchy: spaces, folders, and task dependencies.\n\n` +
+      `Actions:\n` +
+      `- "list_spaces": List all PM spaces\n` +
+      `- "create_space": Create a space. Required: name. Optional: description, icon, icon_color\n` +
+      `- "update_space": Update a space. Required: id. Optional: name, description, icon, icon_color, sort_order\n` +
+      `- "delete_space": Delete a space. Required: id\n` +
+      `- "list_folders": List folders. Optional: space_id to filter\n` +
+      `- "create_folder": Create. Required: name, space_id. Optional: parent_folder_id, folder_type\n` +
+      `- "update_folder": Update. Required: id. Optional: name, space_id, parent_folder_id, sort_order\n` +
+      `- "delete_folder": Delete. Required: id\n` +
+      `- "list_dependencies": List task dependencies. Optional: task_id\n` +
+      `- "add_dependency": Link tasks. Required: predecessor_id, successor_id. Optional: dependency_type, lag_days\n` +
+      `- "remove_dependency": Unlink. Required: dependency_id\n` +
+      `dependency_type: finish_to_start (default), start_to_start, finish_to_finish, start_to_finish`,
+    parameters: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: {
+          type: "string",
+          description: "The operation to perform",
+          enum: ["list_spaces", "create_space", "update_space", "delete_space",
+                 "list_folders", "create_folder", "update_folder", "delete_folder",
+                 "list_dependencies", "add_dependency", "remove_dependency"],
+        },
+        id: { type: "string", description: "Space, folder, or dependency ID" },
+        name: { type: "string", description: "Name for space/folder" },
+        description: { type: "string", description: "Description" },
+        icon: { type: "string", description: "Emoji icon for space" },
+        icon_color: { type: "string", description: "Hex color for space icon" },
+        space_id: { type: "string", description: "Parent space ID" },
+        parent_folder_id: { type: "string", description: "Parent folder ID for nesting" },
+        folder_type: { type: "string", enum: ["folder", "project"], description: "Folder type" },
+        sort_order: { type: "number", description: "Sort order" },
+        predecessor_id: { type: "string", description: "Task that must complete first" },
+        successor_id: { type: "string", description: "Task that depends on predecessor" },
+        dependency_type: {
+          type: "string",
+          enum: ["finish_to_start", "start_to_start", "finish_to_finish", "start_to_finish"],
+          description: "Type of dependency link",
+        },
+        lag_days: { type: "number", description: "Days of lag between tasks (default 0)" },
+        task_id: { type: "string", description: "Filter dependencies by task ID" },
+        dependency_id: { type: "string", description: "Dependency ID to remove" },
+      },
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      const action = params.action as string;
+      switch (action) {
+        // ── Spaces ──
+        case "list_spaces": {
+          const { data, error } = await supabase.from("pm_spaces").select("*").eq("user_id", userId).order("sort_order");
+          if (error) return err(error.message);
+          return ok({ spaces: data || [], count: (data || []).length });
+        }
+        case "create_space": {
+          if (!params.name) return err("Missing required: name");
+          const { data, error } = await supabase.from("pm_spaces").insert({
+            user_id: userId,
+            name: params.name,
+            description: (params.description as string) || "",
+            icon: (params.icon as string) || "📁",
+            icon_color: (params.icon_color as string) || "#FF6D29",
+            access_type: "private",
+            sort_order: (params.sort_order as number) || 0,
+          }).select().single();
+          if (error) return err(error.message);
+          return ok({ message: `Space "${params.name}" created`, space: data });
+        }
+        case "update_space": {
+          if (!params.id) return err("Missing required: id");
+          const upd: Record<string, any> = { updated_at: new Date().toISOString() };
+          for (const f of ["name", "description", "icon", "icon_color", "sort_order"]) {
+            if ((params as any)[f] !== undefined) upd[f] = (params as any)[f];
+          }
+          const { error } = await supabase.from("pm_spaces").update(upd).eq("id", params.id).eq("user_id", userId);
+          if (error) return err(error.message);
+          return ok({ message: "Space updated", ok: true });
+        }
+        case "delete_space": {
+          if (!params.id) return err("Missing required: id");
+          const { error } = await supabase.from("pm_spaces").delete().eq("id", params.id).eq("user_id", userId);
+          if (error) return err(error.message);
+          return ok({ message: "Space deleted", ok: true });
+        }
+        // ── Folders ──
+        case "list_folders": {
+          let q = supabase.from("pm_folders").select("*").eq("user_id", userId).order("sort_order");
+          if (params.space_id) q = q.eq("space_id", params.space_id as string);
+          const { data, error } = await q;
+          if (error) return err(error.message);
+          return ok({ folders: data || [], count: (data || []).length });
+        }
+        case "create_folder": {
+          if (!params.name || !params.space_id) return err("Missing required: name, space_id");
+          const { data, error } = await supabase.from("pm_folders").insert({
+            user_id: userId,
+            space_id: params.space_id,
+            parent_folder_id: (params.parent_folder_id as string) || null,
+            name: params.name,
+            description: "",
+            folder_type: (params.folder_type as string) || "folder",
+            sort_order: (params.sort_order as number) || 0,
+          }).select().single();
+          if (error) return err(error.message);
+          return ok({ message: `Folder "${params.name}" created`, folder: data });
+        }
+        case "update_folder": {
+          if (!params.id) return err("Missing required: id");
+          const upd: Record<string, any> = { updated_at: new Date().toISOString() };
+          for (const f of ["name", "description", "space_id", "parent_folder_id", "folder_type", "sort_order"]) {
+            if ((params as any)[f] !== undefined) upd[f] = (params as any)[f];
+          }
+          const { error } = await supabase.from("pm_folders").update(upd).eq("id", params.id).eq("user_id", userId);
+          if (error) return err(error.message);
+          return ok({ message: "Folder updated", ok: true });
+        }
+        case "delete_folder": {
+          if (!params.id) return err("Missing required: id");
+          const { error } = await supabase.from("pm_folders").delete().eq("id", params.id).eq("user_id", userId);
+          if (error) return err(error.message);
+          return ok({ message: "Folder deleted", ok: true });
+        }
+        // ── Dependencies ──
+        case "list_dependencies": {
+          let q = supabase.from("pm_dependencies").select("*").eq("user_id", userId);
+          if (params.task_id) {
+            q = supabase.from("pm_dependencies").select("*").eq("user_id", userId)
+              .or(`predecessor_id.eq.${params.task_id},successor_id.eq.${params.task_id}`);
+          }
+          const { data, error } = await q;
+          if (error) return err(error.message);
+          return ok({ dependencies: data || [], count: (data || []).length });
+        }
+        case "add_dependency": {
+          if (!params.predecessor_id || !params.successor_id) return err("Missing required: predecessor_id, successor_id");
+          const { data, error } = await supabase.from("pm_dependencies").insert({
+            user_id: userId,
+            predecessor_id: params.predecessor_id,
+            successor_id: params.successor_id,
+            dependency_type: (params.dependency_type as string) || "finish_to_start",
+            lag_days: (params.lag_days as number) || 0,
+          }).select().single();
+          if (error) return err(error.message);
+          return ok({ message: "Dependency created", dependency: data });
+        }
+        case "remove_dependency": {
+          const depId = (params.dependency_id || params.id) as string;
+          if (!depId) return err("Missing required: dependency_id");
+          const { error } = await supabase.from("pm_dependencies").delete().eq("id", depId).eq("user_id", userId);
+          if (error) return err(error.message);
+          return ok({ message: "Dependency removed", ok: true });
+        }
+        default:
+          return err(`Unknown action "${action}".`);
+      }
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 4: OFIERE_SCHEDULE_OPS — Calendar & Scheduler Events
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function registerScheduleOps(
+  api: any,
+  supabase: SupabaseClient,
+  userId: string,
+): void {
+  api.registerTool({
+    name: "OFIERE_SCHEDULE_OPS",
+    label: "Ofiere Schedule Operations",
+    description:
+      `Manage calendar events and schedule tasks on the timeline.\n\n` +
+      `Actions:\n` +
+      `- "list": List events. Optional: start_date, end_date, agent_id\n` +
+      `- "create": Schedule an event. Required: title, scheduled_date. Optional: task_id, agent_id, scheduled_time, duration_minutes, recurrence_type, recurrence_interval, color, priority\n` +
+      `- "update": Update event. Required: id. Optional: title, scheduled_date, scheduled_time, duration_minutes, status, recurrence_type\n` +
+      `- "delete": Remove event. Required: id\n` +
+      `recurrence_type: none, hourly, daily, weekly, monthly\n` +
+      `priority: 0=low, 1=medium, 2=high, 3=critical`,
+    parameters: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: { type: "string", enum: ["list", "create", "update", "delete"] },
+        id: { type: "string", description: "Event ID" },
+        title: { type: "string", description: "Event title" },
+        description: { type: "string" },
+        task_id: { type: "string", description: "Link to a task" },
+        agent_id: { type: "string", description: "Assigned agent" },
+        scheduled_date: { type: "string", description: "Date (YYYY-MM-DD)" },
+        scheduled_time: { type: "string", description: "Time (HH:MM)" },
+        start_date: { type: "string", description: "List filter: start (YYYY-MM-DD)" },
+        end_date: { type: "string", description: "List filter: end (YYYY-MM-DD)" },
+        duration_minutes: { type: "number", description: "Duration in minutes (default 30)" },
+        recurrence_type: { type: "string", enum: ["none", "hourly", "daily", "weekly", "monthly"] },
+        recurrence_interval: { type: "number", description: "Repeat every N periods" },
+        color: { type: "string", description: "Hex color" },
+        priority: { type: "number", description: "0-3" },
+        status: { type: "string", enum: ["scheduled", "completed", "cancelled"] },
+      },
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      const action = params.action as string;
+      switch (action) {
+        case "list": {
+          let q = supabase.from("scheduler_events").select("*").eq("user_id", userId)
+            .order("scheduled_date", { ascending: true });
+          if (params.start_date) q = q.gte("scheduled_date", params.start_date as string);
+          if (params.end_date) q = q.lte("scheduled_date", params.end_date as string);
+          if (params.agent_id) q = q.eq("agent_id", params.agent_id as string);
+          const { data, error } = await q;
+          if (error) return err(error.message);
+          return ok({ events: data || [], count: (data || []).length });
+        }
+        case "create": {
+          if (!params.title || !params.scheduled_date) return err("Missing required: title, scheduled_date");
+          const evtId = crypto.randomUUID();
+          const priorityMap: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
+          const pVal = typeof params.priority === "number" ? params.priority
+            : priorityMap[String(params.priority || "").toLowerCase()] ?? 0;
+          const insertData: Record<string, any> = {
+            id: evtId,
+            user_id: userId,
+            task_id: (params.task_id as string) || null,
+            agent_id: (params.agent_id as string) || null,
+            title: params.title,
+            description: (params.description as string) || null,
+            scheduled_date: params.scheduled_date,
+            scheduled_time: (params.scheduled_time as string) || null,
+            duration_minutes: (params.duration_minutes as number) || 30,
+            recurrence_type: (params.recurrence_type as string) || "none",
+            recurrence_interval: (params.recurrence_interval as number) || 1,
+            status: "scheduled",
+            run_count: 0,
+            color: (params.color as string) || null,
+            priority: pVal,
+          };
+          const { error } = await supabase.from("scheduler_events").insert(insertData);
+          if (error) return err(error.message);
+          return ok({ message: `Event "${params.title}" scheduled for ${params.scheduled_date}`, id: evtId });
+        }
+        case "update": {
+          if (!params.id) return err("Missing required: id");
+          const upd: Record<string, any> = { updated_at: new Date().toISOString() };
+          for (const f of ["title", "description", "scheduled_date", "scheduled_time", "duration_minutes",
+                           "recurrence_type", "recurrence_interval", "status", "color", "priority", "agent_id"]) {
+            if ((params as any)[f] !== undefined) upd[f] = (params as any)[f];
+          }
+          const { error } = await supabase.from("scheduler_events").update(upd).eq("id", params.id);
+          if (error) return err(error.message);
+          return ok({ message: "Event updated", ok: true });
+        }
+        case "delete": {
+          if (!params.id) return err("Missing required: id");
+          const { error } = await supabase.from("scheduler_events").delete().eq("id", params.id);
+          if (error) return err(error.message);
+          return ok({ message: "Event deleted", ok: true });
+        }
+        default:
+          return err(`Unknown action "${action}".`);
+      }
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 5: OFIERE_KNOWLEDGE_OPS — Knowledge Base
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function registerKnowledgeOps(
+  api: any,
+  supabase: SupabaseClient,
+  userId: string,
+): void {
+  api.registerTool({
+    name: "OFIERE_KNOWLEDGE_OPS",
+    label: "Ofiere Knowledge Operations",
+    description:
+      `Search, add, and manage knowledge documents. This is the long-term memory system.\n\n` +
+      `Actions:\n` +
+      `- "search": Search docs by keyword. Required: query. Optional: limit\n` +
+      `- "list": List recent docs. Optional: page, page_size, search\n` +
+      `- "create": Add a document. Required: file_name. Optional: content, text, source, source_type, author, credibility_tier\n` +
+      `- "update": Edit a document. Required: id. Optional: file_name, content, text, source, source_type, author\n` +
+      `- "delete": Remove a document. Required: id`,
+    parameters: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: { type: "string", enum: ["search", "list", "create", "update", "delete"] },
+        id: { type: "string", description: "Document ID" },
+        query: { type: "string", description: "Search query" },
+        file_name: { type: "string", description: "Document name" },
+        content: { type: "string", description: "Raw content" },
+        text: { type: "string", description: "Processed text" },
+        source: { type: "string", description: "Source URL or reference" },
+        source_type: { type: "string", description: "e.g. web, pdf, manual" },
+        author: { type: "string", description: "Author name" },
+        credibility_tier: { type: "string", description: "Credibility level" },
+        page: { type: "number", description: "Page number (default 1)" },
+        page_size: { type: "number", description: "Results per page (default 20)" },
+        search: { type: "string", description: "Filter for list action" },
+        limit: { type: "number", description: "Max results for search" },
+      },
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      const action = params.action as string;
+      switch (action) {
+        case "search": {
+          if (!params.query) return err("Missing required: query");
+          const lim = (params.limit as number) || 20;
+          const searchTerm = `%${params.query}%`;
+          const { data, error } = await supabase
+            .from("knowledge_documents")
+            .select("id, file_name, file_type, content, source, source_type, author, credibility_tier")
+            .or(`file_name.ilike.${searchTerm},content.ilike.${searchTerm},author.ilike.${searchTerm},source.ilike.${searchTerm}`)
+            .order("created_at", { ascending: false })
+            .limit(lim);
+          if (error) return err(error.message);
+          return ok({ documents: data || [], count: (data || []).length, query: params.query });
+        }
+        case "list": {
+          const page = Math.max(1, (params.page as number) || 1);
+          const pageSize = Math.min(100, Math.max(1, (params.page_size as number) || 20));
+          const from = (page - 1) * pageSize;
+          const to = from + pageSize - 1;
+          let q = supabase.from("knowledge_documents")
+            .select("id, file_name, file_type, source, source_type, author, credibility_tier, created_at", { count: "exact" })
+            .order("created_at", { ascending: false })
+            .range(from, to);
+          if (params.search) {
+            const s = `%${params.search}%`;
+            q = q.or(`file_name.ilike.${s},content.ilike.${s},author.ilike.${s}`);
+          }
+          const { data, count, error } = await q;
+          if (error) return err(error.message);
+          return ok({ documents: data || [], total: count || 0, page, page_size: pageSize });
+        }
+        case "create": {
+          if (!params.file_name) return err("Missing required: file_name");
+          const docId = crypto.randomUUID();
+          const { error } = await supabase.from("knowledge_documents").insert({
+            id: docId,
+            user_id: userId,
+            file_name: params.file_name,
+            file_type: (params.file_type as string) || null,
+            content: (params.content as string) || null,
+            text: (params.text as string) || null,
+            source: (params.source as string) || null,
+            source_type: (params.source_type as string) || null,
+            author: (params.author as string) || null,
+            credibility_tier: (params.credibility_tier as string) || null,
+            size_bytes: params.content ? new TextEncoder().encode(params.content as string).length : 0,
+            indexed: false,
+          });
+          if (error) return err(error.message);
+          return ok({ message: `Knowledge doc "${params.file_name}" created`, id: docId });
+        }
+        case "update": {
+          if (!params.id) return err("Missing required: id");
+          const allowed = ["file_name", "file_type", "content", "text", "source", "source_type", "author", "credibility_tier"];
+          const upd: Record<string, any> = {};
+          for (const k of allowed) if ((params as any)[k] !== undefined) upd[k] = (params as any)[k];
+          if (Object.keys(upd).length === 0) return err("No valid fields to update");
+          const { error } = await supabase.from("knowledge_documents").update(upd).eq("id", params.id);
+          if (error) return err(error.message);
+          return ok({ message: "Document updated", ok: true });
+        }
+        case "delete": {
+          if (!params.id) return err("Missing required: id");
+          const { error } = await supabase.from("knowledge_documents").delete().eq("id", params.id);
+          if (error) return err(error.message);
+          return ok({ message: "Document deleted", ok: true });
+        }
+        default:
+          return err(`Unknown action "${action}".`);
+      }
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 6: OFIERE_WORKFLOW_OPS — Workflow Management & Execution
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function registerWorkflowOps(
+  api: any,
+  supabase: SupabaseClient,
+  userId: string,
+): void {
+  api.registerTool({
+    name: "OFIERE_WORKFLOW_OPS",
+    label: "Ofiere Workflow Operations",
+    description:
+      `Manage and trigger automated workflows.\n\n` +
+      `Actions:\n` +
+      `- "list": List all workflows. Optional: status\n` +
+      `- "get": Get workflow details. Required: id\n` +
+      `- "create": Create a workflow. Required: name. Optional: description, steps, schedule, status\n` +
+      `- "list_runs": List recent runs. Required: workflow_id. Optional: limit\n` +
+      `- "trigger": Start a workflow run. Required: workflow_id`,
+    parameters: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: { type: "string", enum: ["list", "get", "create", "list_runs", "trigger"] },
+        id: { type: "string", description: "Workflow ID" },
+        workflow_id: { type: "string", description: "Workflow ID for runs/trigger" },
+        name: { type: "string", description: "Workflow name" },
+        description: { type: "string" },
+        steps: { type: "array", items: { type: "object" }, description: "Workflow step definitions" },
+        schedule: { type: "string", description: "Cron expression or schedule" },
+        status: { type: "string", enum: ["draft", "active", "paused", "archived"] },
+        limit: { type: "number", description: "Max results" },
+      },
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      const action = params.action as string;
+      switch (action) {
+        case "list": {
+          let q = supabase.from("workflows").select("*").eq("user_id", userId).order("updated_at", { ascending: false });
+          if (params.status) q = q.eq("status", params.status as string);
+          const { data, error } = await q;
+          if (error) return err(error.message);
+          return ok({ workflows: data || [], count: (data || []).length });
+        }
+        case "get": {
+          const wfId = (params.id || params.workflow_id) as string;
+          if (!wfId) return err("Missing required: id");
+          const { data, error } = await supabase.from("workflows").select("*").eq("id", wfId).eq("user_id", userId).single();
+          if (error) return err(error.message);
+          return ok({ workflow: data });
+        }
+        case "create": {
+          if (!params.name) return err("Missing required: name");
+          const wfId = crypto.randomUUID();
+          const stepsWithIds = ((params.steps as any[]) || []).map((s: any, i: number) => ({
+            ...s, id: s.id || `step-${i}`,
+          }));
+          const { data, error } = await supabase.from("workflows").insert({
+            id: wfId, user_id: userId,
+            name: params.name,
+            description: (params.description as string) || null,
+            steps: stepsWithIds,
+            schedule: (params.schedule as string) || null,
+            status: (params.status as string) || "draft",
+            nodes: [], edges: [], definition_version: 1,
+          }).select().single();
+          if (error) return err(error.message);
+          return ok({ message: `Workflow "${params.name}" created`, workflow: data });
+        }
+        case "list_runs": {
+          const wfId = (params.workflow_id || params.id) as string;
+          if (!wfId) return err("Missing required: workflow_id");
+          const { data, error } = await supabase.from("workflow_runs").select("*")
+            .eq("workflow_id", wfId)
+            .order("created_at", { ascending: false })
+            .limit((params.limit as number) || 20);
+          if (error) return err(error.message);
+          return ok({ runs: data || [], count: (data || []).length });
+        }
+        case "trigger": {
+          const wfId = (params.workflow_id || params.id) as string;
+          if (!wfId) return err("Missing required: workflow_id");
+          const runId = crypto.randomUUID();
+          const { error } = await supabase.from("workflow_runs").insert({
+            id: runId,
+            workflow_id: wfId,
+            status: "running",
+            started_at: new Date().toISOString(),
+            trigger_type: "agent",
+          });
+          if (error) return err(error.message);
+          return ok({ message: `Workflow run triggered`, run_id: runId, workflow_id: wfId });
+        }
+        default:
+          return err(`Unknown action "${action}".`);
+      }
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 7: OFIERE_NOTIFY_OPS — Notifications
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function registerNotifyOps(
+  api: any,
+  supabase: SupabaseClient,
+  userId: string,
+): void {
+  api.registerTool({
+    name: "OFIERE_NOTIFY_OPS",
+    label: "Ofiere Notification Operations",
+    description:
+      `Read and manage notifications.\n\n` +
+      `Actions:\n` +
+      `- "list": List notifications. Optional: unread_only (true/false), limit\n` +
+      `- "mark_read": Mark one as read. Required: id\n` +
+      `- "mark_all_read": Mark all as read\n` +
+      `- "delete": Delete a notification. Required: id`,
+    parameters: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: { type: "string", enum: ["list", "mark_read", "mark_all_read", "delete"] },
+        id: { type: "string", description: "Notification ID" },
+        unread_only: { type: "boolean", description: "Only show unread" },
+        limit: { type: "number", description: "Max results (default 50)" },
+      },
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      const action = params.action as string;
+      switch (action) {
+        case "list": {
+          let q = supabase.from("notifications").select("*")
+            .order("created_at", { ascending: false })
+            .limit((params.limit as number) || 50);
+          if (params.unread_only === true) q = q.eq("read", false);
+          const { data, error } = await q;
+          if (error) return err(error.message);
+          const unread = (data || []).filter((n: any) => !n.read).length;
+          return ok({ notifications: data || [], count: (data || []).length, unread_count: unread });
+        }
+        case "mark_read": {
+          if (!params.id) return err("Missing required: id");
+          const { error } = await supabase.from("notifications").update({ read: true }).eq("id", params.id);
+          if (error) return err(error.message);
+          return ok({ message: "Notification marked as read", ok: true });
+        }
+        case "mark_all_read": {
+          const { error } = await supabase.from("notifications").update({ read: true }).eq("read", false);
+          if (error) return err(error.message);
+          return ok({ message: "All notifications marked as read", ok: true });
+        }
+        case "delete": {
+          if (!params.id) return err("Missing required: id");
+          const { error } = await supabase.from("notifications").delete().eq("id", params.id);
+          if (error) return err(error.message);
+          return ok({ message: "Notification deleted", ok: true });
+        }
+        default:
+          return err(`Unknown action "${action}".`);
+      }
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 8: OFIERE_MEMORY_OPS — Conversations & Knowledge Fragments
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function registerMemoryOps(
+  api: any,
+  supabase: SupabaseClient,
+  userId: string,
+): void {
+  api.registerTool({
+    name: "OFIERE_MEMORY_OPS",
+    label: "Ofiere Memory Operations",
+    description:
+      `Access conversation history and knowledge memory.\n\n` +
+      `Actions:\n` +
+      `- "list_conversations": List recent conversations. Optional: agent_id, limit\n` +
+      `- "get_messages": Get messages from a conversation. Required: conversation_id. Optional: limit\n` +
+      `- "search_messages": Search all messages. Required: query. Optional: agent_id, limit\n` +
+      `- "add_knowledge": Store a knowledge fragment. Required: agent_id, content, source. Optional: tags, importance\n` +
+      `- "search_knowledge": Search knowledge. Required: agent_id, query. Optional: limit`,
+    parameters: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: { type: "string", enum: ["list_conversations", "get_messages", "search_messages", "add_knowledge", "search_knowledge"] },
+        conversation_id: { type: "string" },
+        agent_id: { type: "string" },
+        query: { type: "string", description: "Search query" },
+        content: { type: "string", description: "Knowledge content to store" },
+        source: { type: "string", description: "Source of knowledge" },
+        tags: { type: "array", items: { type: "string" } },
+        importance: { type: "number", description: "1-10 importance scale" },
+        limit: { type: "number", description: "Max results" },
+      },
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      const action = params.action as string;
+      switch (action) {
+        case "list_conversations": {
+          let q = supabase.from("conversations")
+            .select("id, agent_id, title, created_at, updated_at")
+            .eq("user_id", userId)
+            .order("updated_at", { ascending: false })
+            .limit((params.limit as number) || 20);
+          if (params.agent_id) q = q.eq("agent_id", params.agent_id as string);
+          const { data, error } = await q;
+          if (error) return err(error.message);
+          return ok({ conversations: data || [], count: (data || []).length });
+        }
+        case "get_messages": {
+          if (!params.conversation_id) return err("Missing required: conversation_id");
+          const { data, error } = await supabase.from("conversation_messages")
+            .select("id, role, content, created_at")
+            .eq("conversation_id", params.conversation_id as string)
+            .order("created_at", { ascending: true })
+            .limit((params.limit as number) || 100);
+          if (error) return err(error.message);
+          return ok({ messages: data || [], count: (data || []).length });
+        }
+        case "search_messages": {
+          if (!params.query) return err("Missing required: query");
+          const searchTerm = `%${params.query}%`;
+          let q = supabase.from("conversation_messages")
+            .select("id, conversation_id, role, content, created_at")
+            .ilike("content", searchTerm)
+            .order("created_at", { ascending: false })
+            .limit((params.limit as number) || 20);
+          const { data, error } = await q;
+          if (error) return err(error.message);
+          return ok({ messages: data || [], count: (data || []).length, query: params.query });
+        }
+        case "add_knowledge": {
+          if (!params.agent_id || !params.content || !params.source) return err("Missing required: agent_id, content, source");
+          const fragId = crypto.randomUUID();
+          const { error } = await supabase.from("knowledge_fragments").insert({
+            id: fragId,
+            agent_id: params.agent_id,
+            content: params.content,
+            source: params.source,
+            tags: (params.tags as string[]) || [],
+            importance: (params.importance as number) || 5,
+          });
+          if (error) return err(error.message);
+          return ok({ message: "Knowledge stored", id: fragId });
+        }
+        case "search_knowledge": {
+          if (!params.agent_id || !params.query) return err("Missing required: agent_id, query");
+          const searchTerm = `%${params.query}%`;
+          const { data, error } = await supabase.from("knowledge_fragments")
+            .select("id, content, source, tags, importance, created_at")
+            .eq("agent_id", params.agent_id as string)
+            .ilike("content", searchTerm)
+            .order("importance", { ascending: false })
+            .limit((params.limit as number) || 20);
+          if (error) return err(error.message);
+          return ok({ fragments: data || [], count: (data || []).length });
+        }
+        default:
+          return err(`Unknown action "${action}".`);
+      }
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 9: OFIERE_PROMPT_OPS — System Prompt Chunk Management
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function registerPromptOps(
+  api: any,
+  supabase: SupabaseClient,
+  userId: string,
+): void {
+  api.registerTool({
+    name: "OFIERE_PROMPT_OPS",
+    label: "Ofiere Prompt Operations",
+    description:
+      `Manage system prompt instruction chunks. These are the building blocks of agent behavior.\n\n` +
+      `Actions:\n` +
+      `- "list": List all prompt chunks. Optional: agent_id\n` +
+      `- "get": Get a specific chunk. Required: id\n` +
+      `- "create": Create a new chunk. Required: label, content. Optional: agent_id, sort_order\n` +
+      `- "update": Update a chunk. Required: id. Optional: label, content, enabled, sort_order\n` +
+      `- "delete": Delete a chunk. Required: id`,
+    parameters: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: { type: "string", enum: ["list", "get", "create", "update", "delete"] },
+        id: { type: "string", description: "Chunk ID" },
+        label: { type: "string", description: "Chunk label/name" },
+        content: { type: "string", description: "Prompt chunk content" },
+        agent_id: { type: "string", description: "Associate with specific agent" },
+        enabled: { type: "boolean", description: "Whether chunk is active" },
+        sort_order: { type: "number", description: "Display order" },
+      },
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      const action = params.action as string;
+      switch (action) {
+        case "list": {
+          let q = supabase.from("prompt_chunks").select("*").eq("user_id", userId).order("sort_order");
+          if (params.agent_id) q = q.eq("agent_id", params.agent_id as string);
+          const { data, error } = await q;
+          if (error) return err(error.message);
+          return ok({ chunks: data || [], count: (data || []).length });
+        }
+        case "get": {
+          if (!params.id) return err("Missing required: id");
+          const { data, error } = await supabase.from("prompt_chunks").select("*").eq("id", params.id).single();
+          if (error) return err(error.message);
+          return ok({ chunk: data });
+        }
+        case "create": {
+          if (!params.label || !params.content) return err("Missing required: label, content");
+          const chunkId = crypto.randomUUID();
+          const { data, error } = await supabase.from("prompt_chunks").insert({
+            id: chunkId,
+            user_id: userId,
+            label: params.label,
+            content: params.content,
+            agent_id: (params.agent_id as string) || null,
+            enabled: true,
+            sort_order: (params.sort_order as number) || 0,
+          }).select().single();
+          if (error) return err(error.message);
+          api.logger?.info?.(`[ofiere] Prompt chunk created: "${params.label}" by agent`);
+          return ok({ message: `Prompt chunk "${params.label}" created`, chunk: data });
+        }
+        case "update": {
+          if (!params.id) return err("Missing required: id");
+          const upd: Record<string, any> = { updated_at: new Date().toISOString() };
+          for (const f of ["label", "content", "enabled", "sort_order", "agent_id"]) {
+            if ((params as any)[f] !== undefined) upd[f] = (params as any)[f];
+          }
+          const { error } = await supabase.from("prompt_chunks").update(upd).eq("id", params.id);
+          if (error) return err(error.message);
+          api.logger?.info?.(`[ofiere] Prompt chunk ${params.id} updated by agent`);
+          return ok({ message: "Prompt chunk updated", ok: true });
+        }
+        case "delete": {
+          if (!params.id) return err("Missing required: id");
+          const { error } = await supabase.from("prompt_chunks").delete().eq("id", params.id);
+          if (error) return err(error.message);
+          api.logger?.info?.(`[ofiere] Prompt chunk ${params.id} deleted by agent`);
+          return ok({ message: "Prompt chunk deleted", ok: true });
+        }
+        default:
+          return err(`Unknown action "${action}".`);
+      }
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Public: Register All Meta-Tools
+// ═══════════════════════════════════════════════════════════════════════════════
 // This is the single entry point called by index.ts.
 // Returns the number of tools registered for dynamic prompt generation.
-//
-// To expand: add new register*Ops() calls here and increment the count.
 
 export function registerTools(
   api: any, // OpenClawPluginApi — typed as any to avoid import-path issues at install time
@@ -512,11 +1415,18 @@ export function registerTools(
   const resolveAgent = createAgentResolver(api, supabase, userId, fallbackAgentId);
 
   // ── Register each domain meta-tool ──
-  registerTaskOps(api, supabase, userId, resolveAgent);
-  registerAgentOps(api, supabase, userId, fallbackAgentId);
+  registerTaskOps(api, supabase, userId, resolveAgent);       // 1
+  registerAgentOps(api, supabase, userId, fallbackAgentId);   // 2
+  registerProjectOps(api, supabase, userId);                  // 3
+  registerScheduleOps(api, supabase, userId);                 // 4
+  registerKnowledgeOps(api, supabase, userId);                // 5
+  registerWorkflowOps(api, supabase, userId);                 // 6
+  registerNotifyOps(api, supabase, userId);                   // 7
+  registerMemoryOps(api, supabase, userId);                   // 8
+  registerPromptOps(api, supabase, userId);                   // 9
 
   // ── Count and log ──
-  const toolCount = 2; // Update this when adding new meta-tools
+  const toolCount = 9;
   const callerName = getCallingAgentName(api);
   const agentLabel = fallbackAgentId || callerName || "auto-detect";
   api.logger.info(`[ofiere] ${toolCount} meta-tools registered (agent: ${agentLabel})`);

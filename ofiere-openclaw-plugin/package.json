@@ -1,8 +1,8 @@
 {
   "name": "ofiere-openclaw-plugin",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "type": "module",
-  "description": "OpenClaw plugin for Ofiere PM — scalable meta-tool architecture for task, agent, and project management",
+  "description": "OpenClaw plugin for Ofiere PM — 9 meta-tools covering tasks, agents, projects, scheduling, knowledge, workflows, notifications, memory, and prompts",
   "keywords": ["openclaw", "ofiere", "project-management", "agents", "plugin"],
   "homepage": "https://github.com/gilanggemar/Ofiere",
   "repository": {
