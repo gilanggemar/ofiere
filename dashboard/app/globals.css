@@ -697,6 +697,91 @@ html {
   75%, 95% { opacity: 1; }
 }
 
+/* ─── Pinned Chat Orb ─── */
+@keyframes ofiere-orb-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 109, 41, 0.25);
+    border-color: rgba(255, 109, 41, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(255, 109, 41, 0.15);
+    border-color: rgba(255, 109, 41, 0.55);
+  }
+}
+
+.ofiere-pinned-orb {
+  position: fixed;
+  border-radius: 50%;
+}
+
+/* ─── Pinned Chat Popover ─── */
+@keyframes ofiere-popover-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.ofiere-pinned-popover {
+  will-change: transform, opacity;
+}
+
+/* Ensure popover message area scrollbar is minimal */
+.ofiere-pinned-popover ::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ofiere-pinned-popover ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+.ofiere-pinned-popover ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Thinking dots bounce */
+@keyframes ofiere-thinking-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Badge pop-in */
+@keyframes ofiere-badge-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Chat message slide-in */
+@keyframes ofiere-chat-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 /* Custom Minimal Scrollbar (Global) */
 * {

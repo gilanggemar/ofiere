@@ -297,6 +297,9 @@ export function useSocket() {
     const commandTaskMap = useRef<Map<string, string>>(new Map());
     // Buffer for tool calls that arrive via event:agent BEFORE the event:chat message is created
     const pendingToolCalls = useRef<Map<string, any[]>>(new Map());
+    // Track runIds that event:chat is already handling content for,
+    // so event:agent bridge doesn't double-accumulate the same streaming deltas
+    const chatHandledRunIds = useRef(new Set<string>());
     const gatewayInitialized = useRef(false);
 
     const {
@@ -670,6 +673,10 @@ export function useSocket() {
                     });
                 }
             } else if (!routeToSummit && runId) {
+                // Mark this runId as handled by event:chat so event:agent bridge
+                // doesn't double-accumulate the same streaming content
+                chatHandledRunIds.current.add(runId);
+
                 const existing = useSocketStore.getState().chatMessages.find(m => m.id === `reply-${runId}`);
                 if (existing) {
                     const newToolCalls = (p.tool_calls && p.tool_calls.length > 0) ? p.tool_calls : (existing.tool_calls || []);
@@ -729,6 +736,7 @@ export function useSocket() {
                 // Clean up tracking refs
                 runIdToStartTime.current.delete(runId);
                 runIdToInputText.current.delete(runId);
+                chatHandledRunIds.current.delete(runId);
 
                 if (routeToSummit) {
                     const existing = useSocketStore.getState().summitMessages.find(m => m.runId === runId);
@@ -893,37 +901,17 @@ export function useSocket() {
             }
 
             // ── Bridge: assistant stream text → chatMessages ──
-            // The gateway sends post-tool-call text ONLY via event:agent stream:'assistant',
-            // NOT via event:chat. We must bridge this text to chatMessages for the chat UI.
+            // NOTE: Content accumulation is intentionally NOT done here.
+            // event:chat handles all streaming content. If event:chat never
+            // fires (post-tool-call text), the lifecycle:end handler creates
+            // a fallback message from OpenClawStore's accumulated assistantText.
+            // Doing content updates here caused double-accumulation bugs where
+            // every token was duplicated (both channels appending the same delta).
             if (p.stream === 'assistant' && agentRunId) {
                 const runId = agentRunId;
                 const delta = p.data?.delta || '';
                 const fullText = p.data?.text || p.data?.content || '';
                 const text = delta || fullText;
-
-                if (text && !summitRunIds.has(runId) && resolvedAgentId !== 'unknown') {
-                    const existing = useSocketStore.getState().chatMessages.find(m => m.id === `reply-${runId}`);
-                    if (existing) {
-                        // Update existing message with new text
-                        if (delta) {
-                            updateChatMessage(`reply-${runId}`, { content: existing.content + delta });
-                        } else if (fullText && fullText.length >= existing.content.length) {
-                            updateChatMessage(`reply-${runId}`, { content: fullText });
-                        }
-                    } else {
-                        // Create new chat message from agent event
-                        addChatMessage({
-                            id: `reply-${runId}`,
-                            role: 'assistant' as const,
-                            content: text,
-                            timestamp: new Date().toLocaleTimeString(),
-                            agentId: resolvedAgentId,
-                            sessionKey: resolvedSessionKey,
-                            streaming: true,
-                            tool_calls: [],
-                        } as any);
-                    }
-                }
 
                 // Also parse for inline tool calls (original behavior)
                 if (text) {

@@ -11,7 +11,7 @@ import {
     Wifi, WifiOff, ArrowDown, PanelLeftOpen, PanelLeftClose, ArrowUpRight,
     FileText, Image as ImageIcon, X as XIcon, Package, Check, Pencil,
     Target, Shield, Compass, Copy, Square, Brain, MessageSquareText, GitMerge,
-    Heart, Quote
+    Heart, Quote, Pin
 } from "lucide-react";
 import {
     IconPlus, IconPaperclip, IconCode, IconWorld, IconHistory,
@@ -50,6 +50,7 @@ import { useChatStore } from "@/stores/useChatStore";
 import { useOpenClawStore } from "@/store/useOpenClawStore";
 import { useCompanionModeStore } from "@/stores/useCompanionModeStore";
 import { useOpenClawModelStore } from "@/stores/useOpenClawModelStore";
+import { usePinnedChatStore } from "@/stores/usePinnedChatStore";
 
 import { parseOpenClawToolCalls } from "@/lib/openclawToolParser";
 import { AgentZeroMessageCard, tryParseAgentZeroJSON } from "@/components/chat/AgentZeroMessageCard";
@@ -1221,13 +1222,26 @@ export default function ChatPage() {
                         })}
                     </div>
 
-                    {/* Companion Mode Toggle */}
-                    {selectedAgentId && (
-                        <CompanionToggle
-                            agentId={selectedAgentId}
-                            onModeSwitch={() => setSidebarRefreshTrigger(t => t + 1)}
-                        />
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Pin Chat Button */}
+                        {selectedAgentId && (
+                            <PinChatButton
+                                agentId={selectedAgentId}
+                                agentName={selectedAgentName}
+                                conversationId={activeConversationId}
+                                conversationTitle={activeConversationId ? (chatStore.conversations[activeConversationId]?.title || undefined) : undefined}
+                                mode={useCompanionModeStore.getState().isCompanionMode(selectedAgentId) ? 'companion' : 'agent'}
+                            />
+                        )}
+
+                        {/* Companion Mode Toggle */}
+                        {selectedAgentId && (
+                            <CompanionToggle
+                                agentId={selectedAgentId}
+                                onModeSwitch={() => setSidebarRefreshTrigger(t => t + 1)}
+                            />
+                        )}
+                    </div>
                 </div>
 
                 {/* ─── Main Content (Chat + Process Hierarchy) ─── */}
@@ -2060,6 +2074,67 @@ Extract the most actionable next steps from the conversation. Be specific and pr
                 mode="create"
             />
         </div>
+    );
+}
+
+/* ─── Pin Chat Button ─── */
+function PinChatButton({
+    agentId,
+    agentName,
+    conversationId,
+    conversationTitle,
+    mode,
+}: {
+    agentId: string;
+    agentName: string;
+    conversationId?: string;
+    conversationTitle?: string;
+    mode: 'agent' | 'companion';
+}) {
+    const { pinnedChat, pinChat, unpinChat } = usePinnedChatStore();
+    const isPinned = pinnedChat?.conversationId === conversationId && pinnedChat?.agentId === agentId && !!conversationId;
+    const hasConversation = !!conversationId;
+
+    const handleClick = () => {
+        if (!hasConversation) return;
+        if (isPinned) {
+            unpinChat();
+        } else {
+            pinChat({
+                agentId,
+                agentName,
+                conversationId: conversationId!,
+                conversationTitle: conversationTitle || undefined,
+                mode,
+            });
+        }
+    };
+
+    return (
+        <button
+            onClick={handleClick}
+            disabled={!hasConversation}
+            className={cn(
+                "relative flex items-center gap-1.5 h-8 px-2.5 rounded-sm text-xs font-medium transition-all duration-200 shrink-0 border",
+                !hasConversation
+                    ? "bg-zinc-900/30 text-zinc-700 border-zinc-800/50 cursor-not-allowed opacity-50"
+                    : isPinned
+                        ? "bg-orange-500/15 text-orange-400 border-orange-500/40 ring-1 ring-orange-500/20"
+                        : "bg-zinc-900/60 text-muted-foreground border-zinc-800 hover:border-zinc-600 hover:text-foreground hover:bg-zinc-800/60"
+            )}
+            title={
+                !hasConversation
+                    ? "Select a conversation to pin"
+                    : isPinned
+                        ? "Unpin this chat"
+                        : "Pin this chat — access it from anywhere"
+            }
+        >
+            <Pin
+                className={cn("w-3.5 h-3.5 transition-transform", isPinned && "rotate-45")}
+                style={isPinned ? { fill: 'currentColor' } : undefined}
+            />
+        </button>
     );
 }
 

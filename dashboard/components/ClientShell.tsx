@@ -11,6 +11,16 @@ import { useOpenClawStore } from "@/store/useOpenClawStore";
 import { useConnectionStore } from "@/store/useConnectionStore";
 import { ExecApprovalModal } from "@/components/ExecApprovalModal";
 import { useHealthPoller } from "@/lib/useHealthPoller";
+import dynamic from "next/dynamic";
+
+const PinnedChatOrb = dynamic(
+    () => import("@/components/chat/PinnedChatOrb").then(mod => mod.PinnedChatOrb),
+    { ssr: false }
+);
+const PinnedChatPopover = dynamic(
+    () => import("@/components/chat/PinnedChatPopover").then(mod => mod.PinnedChatPopover),
+    { ssr: false }
+);
 
 export function ClientShell({ children }: { children: React.ReactNode }) {
     useKeyboardShortcuts();
@@ -81,6 +91,10 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
                 </motion.div>
             </AnimatePresence>
             <CommandPalette />
+
+            {/* Pinned Chat: Floating Orb + Popover */}
+            <PinnedChatOrb />
+            <PinnedChatPopover />
 
             {/* Exec Approval Modals */}
             {pendingApprovals.length > 0 && (
