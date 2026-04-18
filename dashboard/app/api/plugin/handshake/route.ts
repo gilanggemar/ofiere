@@ -4,12 +4,9 @@ import { getAuthUserId } from '@/lib/auth';
 /**
  * POST /api/plugin/handshake
  *
- * Returns a personalized, single-command install script with embedded credentials.
- * The command:
- *   1. Downloads the plugin from npm
- *   2. Installs all dependencies automatically
- *   3. Configures environment variables
- *   4. Restarts the OpenClaw gateway
+ * Returns personalized install commands with embedded credentials.
+ * Provides both Docker and native variants since OpenClaw may run
+ * in either environment.
  */
 export async function POST(request: Request) {
     const userId = await getAuthUserId();
@@ -22,21 +19,39 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Server missing Supabase credentials' }, { status: 500 });
     }
 
-    // Single command that does everything
-    const installCmd = [
-        `curl -sSL https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/install.sh | bash -s --`,
-        `--supabase-url "${SUPABASE_URL}"`,
-        `--service-key "${SERVICE_ROLE_KEY}"`,
-        `--user-id "${userId}"`,
-    ].join(' \\\n  ');
+    const installScript = 'https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/install.sh';
+
+    // Core args (same for both modes)
+    const args = `--supabase-url "${SUPABASE_URL}" --service-key "${SERVICE_ROLE_KEY}" --user-id "${userId}"`;
+
+    // Native variant — runs directly on the machine
+    const nativeCmd = `curl -sSL ${installScript} | bash -s -- ${args}`;
+
+    // Docker variant:
+    //   1. Finds the OpenClaw container
+    //   2. Runs install INSIDE the container with --no-restart (docker CLI unavailable inside)
+    //   3. Restarts the container from the HOST after install completes
+    const innerCmd = `curl -sSL ${installScript} | bash -s -- ${args} --no-restart`;
+    const dockerCmd = [
+        'CONTAINER=$(docker ps --filter "name=openclaw" --format "{{.Names}}" | head -1)',
+        `docker exec -i $CONTAINER bash -c '${innerCmd}'`,
+        'docker restart $CONTAINER',
+    ].join(' && ');
 
     return NextResponse.json({
         success: true,
-        installCommand: installCmd,
+        dockerCommand: dockerCmd,
+        nativeCommand: nativeCmd,
         steps: [
             {
-                label: 'Install Ofiere plugin (paste this into your VPS terminal)',
-                command: installCmd,
+                label: 'Docker (most common)',
+                command: dockerCmd,
+                description: 'If OpenClaw runs in Docker, paste this on your VPS host',
+            },
+            {
+                label: 'Native',
+                command: nativeCmd,
+                description: 'If OpenClaw runs directly (no Docker), paste this on your server',
             },
         ],
     });
