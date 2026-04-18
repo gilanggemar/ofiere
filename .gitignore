@@ -60,6 +60,7 @@ Desktop.ini
 # --- Legacy overview backups ---
 .overview2/
 .overview-redesign/
+.old/
 
 # --- Miscellaneous junk files ---
 nul
