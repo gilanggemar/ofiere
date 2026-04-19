@@ -11,7 +11,7 @@ export async function sendOpenClawMessage(
   sessionKey: string = `agent:${agentName.toLowerCase()}:workflow`,
   timeoutMs: number = 60000
 ): Promise<string> {
-  const wsUrl = process.env.NEXT_PUBLIC_OPENCLAW_WS_URL || 'wss://srv1335911.tailececae.ts.net';
+  const wsUrl = process.env.NEXT_PUBLIC_OPENCLAW_WS_URL || 'wss://gateway.ofiere.com';
   const token = process.env.OPENCLAW_AUTH_TOKEN || process.env.NEXT_PUBLIC_OPENCLAW_GATEWAY_TOKEN || '';
 
   return new Promise((resolve, reject) => {
