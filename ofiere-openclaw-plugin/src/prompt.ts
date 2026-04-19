@@ -71,12 +71,13 @@ const TOOL_DOCS: Record<string, string> = {
     - delete: Remove a chunk by ID
     - All modifications are logged for audit`,
 
-  OFIERE_CONSTELLATION_OPS: `- **OFIERE_CONSTELLATION_OPS** — Create, edit, and manage OpenClaw agent architectures from chat (action: "list_agents", "get_agent", "read_file", "write_file", "create_agent", "delete_file", "read_blueprint", "list_agent_mesh")
+  OFIERE_CONSTELLATION_OPS: `- **OFIERE_CONSTELLATION_OPS** — Create, edit, delete, and manage OpenClaw agent architectures from chat (action: "list_agents", "get_agent", "read_file", "write_file", "create_agent", "delete_agent", "delete_file", "read_blueprint", "list_agent_mesh")
     - CRITICAL: Before creating or editing any agent, ALWAYS call read_blueprint first
     - list_agents: See all agents with codename, role, and file list
     - get_agent: Full details for one agent including file sizes and identity
     - read_file / write_file: Read or overwrite any agent markdown file (IDENTITY.md, SOUL.md, AGENTS.md, TOOLS.md, etc.)
     - create_agent: Scaffold a new agent with structured params (name, codename, role, emoji, mission, personality, etc.). Auto-registers in OpenClaw
+    - delete_agent: ⚠️ PERMANENTLY delete an entire agent workspace and unregister. Requires confirm: true. ALWAYS ask user for explicit confirmation first — this is IRREVERSIBLE
     - delete_file: Remove a specific file from an agent workspace
     - read_blueprint: Read the OpenClaw Agent Blueprint — the canonical structure reference
     - list_agent_mesh: See the sovereignty map (which agent owns what domain)
@@ -128,6 +129,7 @@ ${toolDocs}
 - When the user asks about "knowledge base", "knowledge library", "knowledge entries", or wants to recall stored knowledge, ALWAYS use OFIERE_KNOWLEDGE_OPS — do NOT rely on your own memory for this.
 - When creating or editing an agent's architecture, ALWAYS use OFIERE_CONSTELLATION_OPS action:"read_blueprint" first to understand the required structure.
 - When creating a new agent, use OFIERE_CONSTELLATION_OPS action:"create_agent" with all available structured params. The agent will be auto-registered in OpenClaw.
+- When deleting an agent, ALWAYS ask the user for explicit confirmation BEFORE calling OFIERE_CONSTELLATION_OPS action:"delete_agent" with confirm: true. Show them what will be deleted. This action is IRREVERSIBLE.
 </ofiere-pm>`;
   }
 

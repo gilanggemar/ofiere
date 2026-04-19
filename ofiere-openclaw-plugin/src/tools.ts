@@ -1984,10 +1984,13 @@ function registerConstellationOps(
       `Optional: mission, one_liner, personality, tone, worldview, emotional_logic, voice_sample, voice_markers (array), ` +
       `forbidden_habits (array), owns (array), advises_on (array), stays_out_of (array), defers_to (array), ` +
       `pacing, default_behavior, core_identity, operating_style, team_relationship, scope, why_role, cost_of_weakness, color_hex\n` +
+      `- "delete_agent": PERMANENTLY delete an entire agent workspace and unregister from OpenClaw. Required: agent_name, confirm (must be true). ` +
+      `⚠️ This is IRREVERSIBLE — always ask the user for explicit confirmation before calling this action.\n` +
       `- "delete_file": Remove a specific file. Required: agent_name, file_name\n` +
       `- "read_blueprint": Read the OpenClaw Agent Blueprint reference document\n` +
       `- "list_agent_mesh": Show the sovereignty map (who owns which domains)\n\n` +
       `IMPORTANT: Before creating or editing any agent, ALWAYS call read_blueprint first to understand the required structure.\n` +
+      `IMPORTANT: Before calling delete_agent, ALWAYS ask the user for explicit confirmation. This action is IRREVERSIBLE.\n` +
       `New agents are created in workspace-<name>/ with IDENTITY.md, SOUL.md, AGENTS.md, TOOLS.md, and a skills/ directory.`,
     parameters: {
       type: "object",
@@ -1995,9 +1998,10 @@ function registerConstellationOps(
       properties: {
         action: {
           type: "string",
-          enum: ["list_agents", "get_agent", "read_file", "write_file", "create_agent", "delete_file", "read_blueprint", "list_agent_mesh"],
+          enum: ["list_agents", "get_agent", "read_file", "write_file", "create_agent", "delete_agent", "delete_file", "read_blueprint", "list_agent_mesh"],
         },
         agent_name: { type: "string", description: "Agent name (lowercase, e.g. 'luna', 'ivy')" },
+        confirm: { type: "boolean", description: "Required for delete_agent. Must be true to execute. Always ask user for confirmation first." },
         file_name: { type: "string", description: "File name (e.g. 'SOUL.md', 'AGENTS.md')" },
         content: { type: "string", description: "File content for write_file" },
         // create_agent fields
@@ -2232,6 +2236,68 @@ function registerConstellationOps(
             mesh.push({ agent: agent.name, codename: agent.codename, role: agent.role, owns });
           }
           return ok({ mesh, count: mesh.length });
+        }
+
+        // ── Delete an entire agent ──
+        case "delete_agent": {
+          if (!params.agent_name) return err("Missing required: agent_name");
+          const agentName = (params.agent_name as string).toLowerCase().replace(/[^a-z0-9_-]/g, "");
+          const wsPath = getWorkspacePath(agentName);
+
+          // Safety gate: confirm must be explicitly true
+          if (params.confirm !== true) {
+            // List what would be deleted so the agent can show the user
+            let fileList: string[] = [];
+            try {
+              if (fs.existsSync(wsPath)) {
+                fileList = fs.readdirSync(wsPath, { recursive: true }) as string[];
+              }
+            } catch {}
+            return err(
+              `⚠️ DESTRUCTIVE ACTION: This will permanently delete agent "${agentName}" and ALL files in workspace-${agentName}/ (${fileList.length} items). ` +
+              `This CANNOT be undone.\n\n` +
+              `Files that will be deleted:\n${fileList.map((f: string) => `  - ${f}`).join("\n") || "  (directory not found)"}\n\n` +
+              `To proceed, ask the user for explicit confirmation and then call this action again with confirm: true.`
+            );
+          }
+
+          // Check workspace exists
+          if (!fs.existsSync(wsPath)) {
+            return err(`Agent workspace-${agentName} does not exist at ${wsPath}`);
+          }
+
+          // Count files before deletion for the report
+          let deletedFiles: string[] = [];
+          try {
+            deletedFiles = fs.readdirSync(wsPath, { recursive: true }) as string[];
+          } catch {}
+
+          // Remove the entire workspace directory
+          try {
+            fs.rmSync(wsPath, { recursive: true, force: true });
+          } catch (e: any) {
+            return err(`Failed to delete workspace-${agentName}: ${String(e).slice(0, 300)}`);
+          }
+
+          // Unregister from OpenClaw (best-effort)
+          let unregResult = { success: false, message: "" };
+          try {
+            const cmd = `openclaw agents remove "${agentName}" --non-interactive 2>&1`;
+            const output = execSync(cmd, { encoding: "utf8", timeout: 15000 });
+            unregResult = { success: true, message: output.slice(0, 200) };
+          } catch (e: any) {
+            unregResult = { success: false, message: `Manual step needed: openclaw agents remove "${agentName}"` };
+          }
+
+          api.logger?.info?.(`[ofiere] Deleted agent "${agentName}" — ${deletedFiles.length} files removed`);
+
+          return ok({
+            message: `Agent "${agentName}" has been permanently deleted`,
+            agent_name: agentName,
+            workspace_deleted: wsPath,
+            files_removed: deletedFiles.length,
+            unregistration: unregResult,
+          });
         }
 
         default:
