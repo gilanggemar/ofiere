@@ -430,11 +430,54 @@ async function handleCreateTask(
     const effectiveAgentId = (insertData.agent_id as string) || assignee;
     if (startDate && effectiveAgentId) {
       try {
-        const scheduledTime = (params.scheduled_time as string) || "09:00"; // default 9am
-        const datePart = startDate; // YYYY-MM-DD
-        const timePart = scheduledTime; // HH:MM
-        const dt = new Date(`${datePart}T${timePart}:00`);
-        const nextRunAt = Math.floor(dt.getTime() / 1000);
+        // Parse start_date robustly — it can be:
+        //   "2026-04-19"                    (date only)
+        //   "2026-04-19T18:45:00"           (local datetime)
+        //   "2026-04-19 11:45:00+00"        (Supabase timestamptz)
+        //   "2026-04-19T11:45:00.000Z"      (ISO UTC)
+        const parsedDate = new Date(startDate);
+        const explicitScheduledTime = params.scheduled_time as string | undefined;
+
+        let nextRunAtEpoch: number;
+        let scheduledTimeFinal: string;
+        let scheduledDateFinal: string;
+
+        if (!isNaN(parsedDate.getTime())) {
+          // Valid date — check if it includes a meaningful time component
+          const hasTimeInfo = /[T ]\d{2}:\d{2}/.test(startDate);
+
+          if (explicitScheduledTime) {
+            // Agent explicitly passed a scheduled_time — use date from start_date + explicit time
+            const dateStr = parsedDate.toISOString().split("T")[0]; // YYYY-MM-DD
+            const dt = new Date(`${dateStr}T${explicitScheduledTime}:00Z`);
+            nextRunAtEpoch = Math.floor(dt.getTime() / 1000);
+            scheduledTimeFinal = explicitScheduledTime;
+            scheduledDateFinal = dateStr;
+          } else if (hasTimeInfo) {
+            // start_date already contains time — use it directly
+            nextRunAtEpoch = Math.floor(parsedDate.getTime() / 1000);
+            scheduledTimeFinal = `${String(parsedDate.getUTCHours()).padStart(2, "0")}:${String(parsedDate.getUTCMinutes()).padStart(2, "0")}`;
+            scheduledDateFinal = parsedDate.toISOString().split("T")[0];
+          } else {
+            // Date only, no time — default to 09:00 UTC
+            const dateStr = parsedDate.toISOString().split("T")[0];
+            const dt = new Date(`${dateStr}T09:00:00Z`);
+            nextRunAtEpoch = Math.floor(dt.getTime() / 1000);
+            scheduledTimeFinal = "09:00";
+            scheduledDateFinal = dateStr;
+          }
+        } else {
+          // Unparseable date — fallback to now + 60s
+          nextRunAtEpoch = Math.floor(Date.now() / 1000) + 60;
+          scheduledTimeFinal = "00:00";
+          scheduledDateFinal = new Date().toISOString().split("T")[0];
+        }
+
+        // Safety net: if computed time is in the past, schedule for now + 60s
+        const nowEpoch = Math.floor(Date.now() / 1000);
+        if (nextRunAtEpoch <= nowEpoch) {
+          nextRunAtEpoch = nowEpoch + 60;
+        }
 
         await supabase.from("scheduler_events").insert({
           id: crypto.randomUUID(),
@@ -443,13 +486,13 @@ async function handleCreateTask(
           agent_id: effectiveAgentId,
           title: params.title,
           description: (params.description as string) || (params.instructions as string) || null,
-          scheduled_date: datePart,
-          scheduled_time: timePart,
+          scheduled_date: scheduledDateFinal,
+          scheduled_time: scheduledTimeFinal,
           duration_minutes: 30,
           recurrence_type: "none",
           recurrence_interval: 1,
           status: "scheduled",
-          next_run_at: nextRunAt,
+          next_run_at: nextRunAtEpoch,
           run_count: 0,
           priority: params.priority !== undefined ? params.priority : 1,
         });
