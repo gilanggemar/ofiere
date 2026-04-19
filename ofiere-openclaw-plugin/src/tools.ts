@@ -191,12 +191,13 @@ function registerTaskOps(
       `Manage tasks in the Ofiere PM dashboard. All task operations go through this tool.\n\n` +
       `Actions:\n` +
       `- "list": List/filter tasks. Optional: status, agent_id, space_id, folder_id, limit\n` +
-      `- "create": Create a task. Required: title. Optional: agent_id, description, status, priority, space_id, folder_id, start_date, due_date, tags, instructions, execution_plan, goals, constraints, system_prompt\n` +
+      `- "create": Create a task. Required: title. Optional: agent_id, description, status, priority, space_id, folder_id, start_date, due_date, tags, instructions, execution_plan, goals, constraints, system_prompt, recurrence_type, recurrence_interval, scheduled_time\n` +
       `- "update": Update a task. Required: task_id. Optional: all create fields + progress\n` +
       `- "delete": Delete task + subtasks. Required: task_id\n\n` +
       `For complex tasks, fill in execution_plan (step-by-step plan), goals, constraints, and system_prompt to help the executing agent.\n` +
       `For simple tasks, just provide title and optionally description.\n` +
       `agent_id: Pass your name to self-assign, another agent's name, or 'none'.\n` +
+      `For recurring tasks: set start_date + recurrence_type + recurrence_interval. Example: every 2 minutes = recurrence_type: "minutely", recurrence_interval: 2.\n` +
       `Status: PENDING, IN_PROGRESS, DONE, FAILED | Priority: 0=LOW, 1=MEDIUM, 2=HIGH, 3=CRITICAL`,
     parameters: {
       type: "object",
@@ -224,8 +225,15 @@ function registerTaskOps(
         progress: { type: "number", description: "Progress percentage 0-100 (update only)" },
         space_id: { type: "string", description: "PM Space ID" },
         folder_id: { type: "string", description: "PM Folder ID" },
-        start_date: { type: "string", description: "Start date (ISO 8601)" },
+        start_date: { type: "string", description: "Start date (ISO 8601). Required for scheduled/recurring tasks." },
         due_date: { type: "string", description: "Due date (ISO 8601)" },
+        scheduled_time: { type: "string", description: "Time to execute in HH:MM format (UTC). If omitted, extracted from start_date or defaults to now+60s." },
+        recurrence_type: {
+          type: "string",
+          description: "How often the task recurs. 'none' for one-shot.",
+          enum: ["none", "minutely", "hourly", "daily", "weekly", "monthly"],
+        },
+        recurrence_interval: { type: "number", description: "Recurrence interval. e.g. recurrence_type='minutely', recurrence_interval=2 → every 2 minutes. Default: 1" },
         tags: {
           type: "array",
           items: { type: "string" },
@@ -489,8 +497,8 @@ async function handleCreateTask(
           scheduled_date: scheduledDateFinal,
           scheduled_time: scheduledTimeFinal,
           duration_minutes: 30,
-          recurrence_type: "none",
-          recurrence_interval: 1,
+          recurrence_type: (params.recurrence_type as string) || "none",
+          recurrence_interval: (params.recurrence_interval as number) || 1,
           status: "scheduled",
           next_run_at: nextRunAtEpoch,
           run_count: 0,
