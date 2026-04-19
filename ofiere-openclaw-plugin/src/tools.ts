@@ -547,6 +547,18 @@ async function handleUpdateTask(
     }
     if (params.status === "DONE") updates.completed_at = new Date().toISOString();
 
+    // If task is being marked DONE or FAILED, auto-complete any linked scheduler events
+    if (params.status === "DONE" || params.status === "FAILED") {
+      try {
+        await supabase
+          .from("scheduler_events")
+          .update({ status: "completed", next_run_at: null, updated_at: new Date().toISOString() })
+          .eq("task_id", params.task_id as string);
+      } catch (_schedErr) {
+        // Non-fatal: task update should still proceed
+      }
+    }
+
     // Handle custom_fields updates (execution_plan, goals, constraints, system_prompt, instructions)
     const hasCustomFields = params.execution_plan !== undefined ||
       params.goals !== undefined ||
