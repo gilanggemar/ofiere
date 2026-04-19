@@ -318,7 +318,7 @@ fi
 
 echo ""
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║   ✓ Ofiere PM Plugin v3.5.1 Installed!              ║"
+echo "║   ✓ Ofiere PM Plugin v3.5.2 Installed!              ║"
 echo "║                                                      ║"
 echo "║   Source:  npm ($PLUGIN_PKG@latest)"
 echo "║   Plugin:  $PLUGIN_DIR"
