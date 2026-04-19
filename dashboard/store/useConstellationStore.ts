@@ -76,9 +76,6 @@ interface ConstellationState {
     // CEO config (visual-only apex node)
     ceoConfig: { name: string; title: string; subtitle: string };
 
-    // Agent Zero chat
-    zeroChatOpen: boolean;
-    zeroChatTargetAgent: string | null;
 
     // Actions
     initialize: () => Promise<void>;
@@ -101,7 +98,6 @@ interface ConstellationState {
     openDrawer: (agentId: string, tab?: ConstellationState['drawerTab']) => void;
     closeDrawer: () => void;
     setDrawerTab: (tab: ConstellationState['drawerTab']) => void;
-    toggleZeroChat: (targetAgentId?: string) => void;
 
     // Relationship actions
     addRelationship: (rel: Omit<AgentRelationship, 'id'>) => void;
@@ -132,8 +128,7 @@ export const useConstellationStore = create<ConstellationState>((set, get) => ({
     doctrineLoaded: {},
     doctrineLoadingId: null,
     ceoConfig: { name: 'Gilang', title: 'Founder & CEO', subtitle: 'Ofiere Center' },
-    zeroChatOpen: false,
-    zeroChatTargetAgent: null,
+
 
     // ─── Initialize ─────────────────────────────────────────────────────
 
@@ -653,13 +648,7 @@ export const useConstellationStore = create<ConstellationState>((set, get) => ({
     closeDrawer: () => set({ drawerOpen: false }),
     setDrawerTab: (tab) => set({ drawerTab: tab }),
 
-    toggleZeroChat: (targetAgentId) => {
-        const { zeroChatOpen } = get();
-        set({
-            zeroChatOpen: !zeroChatOpen,
-            zeroChatTargetAgent: targetAgentId || get().zeroChatTargetAgent,
-        });
-    },
+
 
     // ─── Relationship Actions ───────────────────────────────────────────
 

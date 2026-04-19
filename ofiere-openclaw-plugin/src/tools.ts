@@ -1686,6 +1686,562 @@ function registerPromptOps(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// META-TOOL 10: OFIERE_CONSTELLATION_OPS — Agent Architecture Builder
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function registerConstellationOps(
+  api: any,
+  supabase: SupabaseClient,
+  userId: string,
+): void {
+  // Resolve the OpenClaw data directory — the plugin runs inside the gateway process
+  const fs = require("fs");
+  const path = require("path");
+  const { execSync } = require("child_process");
+
+  // OpenClaw stores data at /data/.openclaw/ inside the Docker container
+  // Fallback: check HOME/.openclaw/ for local dev
+  const OPENCLAW_ROOT =
+    fs.existsSync("/data/.openclaw") ? "/data/.openclaw"
+    : path.join(process.env.HOME || process.env.USERPROFILE || "/root", ".openclaw");
+
+  // ── Helpers ──
+
+  function getWorkspacePath(agentName: string): string {
+    return path.join(OPENCLAW_ROOT, `workspace-${agentName.toLowerCase()}`);
+  }
+
+  function listWorkspaceAgents(): Array<{ name: string; codename: string; role: string; files: string[]; hasSkills: boolean }> {
+    const result: Array<{ name: string; codename: string; role: string; files: string[]; hasSkills: boolean }> = [];
+    try {
+      const entries = fs.readdirSync(OPENCLAW_ROOT, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory() || !entry.name.startsWith("workspace-")) continue;
+        const agentName = entry.name.replace("workspace-", "");
+        if (agentName === "main" || agentName === "zero" || agentName === "echo") continue; // skip system agents
+        const wsPath = path.join(OPENCLAW_ROOT, entry.name);
+        const files = fs.readdirSync(wsPath).filter((f: string) => f.endsWith(".md"));
+        // Try to extract codename and role from IDENTITY.md
+        let codename = agentName.toUpperCase();
+        let role = "Agent";
+        try {
+          const idContent = fs.readFileSync(path.join(wsPath, "IDENTITY.md"), "utf8");
+          const cnMatch = idContent.match(/\*\*Codename[\s:]*\*\*[\s:]*(.+)/i);
+          if (cnMatch) codename = cnMatch[1].trim();
+          const roleMatch = idContent.match(/\*\*Role[\s:]*\*\*[\s:]*(.+)/i);
+          if (roleMatch) role = roleMatch[1].trim();
+        } catch {}
+        const hasSkills = fs.existsSync(path.join(wsPath, "skills"));
+        result.push({ name: agentName, codename, role, files, hasSkills });
+      }
+    } catch (e) {
+      api.logger?.warn?.(`[ofiere] Failed to list workspaces: ${e}`);
+    }
+    return result;
+  }
+
+  function readAgentFile(agentName: string, fileName: string): string | null {
+    try {
+      const filePath = path.join(getWorkspacePath(agentName), fileName);
+      return fs.readFileSync(filePath, "utf8");
+    } catch { return null; }
+  }
+
+  function writeAgentFile(agentName: string, fileName: string, content: string): void {
+    const wsPath = getWorkspacePath(agentName);
+    if (!fs.existsSync(wsPath)) fs.mkdirSync(wsPath, { recursive: true, mode: 0o777 });
+    fs.writeFileSync(path.join(wsPath, fileName), content, "utf8");
+  }
+
+  function deleteAgentFile(agentName: string, fileName: string): boolean {
+    try {
+      const filePath = path.join(getWorkspacePath(agentName), fileName);
+      if (fs.existsSync(filePath)) { fs.unlinkSync(filePath); return true; }
+      return false;
+    } catch { return false; }
+  }
+
+  // ── Markdown Generators (aligned with markdownSerializer.ts patterns) ──
+
+  function generateIdentityMd(p: Record<string, any>): string {
+    const lines: string[] = [];
+    lines.push(`# ${p.agent_name}`);
+    lines.push("");
+    lines.push(`**Name:** ${p.agent_name}`);
+    if (p.emoji) lines.push(`**Emoji:** ${p.emoji}`);
+    lines.push(`**Role:** ${p.role || "Agent"}`);
+    lines.push(`**Codename:** ${p.codename}`);
+    if (p.voice_sample) lines.push(`**Sample:** ${p.voice_sample}`);
+    lines.push("");
+    if (p.one_liner) {
+      lines.push("## One-Liner");
+      lines.push("");
+      lines.push(p.one_liner);
+      lines.push("");
+    }
+    lines.push("## Core Identity");
+    lines.push("");
+    lines.push(p.core_identity || `${p.agent_name} is an AI agent specializing in ${p.role || "general tasks"}.`);
+    lines.push("");
+    lines.push("## Operating Style");
+    lines.push("");
+    lines.push(p.operating_style || "Focused, professional, detail-oriented.");
+    lines.push("");
+    lines.push("## Relationship to Team");
+    lines.push("");
+    lines.push(p.team_relationship || "Collaborative team member within the agent constellation.");
+    lines.push("");
+    return lines.join("\n");
+  }
+
+  function generateSoulMd(p: Record<string, any>): string {
+    const lines: string[] = [];
+    lines.push(`# ${p.agent_name} — Soul`);
+    lines.push("");
+    lines.push("## Personality");
+    lines.push("");
+    lines.push(p.personality || `${p.agent_name} approaches work with focus and precision.`);
+    lines.push("");
+    lines.push("## Tone");
+    lines.push("");
+    lines.push(p.tone || "Professional, clear, and supportive.");
+    lines.push("");
+    lines.push("## Worldview");
+    lines.push("");
+    lines.push(p.worldview || "Every task has a structure; find the structure and the solution follows.");
+    lines.push("");
+    lines.push("## Emotional Logic");
+    lines.push("");
+    lines.push(p.emotional_logic || "Calm under pressure, energized by challenging problems.");
+    lines.push("");
+    lines.push("## Voice Markers");
+    lines.push("");
+    if (p.voice_markers && Array.isArray(p.voice_markers)) {
+      for (const m of p.voice_markers) lines.push(`- ${m}`);
+    } else {
+      lines.push("- Direct and concise");
+      lines.push("- Action-oriented language");
+    }
+    lines.push("");
+    lines.push("## Pacing");
+    lines.push("");
+    lines.push(p.pacing || "Steady and methodical — never rushes, never stalls.");
+    lines.push("");
+    lines.push("## Forbidden Habits");
+    lines.push("");
+    if (p.forbidden_habits && Array.isArray(p.forbidden_habits)) {
+      for (const h of p.forbidden_habits) lines.push(`- ${h}`);
+    } else {
+      lines.push("- Never make up data or references");
+      lines.push("- Never ignore user constraints");
+    }
+    lines.push("");
+    return lines.join("\n");
+  }
+
+  function generateAgentsMd(p: Record<string, any>): string {
+    const lines: string[] = [];
+    lines.push(`# ${p.agent_name} — Agent Protocol`);
+    lines.push("");
+    lines.push(`**Title:** ${p.role || "Agent"}`);
+    lines.push(`**Codename:** ${p.codename}`);
+    lines.push("");
+    lines.push("## Role Charter");
+    lines.push("");
+    lines.push("### Mission");
+    lines.push("");
+    lines.push(p.mission || `Serve as the ${p.role || "primary agent"} within the constellation.`);
+    lines.push("");
+    lines.push("### Scope of Responsibility");
+    lines.push("");
+    lines.push(p.scope || `All tasks related to ${p.role || "the assigned domain"}.`);
+    lines.push("");
+    lines.push("### Why This Role Exists");
+    lines.push("");
+    lines.push(p.why_role || `To provide dedicated ${p.role || "support"} capability within the team.`);
+    lines.push("");
+    lines.push("### Cost of Weakness");
+    lines.push("");
+    lines.push(p.cost_of_weakness || "Gaps in this role lead to bottlenecks and unresolved tasks.");
+    lines.push("");
+    lines.push("## Boundaries");
+    lines.push("");
+    lines.push("### Owns");
+    lines.push("");
+    if (p.owns && Array.isArray(p.owns)) {
+      for (const o of p.owns) lines.push(`- ${o}`);
+    } else {
+      lines.push(`- ${p.role || "General"} domain tasks`);
+    }
+    lines.push("");
+    lines.push("### Advises On");
+    lines.push("");
+    if (p.advises_on && Array.isArray(p.advises_on)) {
+      for (const a of p.advises_on) lines.push(`- ${a}`);
+    } else {
+      lines.push("- Cross-functional decisions touching this domain");
+    }
+    lines.push("");
+    lines.push("### Stays Out Of");
+    lines.push("");
+    if (p.stays_out_of && Array.isArray(p.stays_out_of)) {
+      for (const s of p.stays_out_of) lines.push(`- ${s}`);
+    } else {
+      lines.push("- Other agents' primary domains");
+    }
+    lines.push("");
+    lines.push("### Defers To");
+    lines.push("");
+    if (p.defers_to && Array.isArray(p.defers_to)) {
+      for (const d of p.defers_to) lines.push(`- ${d}`);
+    } else {
+      lines.push("- The user for final decisions");
+    }
+    lines.push("");
+    lines.push("## Operational Protocol");
+    lines.push("");
+    lines.push("### Default Behavior");
+    lines.push("");
+    lines.push(p.default_behavior || "Await instructions, proactively report status on active tasks.");
+    lines.push("");
+    lines.push("### Task Routing");
+    lines.push("");
+    lines.push("- Accept tasks within scope, flag tasks outside boundaries");
+    lines.push("- Escalate blockers immediately");
+    lines.push("");
+    lines.push("### Response Discipline");
+    lines.push("");
+    lines.push("- Always confirm task understanding before execution");
+    lines.push("- Provide structured output");
+    lines.push("");
+    return lines.join("\n");
+  }
+
+  function generateToolsMd(p: Record<string, any>): string {
+    const lines: string[] = [];
+    lines.push(`# ${p.agent_name} — Tool Guide`);
+    lines.push("");
+    lines.push("## Available Tools");
+    lines.push("");
+    lines.push("- file_read / file_write — File system access");
+    lines.push("- web_search — Internet research");
+    lines.push("- shell — Terminal commands");
+    lines.push("- browser — Web browsing");
+    lines.push("- OFIERE meta-tools — Dashboard operations");
+    lines.push("");
+    lines.push("## Tool Usage Rules");
+    lines.push("");
+    lines.push("- Always use `file_read` to check existing content before overwriting");
+    lines.push("- Prefer targeted edits over full file rewrites");
+    lines.push("- Log all significant operations");
+    lines.push("");
+    lines.push("## Tool-Specific Notes");
+    lines.push("");
+    lines.push("### Memory");
+    lines.push("");
+    lines.push("Three-tier memory system:");
+    lines.push("1. **Working Memory** — Current conversation context");
+    lines.push("2. **Journal Layer** — Session summaries and decisions");
+    lines.push("3. **Long-Term Core Facts** — Persistent user preferences and project context");
+    lines.push("");
+    return lines.join("\n");
+  }
+
+  // ── Auto-register agent in OpenClaw (best-effort) ──
+
+  function tryRegisterAgent(agentName: string): { success: boolean; message: string } {
+    const wsPath = getWorkspacePath(agentName);
+    try {
+      const cmd = `openclaw agents add "${agentName}" --workspace "${wsPath}" --non-interactive 2>&1`;
+      const output = execSync(cmd, { encoding: "utf8", timeout: 15000 });
+      api.logger?.info?.(`[ofiere] Auto-registered agent "${agentName}": ${output.slice(0, 200)}`);
+      return { success: true, message: `Agent "${agentName}" registered in OpenClaw` };
+    } catch (e: any) {
+      const msg = e?.stderr || e?.stdout || String(e);
+      // Check if already registered
+      if (msg.includes("already exists") || msg.includes("duplicate")) {
+        return { success: true, message: `Agent "${agentName}" was already registered` };
+      }
+      api.logger?.warn?.(`[ofiere] Auto-registration failed for "${agentName}": ${msg.slice(0, 300)}`);
+      return { success: false, message: `Auto-registration failed. Manual step: openclaw agents add "${agentName}" --workspace "${wsPath}"` };
+    }
+  }
+
+  // ── Register the tool ──
+
+  api.registerTool({
+    name: "OFIERE_CONSTELLATION_OPS",
+    label: "Ofiere Constellation Operations",
+    description:
+      `Create, edit, and manage OpenClaw agent architectures directly from chat. ` +
+      `This tool reads and writes the markdown files that define each agent's identity, personality, boundaries, and operational protocol.\n\n` +
+      `Actions:\n` +
+      `- "list_agents": List all agents with codename, role, and file listing\n` +
+      `- "get_agent": Get full details for one agent. Required: agent_name\n` +
+      `- "read_file": Read a specific agent file. Required: agent_name, file_name\n` +
+      `- "write_file": Create or overwrite an agent file. Required: agent_name, file_name, content\n` +
+      `- "create_agent": Scaffold a complete new agent. Required: agent_name, codename, role, emoji. ` +
+      `Optional: mission, one_liner, personality, tone, worldview, emotional_logic, voice_sample, voice_markers (array), ` +
+      `forbidden_habits (array), owns (array), advises_on (array), stays_out_of (array), defers_to (array), ` +
+      `pacing, default_behavior, core_identity, operating_style, team_relationship, scope, why_role, cost_of_weakness, color_hex\n` +
+      `- "delete_file": Remove a specific file. Required: agent_name, file_name\n` +
+      `- "read_blueprint": Read the OpenClaw Agent Blueprint reference document\n` +
+      `- "list_agent_mesh": Show the sovereignty map (who owns which domains)\n\n` +
+      `IMPORTANT: Before creating or editing any agent, ALWAYS call read_blueprint first to understand the required structure.\n` +
+      `New agents are created in workspace-<name>/ with IDENTITY.md, SOUL.md, AGENTS.md, TOOLS.md, and a skills/ directory.`,
+    parameters: {
+      type: "object",
+      required: ["action"],
+      properties: {
+        action: {
+          type: "string",
+          enum: ["list_agents", "get_agent", "read_file", "write_file", "create_agent", "delete_file", "read_blueprint", "list_agent_mesh"],
+        },
+        agent_name: { type: "string", description: "Agent name (lowercase, e.g. 'luna', 'ivy')" },
+        file_name: { type: "string", description: "File name (e.g. 'SOUL.md', 'AGENTS.md')" },
+        content: { type: "string", description: "File content for write_file" },
+        // create_agent fields
+        codename: { type: "string", description: "All-caps codename (e.g. 'PRISM', 'NEXUS')" },
+        role: { type: "string", description: "Executive role (e.g. 'CTO', 'CMO', 'CPO')" },
+        emoji: { type: "string", description: "Agent emoji (e.g. '🌙', '🎨')" },
+        mission: { type: "string", description: "Agent's mission statement" },
+        one_liner: { type: "string", description: "One-line agent description" },
+        personality: { type: "string", description: "Personality description" },
+        tone: { type: "string", description: "Communication tone" },
+        worldview: { type: "string", description: "Core worldview/philosophy" },
+        emotional_logic: { type: "string", description: "Emotional response patterns" },
+        voice_sample: { type: "string", description: "Sample of how the agent talks" },
+        voice_markers: { type: "array", items: { type: "string" }, description: "List of voice characteristics" },
+        forbidden_habits: { type: "array", items: { type: "string" }, description: "Things the agent must never do" },
+        owns: { type: "array", items: { type: "string" }, description: "Primary domain ownership" },
+        advises_on: { type: "array", items: { type: "string" }, description: "Advisory areas" },
+        stays_out_of: { type: "array", items: { type: "string" }, description: "No-fly zones" },
+        defers_to: { type: "array", items: { type: "string" }, description: "Handoff targets" },
+        pacing: { type: "string", description: "Work pacing description" },
+        default_behavior: { type: "string", description: "Default operational behavior" },
+        core_identity: { type: "string", description: "Core identity paragraph" },
+        operating_style: { type: "string", description: "Operating style description" },
+        team_relationship: { type: "string", description: "Relationship to the team" },
+        scope: { type: "string", description: "Scope of responsibility" },
+        why_role: { type: "string", description: "Why this role exists" },
+        cost_of_weakness: { type: "string", description: "Cost of weakness in this role" },
+        color_hex: { type: "string", description: "Brand color hex (e.g. '#a78bfa')" },
+      },
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      const action = params.action as string;
+
+      switch (action) {
+        // ── List all agents ──
+        case "list_agents": {
+          const agents = listWorkspaceAgents();
+          return ok({
+            agents: agents.map(a => ({
+              name: a.name,
+              codename: a.codename,
+              role: a.role,
+              file_count: a.files.length,
+              files: a.files,
+              has_skills: a.hasSkills,
+            })),
+            count: agents.length,
+          });
+        }
+
+        // ── Get agent details ──
+        case "get_agent": {
+          if (!params.agent_name) return err("Missing required: agent_name");
+          const name = (params.agent_name as string).toLowerCase();
+          const wsPath = getWorkspacePath(name);
+          if (!fs.existsSync(wsPath)) return err(`Agent workspace not found: workspace-${name}`);
+          const files = fs.readdirSync(wsPath).filter((f: string) => f.endsWith(".md"));
+          const fileDetails = files.map((f: string) => {
+            const stat = fs.statSync(path.join(wsPath, f));
+            return { name: f, size_bytes: stat.size, modified: stat.mtime.toISOString() };
+          });
+          // Read IDENTITY.md for quick summary
+          let identity: Record<string, string> = {};
+          try {
+            const idContent = fs.readFileSync(path.join(wsPath, "IDENTITY.md"), "utf8");
+            const nameMatch = idContent.match(/\*\*Name[\s:]*\*\*[\s:]*(.+)/i);
+            const cnMatch = idContent.match(/\*\*Codename[\s:]*\*\*[\s:]*(.+)/i);
+            const roleMatch = idContent.match(/\*\*Role[\s:]*\*\*[\s:]*(.+)/i);
+            const emojiMatch = idContent.match(/\*\*Emoji[\s:]*\*\*[\s:]*(.+)/i);
+            if (nameMatch) identity.name = nameMatch[1].trim();
+            if (cnMatch) identity.codename = cnMatch[1].trim();
+            if (roleMatch) identity.role = roleMatch[1].trim();
+            if (emojiMatch) identity.emoji = emojiMatch[1].trim();
+          } catch {}
+          const hasSkills = fs.existsSync(path.join(wsPath, "skills"));
+          return ok({ agent_name: name, identity, files: fileDetails, has_skills: hasSkills, workspace_path: wsPath });
+        }
+
+        // ── Read a file ──
+        case "read_file": {
+          if (!params.agent_name || !params.file_name) return err("Missing required: agent_name, file_name");
+          const content = readAgentFile((params.agent_name as string).toLowerCase(), params.file_name as string);
+          if (content === null) return err(`File not found: ${params.file_name} in workspace-${params.agent_name}`);
+          return ok({ agent_name: params.agent_name, file_name: params.file_name, content, size_bytes: Buffer.byteLength(content) });
+        }
+
+        // ── Write a file ──
+        case "write_file": {
+          if (!params.agent_name || !params.file_name || !params.content)
+            return err("Missing required: agent_name, file_name, content");
+          const agentName = (params.agent_name as string).toLowerCase();
+          writeAgentFile(agentName, params.file_name as string, params.content as string);
+          api.logger?.info?.(`[ofiere] Wrote ${params.file_name} for agent "${agentName}"`);
+          return ok({
+            message: `File "${params.file_name}" written to workspace-${agentName}`,
+            agent_name: agentName,
+            file_name: params.file_name,
+            size_bytes: Buffer.byteLength(params.content as string),
+          });
+        }
+
+        // ── Create a full agent ──
+        case "create_agent": {
+          if (!params.agent_name || !params.codename || !params.role || !params.emoji)
+            return err("Missing required: agent_name, codename, role, emoji");
+
+          const agentName = (params.agent_name as string).toLowerCase().replace(/[^a-z0-9_-]/g, "");
+          const wsPath = getWorkspacePath(agentName);
+
+          // Check if workspace already exists
+          if (fs.existsSync(wsPath)) {
+            const existing = fs.readdirSync(wsPath).filter((f: string) => f.endsWith(".md"));
+            if (existing.length > 0) {
+              return err(`Agent workspace-${agentName} already exists with ${existing.length} files. Use write_file to edit individual files instead.`);
+            }
+          }
+
+          // Create workspace directory
+          fs.mkdirSync(wsPath, { recursive: true, mode: 0o777 });
+
+          // Create skills directory
+          const skillsDir = path.join(wsPath, "skills");
+          if (!fs.existsSync(skillsDir)) fs.mkdirSync(skillsDir, { recursive: true, mode: 0o777 });
+
+          // Create .openclaw subdirectory (workspace state)
+          const ocDir = path.join(wsPath, ".openclaw");
+          if (!fs.existsSync(ocDir)) fs.mkdirSync(ocDir, { recursive: true, mode: 0o777 });
+
+          // Generate all files
+          const p = params as Record<string, any>;
+          const identityMd = generateIdentityMd(p);
+          const soulMd = generateSoulMd(p);
+          const agentsMd = generateAgentsMd(p);
+          const toolsMd = generateToolsMd(p);
+
+          // Write files
+          const filesWritten: string[] = [];
+          writeAgentFile(agentName, "IDENTITY.md", identityMd); filesWritten.push("IDENTITY.md");
+          writeAgentFile(agentName, "SOUL.md", soulMd); filesWritten.push("SOUL.md");
+          writeAgentFile(agentName, "AGENTS.md", agentsMd); filesWritten.push("AGENTS.md");
+          writeAgentFile(agentName, "TOOLS.md", toolsMd); filesWritten.push("TOOLS.md");
+
+          // Create doctrine file (codename.md) — empty scaffold
+          const doctrineName = `${(params.codename as string).toUpperCase()}.md`;
+          const doctrineMd = `# ${params.codename} Doctrine\n\n## Mission\n\n${p.mission || "To be defined."}\n\n## Decision Frameworks\n\n- (Define frameworks here)\n\n## Non-Goals\n\n- (Define non-goals here)\n\n## Evaluation Criteria\n\n- (Define criteria here)\n\n## Metrics\n\n- (Define metrics here)\n\n## Standard Deliverables\n\n- (Define deliverables here)\n\n## Anti-Patterns\n\n- (Define anti-patterns here)\n\n## Handoff Rules\n\n- (Define handoff rules here)\n`;
+          writeAgentFile(agentName, doctrineName, doctrineMd);
+          filesWritten.push(doctrineName);
+
+          api.logger?.info?.(`[ofiere] Created agent "${agentName}" with ${filesWritten.length} files`);
+
+          // Try auto-registration
+          const regResult = tryRegisterAgent(agentName);
+
+          // Compute a basic build score
+          const buildAssessment = {
+            identity: true,
+            soul: true,
+            agents: true,
+            tools: true,
+            doctrine: true,
+            skills_dir: true,
+            total_files: filesWritten.length,
+            completeness: "Scaffold complete — flesh out personality, doctrine, and playbooks for a full build",
+          };
+
+          return ok({
+            message: `Agent "${agentName}" (${params.codename}) created with ${filesWritten.length} files`,
+            agent_name: agentName,
+            codename: params.codename,
+            role: params.role,
+            emoji: params.emoji,
+            workspace_path: wsPath,
+            files_created: filesWritten,
+            registration: regResult,
+            build_assessment: buildAssessment,
+            next_steps: [
+              "Flesh out SOUL.md with richer personality and voice markers",
+              `Expand ${doctrineName} with decision frameworks and metrics`,
+              "Add skills to the skills/ directory for specialized capabilities",
+              "Add SOUL_EXTENDED.md for deeper character development",
+              "Use the Constellation page in the dashboard to visually review the build score",
+            ],
+          });
+        }
+
+        // ── Delete a file ──
+        case "delete_file": {
+          if (!params.agent_name || !params.file_name) return err("Missing required: agent_name, file_name");
+          const agentName = (params.agent_name as string).toLowerCase();
+          const deleted = deleteAgentFile(agentName, params.file_name as string);
+          if (!deleted) return err(`File not found: ${params.file_name} in workspace-${agentName}`);
+          api.logger?.info?.(`[ofiere] Deleted ${params.file_name} from agent "${agentName}"`);
+          return ok({ message: `File "${params.file_name}" deleted from workspace-${agentName}`, ok: true });
+        }
+
+        // ── Read the blueprint ──
+        case "read_blueprint": {
+          // Try multiple locations for the blueprint
+          const candidates = [
+            path.join(OPENCLAW_ROOT, "AGENT_BLUEPRINT.md"),
+            path.join(OPENCLAW_ROOT, "OPENCLAW_AGENT_BLUEPRINT.md"),
+          ];
+          for (const bp of candidates) {
+            try {
+              const content = fs.readFileSync(bp, "utf8");
+              return ok({ blueprint: content, source: bp, size_bytes: Buffer.byteLength(content) });
+            } catch {}
+          }
+          return err(
+            "Agent blueprint not found. Expected at: " + candidates.join(" or ") +
+            ". The blueprint defines the mandatory structure for all OpenClaw agents."
+          );
+        }
+
+        // ── Agent Mesh — sovereignty map ──
+        case "list_agent_mesh": {
+          const agents = listWorkspaceAgents();
+          const mesh: Array<{ agent: string; codename: string; role: string; owns: string[] }> = [];
+          for (const agent of agents) {
+            const agentsContent = readAgentFile(agent.name, "AGENTS.md");
+            const owns: string[] = [];
+            if (agentsContent) {
+              // Extract ### Owns section
+              const ownsMatch = agentsContent.match(/###\s+Owns\s*\n([\s\S]*?)(?=\n###|\n##|$)/i);
+              if (ownsMatch) {
+                const items = ownsMatch[1].split("\n")
+                  .map((l: string) => l.replace(/^[\s-*]+/, "").trim())
+                  .filter((l: string) => l.length > 0);
+                owns.push(...items);
+              }
+            }
+            mesh.push({ agent: agent.name, codename: agent.codename, role: agent.role, owns });
+          }
+          return ok({ mesh, count: mesh.length });
+        }
+
+        default:
+          return err(`Unknown action "${action}".`);
+      }
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Public: Register All Meta-Tools
 // ═══════════════════════════════════════════════════════════════════════════════
 // This is the single entry point called by index.ts.
@@ -1711,9 +2267,10 @@ export function registerTools(
   registerNotifyOps(api, supabase, userId);                   // 7
   registerMemoryOps(api, supabase, userId);                   // 8
   registerPromptOps(api, supabase, userId);                   // 9
+  registerConstellationOps(api, supabase, userId);            // 10
 
   // ── Count and log ──
-  const toolCount = 9;
+  const toolCount = 10;
   const callerName = getCallingAgentName(api);
   const agentLabel = fallbackAgentId || callerName || "auto-detect";
   api.logger.info(`[ofiere] ${toolCount} meta-tools registered (agent: ${agentLabel})`);

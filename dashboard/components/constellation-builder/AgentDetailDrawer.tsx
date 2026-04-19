@@ -50,7 +50,6 @@ export function AgentDetailDrawer() {
         updateAgentField,
         updateAgentFileContent,
         saveAgentFiles,
-        toggleZeroChat,
         loadDoctrine,
         saveDoctrine,
     } = useConstellationStore();
@@ -151,18 +150,6 @@ export function AgentDetailDrawer() {
                     {drawerTab === 'relationships' && <RelationshipsTab agent={agent} relationships={relationships} />}
                 </div>
 
-                {/* Footer: Ask Zero */}
-                <div className="px-5 py-3 border-t border-white/5">
-                    <button
-                        onClick={() => toggleZeroChat(agent.id)}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 text-[10px] font-mono font-bold tracking-wider
-                            rounded-sm border transition-all duration-300 active:scale-[0.98]
-                            bg-[#38bdf8]/8 border-[#38bdf8]/20 text-[#38bdf8]/70
-                            hover:bg-[#38bdf8]/15 hover:border-[#38bdf8]/40 hover:text-[#38bdf8]"
-                    >
-                        Ask Agent Zero about {agent.name}
-                    </button>
-                </div>
             </motion.div>
         </AnimatePresence>
     );

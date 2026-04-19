@@ -237,6 +237,13 @@ export const AGENT_DEFAULTS: Record<string, Partial<AgentArchitecture>> = {
         executiveRole: 'CMO',
         colorHex: '#fb7185',
     },
+    sasha: {
+        id: 'sasha',
+        name: 'Sasha',
+        codename: 'PRISM',
+        executiveRole: 'CPO',
+        colorHex: '#f472b6',
+    },
 };
 
 // ─── Empty Defaults ─────────────────────────────────────────────────────────

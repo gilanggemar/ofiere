@@ -27,7 +27,7 @@ import { AgentNode } from './nodes/AgentNode';
 import { CEONode } from './nodes/CEONode';
 import { DelegationEdge } from './edges/DelegationEdge';
 import { AgentDetailDrawer } from './AgentDetailDrawer';
-import { AgentZeroChat } from './AgentZeroChat';
+
 
 // ─── Node/Edge Type Registration ────────────────────────────────────────────
 
@@ -263,9 +263,6 @@ export function ConstellationCanvas() {
 
             {/* Agent Detail Drawer */}
             <AgentDetailDrawer />
-
-            {/* Agent Zero Chat Panel */}
-            <AgentZeroChat />
         </div>
     );
 }

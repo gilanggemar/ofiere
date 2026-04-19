@@ -1,9 +1,9 @@
 'use client';
 
 // ConstellationHeader.tsx — Rewritten for Agent Architecture Canvas.
-// Shows title, sync status, refresh button, and Agent Zero chat toggle.
+// Shows title, sync status, refresh button.
 
-import { RefreshCw, Zap, Bot, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { RefreshCw, Zap, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useConstellationStore } from '@/store/useConstellationStore';
 
 export function ConstellationHeader() {
@@ -15,8 +15,6 @@ export function ConstellationHeader() {
         saveAllDirtyAgents,
         hasUnsavedChanges,
         getDirtyAgents,
-        toggleZeroChat,
-        zeroChatOpen,
     } = useConstellationStore();
 
     const dirty = hasUnsavedChanges();
@@ -89,20 +87,6 @@ export function ConstellationHeader() {
                 >
                     <RefreshCw className={`size-3 ${isLoading ? 'animate-spin' : ''}`} />
                     REFRESH
-                </button>
-
-                {/* Agent Zero Chat Toggle */}
-                <button
-                    onClick={() => toggleZeroChat()}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider
-                        rounded-sm border transition-all duration-300 active:scale-95
-                        ${zeroChatOpen
-                            ? 'bg-[#38bdf8]/15 border-[#38bdf8]/40 text-[#38bdf8]'
-                            : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/8 hover:text-white/80'
-                        }`}
-                >
-                    <Bot className="size-3" />
-                    ZERO
                 </button>
             </div>
         </div>
