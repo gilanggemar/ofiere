@@ -5,6 +5,10 @@
 # --- OpenClaw agent config (local only) ---
 .openclaw/
 
+# --- Audit data (local only) ---
+.audit/
+.audit
+
 # --- Dependencies (auto-installed via npm install) ---
 node_modules/
 .pnp

@@ -3,8 +3,8 @@
 > **Purpose**: This document is the single source of truth for expanding the Ofiere plugin.
 > Tag this file in any new Antigravity session to immediately resume expansion work with full context.
 >
-> **Current Version**: v3.0.0 — 9 meta-tools live
-> **Last Updated**: 2026-04-18 — After full expansion + agent resolver fix
+> **Current Version**: v3.1.0 — 9 meta-tools live, all bugs fixed
+> **Last Updated**: 2026-04-19 — After v3.1 bug fix sweep (prompt schema, workflow nodes, knowledge content, task ID collisions)
 
 ---
 
@@ -17,10 +17,12 @@
 | **npm package name** | `ofiere-openclaw-plugin` (published to npmjs.com) |
 | **GitHub repo** | `gilanggemar/ofiere` (main branch) |
 | **Dashboard Task-Ops API** | `dashboard/app/api/tasks/route.ts` — maps `custom_fields` to flat fields |
-| **Dashboard Realtime Hook** | `dashboard/hooks/useRealtimeTasks.ts` — syncs DB writes to frontend stores |
+| **Dashboard Realtime Hooks** | `dashboard/hooks/useRealtimeTasks.ts`, `useRealtimeWorkflows.ts`, `useRealtimePromptChunks.ts` |
 | **Dashboard Task Store** | `dashboard/lib/useTaskStore.ts` — in-memory task state with DB persistence |
-| **Dashboard TaskCardModal** | `dashboard/components/TaskCardModal.tsx` — the modal that renders execution plan/goals/constraints |
+| **Dashboard TaskCardModal** | `dashboard/components/TaskCardModal.tsx` — renders execution plan/goals/constraints |
 | **PM Types** | `dashboard/lib/pm/types.ts` — TypeScript interfaces for PMExecutionStep, PMTaskGoal, etc. |
+| **Workflow Node Components** | `dashboard/components/workflow-builder/nodes/` — React Flow node renderers |
+| **Workflow Node Styles** | `dashboard/components/workflow-builder/nodes/nodeStyles.ts` — NODE_CATEGORIES + NODE_DEFAULTS |
 
 > **When to check dashboard code**: If the plugin writes data correctly but the UI doesn't show it,
 > the issue is in the dashboard data flow (API route → store → component), not the plugin.
@@ -43,8 +45,8 @@ The Ofiere OpenClaw plugin uses a **meta-tool consolidation pattern** where each
 │  │    ├── OFIERE_AGENT_OPS     (list agents)           │ │
 │  │    ├── OFIERE_PROJECT_OPS   (spaces/folders/deps)   │ │
 │  │    ├── OFIERE_SCHEDULE_OPS  (calendar events)       │ │
-│  │    ├── OFIERE_KNOWLEDGE_OPS (knowledge base)        │ │
-│  │    ├── OFIERE_WORKFLOW_OPS  (workflows + trigger)   │ │
+│  │    ├── OFIERE_KNOWLEDGE_OPS (knowledge library)     │ │
+│  │    ├── OFIERE_WORKFLOW_OPS  (16 node types + CRUD)  │ │
 │  │    ├── OFIERE_NOTIFY_OPS    (notifications)         │ │
 │  │    ├── OFIERE_MEMORY_OPS    (conversations/memory)  │ │
 │  │    └── OFIERE_PROMPT_OPS    (prompt chunks)         │ │
@@ -77,7 +79,7 @@ The Ofiere OpenClaw plugin uses a **meta-tool consolidation pattern** where each
 ### Key Files
 
 | File | Role | Edit When? |
-|------|------|-----------:|
+|------|------|----------:|
 | `src/tools.ts` | Tool registration + action handlers | Adding/modifying a domain |
 | `src/prompt.ts` | System prompt + TOOL_DOCS registry | Adding/modifying a domain |
 | `index.ts` | Plugin entry point, calls `registerTools()` | **Never** (tool count is dynamic) |
@@ -177,11 +179,14 @@ if (error?.message?.includes("violates foreign key") && insertData.agent_id) {
 
 ### 4. Realtime Sync: Dashboard Updates Come Through Supabase Realtime
 
-**How it works**: The dashboard uses `useRealtimeTasks` hook that subscribes to Supabase Realtime postgres_changes. When the plugin INSERTs/UPDATEs a task, the realtime event fires and the dashboard updates instantly.
+**How it works**: The dashboard uses realtime hooks (`useRealtimeTasks`, `useRealtimeWorkflows`, `useRealtimePromptChunks`) in `AuthInitializer.tsx` that subscribe to Supabase Realtime postgres_changes. When the plugin INSERTs/UPDATEs a row, the realtime event fires and the dashboard store updates instantly.
 
-**Gotcha**: The realtime INSERT/UPDATE handler (`mapToTaskOps()` in `useRealtimeTasks.ts`) maps `row.custom_fields.execution_plan` → `executionPlan`. If the realtime payload arrives before the write fully commits, or if there are rapid retries (FK violation → retry), the store might get a stale snapshot. A page refresh always resolves this.
+**Currently covered tables**: `tasks`, `workflows`, `prompt_chunks`
+**NOT covered (manual refresh needed)**: `knowledge_entries`, `scheduler_events`, `notifications`
 
-**Rule**: Don't panic if data doesn't appear immediately in the UI after plugin writes. The data IS in the DB. A page refresh will fix it.
+**If you add a new meta-tool that writes data**, consider adding a matching `useRealtime{Domain}.ts` hook in `dashboard/hooks/` and mounting it in `dashboard/components/AuthInitializer.tsx`.
+
+**Rule**: Don't panic if data doesn't appear immediately in the UI after plugin writes. The data IS in the DB. A page refresh will fix it. But ideally, add a realtime hook so it's instant.
 
 ### 5. Supabase Tables: Always Filter by `user_id`
 
@@ -189,12 +194,7 @@ if (error?.message?.includes("violates foreign key") && insertData.agent_id) {
 
 ### 6. PowerShell: `&&` Syntax Doesn't Work
 
-**Problem**: Windows PowerShell doesn't support `&&` for chaining commands. Use `;` instead.
-
-**Wrong**: `cd dir && git add . && git commit -m "msg"`
-**Right**: `cd dir; git add .; git commit -m "msg"`
-
-Or better: run commands separately.
+**Problem**: Windows PowerShell doesn't support `&&` for chaining commands. Use `;` instead. Or better: run commands separately.
 
 ### 7. Docker SCP: Use /tmp as Staging
 
@@ -226,17 +226,55 @@ ssh root@76.13.193.227 'docker exec openclaw-bvwc-openclaw-1 find /data/.opencla
 
 **Rule**: ALWAYS deploy both `tools.ts` and `prompt.ts` in the same restart cycle. Never deploy one without the other.
 
-### 10. Auto-Registering Ghost Agents
+### 10. Schema Mismatch: ALWAYS Verify DB Columns Before Writing Handlers
 
-**Problem**: The `resolveAgentId()` function in `agent-resolver.ts` auto-registers new agents when it can't find a match. This means ANY string passed as `agent_id` will create a new agent record if it doesn't already exist.
+**Problem (v3.0 bug — fixed in v3.1)**: `OFIERE_PROMPT_OPS` was written with `label`, `agent_id`, `enabled`, `sort_order` columns — none of which exist in the `prompt_chunks` table. The actual columns are `name`, `color`, `category`, `order`. This caused every create to fail with `"Could not find the 'agent_id' column of 'prompt_chunks' in the schema cache"`.
 
-**Impact**: The system name "Ofiere PM" was being auto-registered as a real agent. The blocklist prevents this for known system names, but ANY invalid name will still create a phantom agent.
+**Root cause**: The handler was written based on an assumed schema without verifying the actual table structure.
 
-**Consideration for future**: You may want to add a `validateOnly` mode to `resolveAgentId()` that checks existence without auto-registering.
+**Rule**: BEFORE writing ANY handler, run this query to see the exact columns:
+```
+mcp_supabase-mcp-server_execute_sql  project_id: "wcpqanwpngqnsstcvvis"
+query: "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'your_table' ORDER BY ordinal_position"
+```
+
+Or check the dashboard API route for the same table — it already has the correct column names.
+
+### 11. Workflow Nodes: MUST Use Dashboard's Exact Node Types
+
+**Problem (v3.0 bug — fixed in v3.1)**: The workflow tool description listed invented node types like `phase`, `toolkit`, `delegation`, `knowledge`, `gate`. The dashboard's React Flow renderer has completely different types (`agent_step`, `http_request`, `condition`, `human_approval`, etc.). Nodes with unrecognized types rendered as empty boxes.
+
+**Root cause**: Types were copied from `dashboard/types/workflow-nodes.ts` (TypeScript type union) instead of checking the actual rendered node components in `dashboard/components/workflow-builder/nodes/`.
+
+**Solution (v3.1)**:
+1. The tool description now lists the exact 16 node types from `nodeStyles.ts`
+2. A `NODE_DEFAULTS` map auto-populates required `data` fields for each type
+3. A `normalizeNode()` helper validates type + fills defaults + auto-generates IDs
+4. Invalid types are auto-corrected to `agent_step`
+
+**Rule**: The source of truth for node types is `dashboard/components/workflow-builder/nodes/nodeStyles.ts` → `NODE_CATEGORIES` array. NEVER invent node types. ALWAYS check the dashboard's actual React Flow components.
+
+### 12. Unique IDs: Never Use `Date.now()` Alone for Parallel Operations
+
+**Problem (v3.0 bug — fixed in v3.1)**: Bulk task creation used `task-${Date.now()}` for IDs. When agents create multiple tasks in parallel (common in bulk operations), two tasks created in the same millisecond get the same ID → duplicate primary key error.
+
+**Solution**: Use `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` or `crypto.randomUUID()` for all generated IDs.
+
+**Rule**: NEVER use `Date.now()` alone for IDs. Always add a random suffix.
+
+### 13. Knowledge Discoverability: Agents Won't Use Tools They Don't Know About
+
+**Problem (v3.0 bug — fixed in v3.1)**: When users asked agents to "check the knowledge base", agents replied from their own memory instead of using `OFIERE_KNOWLEDGE_OPS`. The tool description used generic language ("Knowledge base documents") and the prompt didn't tell agents to route knowledge queries to the tool.
+
+**Solution**: 
+1. Renamed to "Ofiere Knowledge Library" in the description
+2. Added explicit routing instruction in `prompt.ts`: "When the user asks about knowledge base/library/entries, ALWAYS use OFIERE_KNOWLEDGE_OPS"
+
+**Rule**: When adding a tool that handles a domain the LLM might think it can answer from memory, ADD an explicit routing instruction in the system prompt section of `prompt.ts`.
 
 ---
 
-## Current Meta-Tool Inventory (v3.0)
+## Current Meta-Tool Inventory (v3.1)
 
 | Meta-Tool | Actions | Supabase Tables | Handler Function |
 |-----------|---------|-----------------|-----------------|
@@ -245,16 +283,97 @@ ssh root@76.13.193.227 'docker exec openclaw-bvwc-openclaw-1 find /data/.opencla
 | `OFIERE_PROJECT_OPS` | list_spaces, create_space, update_space, delete_space, list_folders, create_folder, update_folder, delete_folder, list_dependencies, add_dependency, remove_dependency | `pm_spaces`, `pm_folders`, `task_dependencies` | `registerProjectOps()` |
 | `OFIERE_SCHEDULE_OPS` | list, create, update, delete | `scheduler_events` | `registerScheduleOps()` |
 | `OFIERE_KNOWLEDGE_OPS` | search, list, create, update, delete | `knowledge_entries` | `registerKnowledgeOps()` |
-| `OFIERE_WORKFLOW_OPS` | list, get, create, list_runs, trigger | `workflows`, `workflow_runs` | `registerWorkflowOps()` |
+| `OFIERE_WORKFLOW_OPS` | list, get, create, update, delete, list_runs, trigger | `workflows`, `workflow_runs` | `registerWorkflowOps()` |
 | `OFIERE_NOTIFY_OPS` | list, mark_read, mark_all_read, delete | `notifications` | `registerNotifyOps()` |
 | `OFIERE_MEMORY_OPS` | list_conversations, get_messages, search_messages, add_knowledge, search_knowledge | `conversations`, `messages`, `agent_knowledge` | `registerMemoryOps()` |
-| `OFIERE_PROMPT_OPS` | list, get, create, update, delete | `prompt_chunks`, `prompt_audit_log` | `registerPromptOps()` |
+| `OFIERE_PROMPT_OPS` | list, get, create, update, delete | `prompt_chunks` | `registerPromptOps()` |
+
+---
+
+## Workflow Node Types Reference (v3.1)
+
+These are the EXACT types supported by the dashboard's React Flow renderer. Use ONLY these in `OFIERE_WORKFLOW_OPS`.
+
+Source of truth: `dashboard/components/workflow-builder/nodes/nodeStyles.ts` → `NODE_CATEGORIES`
+
+### Triggers (start of workflow — pick one per workflow)
+| Type | Label | Default Data |
+|------|-------|-------------|
+| `manual_trigger` | Execute | `{ label: "Execute Trigger" }` |
+| `webhook_trigger` | Webhook | `{ label: "Webhook Trigger" }` |
+| `schedule_trigger` | Schedule | `{ label: "Schedule Trigger", cron: "0 9 * * 1-5" }` |
+
+### Steps (the work)
+| Type | Label | Default Data |
+|------|-------|-------------|
+| `agent_step` | Agent Step | `{ label, agentId: "", task: "", responseMode: "text", timeoutSec: 120 }` |
+| `formatter_step` | Formatter | `{ label, template: "" }` |
+| `http_request` | HTTP Request | `{ label, method: "GET", url: "" }` |
+| `task_call` | Task | `{ label, agentId: "", taskId: "", taskTitle: "", agentName: "" }` |
+| `variable_set` | Set Variable | `{ label, variableName: "", variableValue: "" }` |
+
+### Control Flow
+| Type | Label | Default Data |
+|------|-------|-------------|
+| `condition` | Condition | `{ label, expression: "" }` |
+| `human_approval` | Approval | `{ label, instructions: "" }` |
+| `delay` | Delay | `{ label, delaySec: 5 }` |
+| `loop` | Loop | `{ label, loopType: "count", maxIterations: 3 }` |
+| `convergence` | Convergence | `{ label, mergeStrategy: "wait_all" }` |
+
+### End
+| Type | Label | Default Data |
+|------|-------|-------------|
+| `output` | Output | `{ label, outputMode: "return" }` |
+
+### Special
+| Type | Label | Default Data |
+|------|-------|-------------|
+| `checkpoint` | Checkpoint | `{ label }` |
+| `note` | Note | `{ label, noteText: "" }` |
+
+The plugin's `normalizeNode()` helper in `tools.ts` auto-fills these defaults when the agent omits data fields. Invalid types are auto-corrected to `agent_step`.
+
+---
+
+## Prompt Chunks Schema Reference (v3.1)
+
+The `prompt_chunks` table uses these EXACT columns:
+
+| Column | Type | Required | Notes |
+|--------|------|----------|-------|
+| `id` | uuid | yes | Generated via `crypto.randomUUID()` |
+| `user_id` | uuid | yes | Always set from `userId` |
+| `name` | text | yes | Max 30 chars |
+| `content` | text | yes | The actual prompt instruction text |
+| `color` | text | no | Hex code (default: `#6B7280`) |
+| `category` | text | no | Grouping label (default: `"Uncategorized"`) |
+| `order` | int | no | Display order, 0-based. Auto-incremented from max |
+| `created_at` | timestamp | auto | |
+| `updated_at` | timestamp | auto | |
+
+**NOT** in this table: `label`, `agent_id`, `enabled`, `sort_order`.
 
 ---
 
 ## Step-by-Step: Adding a New Meta-Tool
 
-### Step 1: `src/tools.ts` — Add the handler function
+### Step 1: Verify the Database Schema
+
+**BEFORE writing any code**, check the actual table columns:
+
+```
+# Using Supabase MCP:
+mcp_supabase-mcp-server_execute_sql
+  project_id: "wcpqanwpngqnsstcvvis"
+  query: "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'your_table' ORDER BY ordinal_position"
+
+# Or check the dashboard API route for the same table
+```
+
+Also check if the dashboard has a matching component that renders this data. If it does, look at what fields the component expects.
+
+### Step 2: `src/tools.ts` — Add the handler function
 
 Find the comment `// ─── Public: Register All Meta-Tools ─────` near the bottom. ABOVE that section, add your new domain:
 
@@ -323,7 +442,7 @@ async function handleListNewdomain(
 }
 ```
 
-### Step 2: `src/tools.ts` — Register it in `registerTools()`
+### Step 3: `src/tools.ts` — Register it in `registerTools()`
 
 Find the `registerTools()` function at the bottom. Add your new call and bump the count:
 
@@ -351,7 +470,7 @@ export function registerTools(
 }
 ```
 
-### Step 3: `src/prompt.ts` — Add to TOOL_DOCS
+### Step 4: `src/prompt.ts` — Add to TOOL_DOCS
 
 Find the `TOOL_DOCS` constant near the top. Add one entry:
 
@@ -368,20 +487,33 @@ const TOOL_DOCS: Record<string, string> = {
 };
 ```
 
+**If the tool handles a domain the LLM might answer from memory** (like knowledge, memory, or conversations), add a routing instruction in the system prompt section at the bottom of `prompt.ts`:
+```typescript
+`- When the user asks about [domain-specific keywords], ALWAYS use OFIERE_NEWDOMAIN_OPS — do NOT rely on your own memory for this.`
+```
+
 **That's it for code.** The prompt auto-includes all entries, and `index.ts` reads the count dynamically.
 
-### Step 4: `install.sh` — Update success banner (cosmetic)
+### Step 5: Dashboard — Add Realtime Hook (if needed)
+
+If the dashboard has a page that shows this data and you want agent writes to appear instantly:
+
+1. Create `dashboard/hooks/useRealtimeNewdomain.ts` (copy `useRealtimeWorkflows.ts` as template)
+2. Change the table name and store references
+3. Import and call it in `dashboard/components/AuthInitializer.tsx`
+
+### Step 6: `install.sh` — Update success banner (cosmetic)
 
 Update the tools list in the success box at the bottom.
 
-### Step 5: `package.json` — Bump version
+### Step 7: `package.json` — Bump version
 
 Use semantic versioning:
-- New domain (meta-tool): bump MINOR (e.g., 3.0.0 → 3.1.0)
-- Bug fix / prompt tweak: bump PATCH (e.g., 3.0.0 → 3.0.1)
-- Breaking changes: bump MAJOR (e.g., 3.0.0 → 4.0.0)
+- New domain (meta-tool): bump MINOR (e.g., 3.1.0 → 3.2.0)
+- Bug fix / prompt tweak: bump PATCH (e.g., 3.1.0 → 3.1.1)
+- Breaking changes: bump MAJOR (e.g., 3.1.0 → 4.0.0)
 
-### Step 6: Deploy
+### Step 8: Deploy
 
 ```bash
 # 1. Commit and push
@@ -389,7 +521,7 @@ git add ofiere-openclaw-plugin/
 git commit -m "feat(plugin): add OFIERE_NEWDOMAIN_OPS meta-tool"
 git push origin main
 
-# 2. Publish to npm
+# 2. Publish to npm (optional — only if users install from npm)
 cd ofiere-openclaw-plugin
 npm publish
 
@@ -400,16 +532,13 @@ ssh root@76.13.193.227 "docker exec openclaw-bvwc-openclaw-1 cp -r /data/.opencl
 scp src/tools.ts root@76.13.193.227:/tmp/ofiere-tools.ts
 scp src/prompt.ts root@76.13.193.227:/tmp/ofiere-prompt.ts
 
-ssh root@76.13.193.227 "
-  docker cp /tmp/ofiere-tools.ts openclaw-bvwc-openclaw-1:/data/.openclaw/extensions/ofiere/src/tools.ts;
-  docker cp /tmp/ofiere-prompt.ts openclaw-bvwc-openclaw-1:/data/.openclaw/extensions/ofiere/src/prompt.ts;
-"
+ssh root@76.13.193.227 "docker cp /tmp/ofiere-tools.ts openclaw-bvwc-openclaw-1:/data/.openclaw/extensions/ofiere/src/tools.ts; docker cp /tmp/ofiere-prompt.ts openclaw-bvwc-openclaw-1:/data/.openclaw/extensions/ofiere/src/prompt.ts"
 
 # 5. Restart gateway
 ssh root@76.13.193.227 "docker restart openclaw-bvwc-openclaw-1"
 
-# 6. Wait 8 seconds, then verify logs
-ssh root@76.13.193.227 "sleep 8; docker logs openclaw-bvwc-openclaw-1 --since 20s 2>&1 | grep 'ofiere.*meta-tools'"
+# 6. Wait 10 seconds, then verify logs
+ssh root@76.13.193.227 "sleep 10; docker logs openclaw-bvwc-openclaw-1 --since 20s 2>&1 | grep 'ofiere.*meta-tools'"
 # Expected: "[ofiere] 10 meta-tools registered"
 
 # 7. Clean up temp files
@@ -421,23 +550,27 @@ ssh root@76.13.193.227 "rm -f /tmp/ofiere-tools.ts /tmp/ofiere-prompt.ts"
 ## Checklist Template (copy for each expansion)
 
 ```
-- [ ] Verify target Supabase tables exist and have the expected columns
+- [ ] Verify target Supabase tables exist — ran column query to confirm exact schema
+- [ ] Checked dashboard API route or component for the same domain — column names match
 - [ ] Handler function added to `src/tools.ts` (registerXxxOps + handlers)
+- [ ] All generated IDs use randomUUID() or Date.now() + random suffix — never Date.now() alone
 - [ ] Registered in `registerTools()` + toolCount bumped
 - [ ] TOOL_DOCS entry added in `src/prompt.ts`
+- [ ] If domain might be confused with LLM's own knowledge: added routing instruction in prompt
 - [ ] If handler writes to tasks: includes FK retry pattern
 - [ ] If handler uses agent_id: passes through resolveAgent() with blocklist safety
 - [ ] All queries include `.eq("user_id", userId)` filter
 - [ ] install.sh banner updated (cosmetic)
 - [ ] package.json version bumped
 - [ ] Git commit + push
-- [ ] npm publish
+- [ ] npm publish (if distributing via npm)
 - [ ] VPS backup (cp -r ofiere ofiere.bak)
 - [ ] SCP + docker cp to VPS (BOTH tools.ts AND prompt.ts together)
 - [ ] docker restart
 - [ ] Verify logs: "[ofiere] N meta-tools registered"
 - [ ] Live chat test with agent
 - [ ] Verify UI renders data correctly (refresh page if needed)
+- [ ] (Optional) Added useRealtime hook for instant UI updates
 ```
 
 ---
@@ -457,15 +590,14 @@ These are the tables available in the Ofiere Supabase database that meta-tools c
 | `pm_folders` | id, name, type, space_id, parent_folder_id, user_id, sort_order | OFIERE_PROJECT_OPS |
 | `task_dependencies` | id, predecessor_id, successor_id, type, lag_days, user_id | OFIERE_PROJECT_OPS |
 | `scheduler_events` | id, title, agent_id, task_id, scheduled_date, scheduled_time, duration_minutes, recurrence_type, recurrence_interval, color, user_id | OFIERE_SCHEDULE_OPS |
-| `knowledge_entries` | id, file_name, content, source, author, credibility_tier, tags, user_id | OFIERE_KNOWLEDGE_OPS |
-| `workflows` | id, name, description, status, steps, schedule, user_id | OFIERE_WORKFLOW_OPS |
+| `knowledge_entries` | id, file_name, content, text, source, author, credibility_tier, tags, user_id | OFIERE_KNOWLEDGE_OPS |
+| `workflows` | id, name, description, status, steps, schedule, **nodes** (JSONB), **edges** (JSONB), definition_version, user_id | OFIERE_WORKFLOW_OPS |
 | `workflow_runs` | id, workflow_id, status, started_at, completed_at, user_id | OFIERE_WORKFLOW_OPS |
 | `notifications` | id, type, title, message, read, user_id, created_at | OFIERE_NOTIFY_OPS |
 | `conversations` | id, agent_id, user_id, created_at, updated_at | OFIERE_MEMORY_OPS |
 | `messages` | id, conversation_id, role, content, created_at | OFIERE_MEMORY_OPS |
 | `agent_knowledge` | id, agent_id, content, source, user_id, created_at | OFIERE_MEMORY_OPS |
-| `prompt_chunks` | id, agent_id, label, content, enabled, sort_order, user_id | OFIERE_PROMPT_OPS |
-| `prompt_audit_log` | id, agent_id, action, chunk_id, label, user_id, created_at | OFIERE_PROMPT_OPS |
+| `prompt_chunks` | id, **name**, **content**, **color**, **category**, **order**, user_id, created_at, updated_at | OFIERE_PROMPT_OPS |
 
 ### `custom_fields` JSONB Schema (for tasks)
 
@@ -601,6 +733,10 @@ const err = (msg: string):   ToolResult => ({ content: [{ type: "text", text: JS
 
 8. **`resolveAgentId()` auto-registers** — passing ANY string will create a new agent if it doesn't exist. Use the blocklist to prevent system names from becoming phantom agents.
 
+9. **Workflow node types must match the dashboard's React Flow renderer.** The source of truth is `nodeStyles.ts`, NOT `workflow-nodes.ts` types.
+
+10. **DB column names must match exactly.** Always verify via Supabase query or dashboard API route before writing a handler. Column mismatches cause silent schema cache errors.
+
 ### Things That Are Safe
 
 - **No `openclaw.json` changes needed** — `tools.allow: "ofiere"` covers all tools from the plugin automatically.
@@ -617,20 +753,6 @@ const err = (msg: string):   ToolResult => ({ content: [{ type: "text", text: JS
 - Tools are re-registered on every gateway restart. No persistent tool state.
 - The `api` object identity is the PLUGIN, not individual agents. Each agent shares the same plugin instance.
 
-### How to Discover New Tables for Expansion
-
-Before building a new meta-tool, verify the target tables exist and check their columns:
-
-```
-# Using the Supabase MCP server:
-mcp_supabase-mcp-server_list_tables  project_id: "wcpqanwpngqnsstcvvis"  schemas: ["public"]  verbose: true
-
-# Or query directly:
-mcp_supabase-mcp-server_execute_sql  project_id: "wcpqanwpngqnsstcvvis"  query: "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'your_table' ORDER BY ordinal_position"
-```
-
-Always verify table names and column names BEFORE writing handler code. Don't guess.
-
 ### Dashboard Data Flow (Plugin → UI)
 
 When the plugin writes to Supabase, the dashboard picks it up via this chain:
@@ -640,20 +762,22 @@ Plugin writes to Supabase DB
         ↓
 Supabase Realtime fires postgres_changes event
         ↓
-useRealtimeTasks.ts receives the event
+useRealtime{Domain}.ts receives the event
         ↓
-mapToTaskOps() maps row → { executionPlan, goals, constraints, ... }
-        ↓
-useTaskStore updates in-memory state
+Store state is updated in-memory
         ↓
 UI components re-render
 ```
 
+Currently covered by realtime hooks: **tasks** (`useRealtimeTasks.ts`), **workflows** (`useRealtimeWorkflows.ts`), **prompt_chunks** (`useRealtimePromptChunks.ts`).
+
+All hooks are mounted in `dashboard/components/AuthInitializer.tsx`.
+
 If the UI doesn't show data after a plugin write:
 1. Check the DB directly (Supabase MCP → execute_sql)
-2. If data IS in DB → it's a dashboard mapping issue (check `mapToTaskOps()` in `useRealtimeTasks.ts`)
+2. If data IS in DB → it's a dashboard mapping issue (check the realtime hook or API route)
 3. If data is NOT in DB → it's a plugin handler issue (check `tools.ts`)
-4. A page refresh always forces a fresh `fetchTasks()` from the API, bypassing realtime
+4. A page refresh always forces a fresh fetch from the API, bypassing realtime
 
 ---
 
@@ -695,3 +819,4 @@ Everything else is automatic.
 | v1.0.0 | 2026-04-17 | Initial release: 5 individual tools |
 | v2.0.0 | 2026-04-18 | Meta-tool migration: 5 tools → 2 meta-tools (TASK_OPS, AGENT_OPS) |
 | v3.0.0 | 2026-04-18 | Full expansion: 9 meta-tools, enhanced TASK_OPS with execution plans, agent resolver fix |
+| v3.1.0 | 2026-04-19 | Bug fix sweep: fixed prompt_chunks schema (name/color/category/order), workflow node types (16 real types + NODE_DEFAULTS), knowledge content retrieval + discoverability, task ID collision prevention, update handler returns full data. Added realtime hooks for workflows + prompt_chunks. |

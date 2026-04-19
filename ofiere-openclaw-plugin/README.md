@@ -1,42 +1,27 @@
 # Ofiere PM Plugin for OpenClaw
 
-Manage your Ofiere PM dashboard directly from OpenClaw agents. Create tasks, update progress, assign agents — all synced to the dashboard in real time.
+Manage your Ofiere PM dashboard directly from OpenClaw agents. Create tasks, manage projects, build workflows, store knowledge — all synced to the dashboard in real time.
 
-## Install
-
-```bash
-openclaw plugins install @ofiere-ai/openclaw-plugin
-```
-
-Or install from the local repo (for development):
+## Quick Install (One-Click)
 
 ```bash
-openclaw plugins install ./ofiere-openclaw-plugin
+curl -sSL https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/install.sh | bash -s -- \
+  --supabase-url "https://xxx.supabase.co" \
+  --service-key "eyJ..." \
+  --user-id "your-uuid"
 ```
 
-Restart OpenClaw after installing.
+Only 3 parameters needed. All agents get the plugin automatically.
 
-## Setup
+## Uninstall
 
 ```bash
-openclaw ofiere setup --supabase-url "https://xxx.supabase.co" --service-key "eyJ..." --user-id "your-uuid" --agent-id "sasha"
+curl -sSL https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin/uninstall.sh | bash
 ```
 
-Or run interactively:
+## How It Works
 
-```bash
-openclaw ofiere setup
-```
-
-Then restart the gateway:
-
-```bash
-openclaw gateway restart
-```
-
-## How it works
-
-Once configured, the plugin connects to your Supabase database at gateway startup and registers PM tools directly into the agent. There's no separate MCP server process — it runs inside the OpenClaw gateway for maximum reliability.
+Once configured, the plugin connects to your Supabase database at gateway startup and registers 9 PM meta-tools directly into the agent. There's no separate MCP server process — it runs inside the OpenClaw gateway for maximum reliability.
 
 Changes made by the agent are immediately visible on the Ofiere dashboard (Vercel) via Supabase real-time subscriptions.
 
@@ -46,20 +31,38 @@ The plugin uses a scalable meta-tool architecture. Each tool handles one domain 
 
 | Tool | Actions | Description |
 |---|---|---|
-| `OFIERE_TASK_OPS` | `list`, `create`, `update`, `delete` | Manage PM tasks — list, create, update status/priority, delete |
+| `OFIERE_TASK_OPS` | `list`, `create`, `update`, `delete` | Rich task management with execution plans, goals, constraints |
 | `OFIERE_AGENT_OPS` | `list` | Query available agents for task assignment |
+| `OFIERE_PROJECT_OPS` | `list_spaces`, `create_space`, `create_folder`, `bulk_create_tasks`, etc. | Full project hierarchy: spaces → folders → tasks |
+| `OFIERE_SCHEDULE_OPS` | `list`, `create`, `update`, `delete` | Calendar events with recurrence |
+| `OFIERE_KNOWLEDGE_OPS` | `search`, `list`, `create`, `update`, `delete` | Knowledge library with full content retrieval |
+| `OFIERE_WORKFLOW_OPS` | `list`, `get`, `create`, `update`, `delete`, `list_runs`, `trigger` | Visual workflow builder with 16 node types |
+| `OFIERE_NOTIFY_OPS` | `list`, `mark_read`, `create` | In-app notifications |
+| `OFIERE_MEMORY_OPS` | `list_conversations`, `search_knowledge` | Conversation history & agent memory |
+| `OFIERE_PROMPT_OPS` | `list`, `get`, `create`, `update`, `delete` | System prompt chunk management |
 
 ### Example
 
 ```
-// Create a task
-OFIERE_TASK_OPS({ action: "create", title: "Deploy v2", agent_id: "ivy" })
+// Create a task with execution plan
+OFIERE_TASK_OPS({ action: "create", title: "Deploy v2", agent_id: "ivy",
+  execution_plan: [{ step: 1, action: "Build", detail: "Run production build" }] })
 
-// List tasks
-OFIERE_TASK_OPS({ action: "list", status: "PENDING", limit: 10 })
+// Create a workflow with nodes
+OFIERE_WORKFLOW_OPS({ action: "create", name: "Deploy Pipeline",
+  nodes: [
+    { type: "agent_step", data: { label: "Build", task: "Run npm build" } },
+    { type: "human_approval", data: { label: "Review", instructions: "Check build output" } },
+    { type: "output", data: { label: "Done" } }
+  ],
+  edges: [
+    { source: "agent_step-...", target: "human_approval-..." },
+    { source: "human_approval-...", target: "output-..." }
+  ]
+})
 
-// Update a task
-OFIERE_TASK_OPS({ action: "update", task_id: "task-123", status: "DONE" })
+// Search knowledge library
+OFIERE_KNOWLEDGE_OPS({ action: "search", query: "API rate limits" })
 ```
 
 ## CLI Commands
@@ -79,7 +82,7 @@ Set via `openclaw ofiere setup` or environment variables:
 | `supabaseUrl` | `OFIERE_SUPABASE_URL` | Supabase project URL |
 | `serviceRoleKey` | `OFIERE_SERVICE_ROLE_KEY` | Supabase service role key |
 | `userId` | `OFIERE_USER_ID` | Your user UUID |
-| `agentId` | `OFIERE_AGENT_ID` | This agent's ID (e.g. `sasha`) |
+| `agentId` | `OFIERE_AGENT_ID` | This agent's ID (optional — auto-detected) |
 | `enabled` | — | Enable/disable the plugin (default: `true`) |
 
 ## Architecture

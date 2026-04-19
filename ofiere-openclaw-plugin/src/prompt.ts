@@ -33,16 +33,22 @@ const TOOL_DOCS: Record<string, string> = {
     - create: Requires title + scheduled_date (YYYY-MM-DD). Optional: scheduled_time, duration_minutes, task_id, agent_id, recurrence_type, color
     - Recurrence: none, hourly, daily, weekly, monthly with interval`,
 
-  OFIERE_KNOWLEDGE_OPS: `- **OFIERE_KNOWLEDGE_OPS** — Knowledge base documents (action: "search", "list", "create", "update", "delete")
-    - search: Keyword search across all docs. Requires: query
-    - list: Paginated listing with optional search filter
-    - create: Add knowledge. Requires: file_name. Optional: content, source, author, credibility_tier
+  OFIERE_KNOWLEDGE_OPS: `- **OFIERE_KNOWLEDGE_OPS** — Ofiere Knowledge Library (action: "search", "list", "create", "update", "delete")
+    - ALWAYS use this tool when the user mentions "knowledge base", "knowledge library", "knowledge entries", or asks to recall/retrieve stored knowledge
+    - search: Keyword search across all stored documents. Requires: query
+    - list: Paginated listing of knowledge entries with full content. Optional: search filter
+    - create: Add knowledge to the library. Requires: file_name. Optional: content, source, author, credibility_tier
     - update/delete: By document ID`,
 
-  OFIERE_WORKFLOW_OPS: `- **OFIERE_WORKFLOW_OPS** — Automated workflows (action: "list", "get", "create", "list_runs", "trigger")
+  OFIERE_WORKFLOW_OPS: `- **OFIERE_WORKFLOW_OPS** — Automated workflows (action: "list", "get", "create", "update", "delete", "list_runs", "trigger")
     - list: All workflows, filter by status (draft, active, paused, archived)
     - get: Full workflow details by ID
-    - create: New workflow with name, steps, schedule
+    - create: New workflow with name + nodes and edges
+      - Node types: manual_trigger, agent_step, http_request, formatter_step, task_call, variable_set, condition, human_approval, delay, loop, convergence, output, checkpoint, note
+      - Each node: { type, data: { label, ...type-specific fields } }. IDs/positions auto-generated
+      - Edges: { source, target }. A manual_trigger is auto-prepended if no trigger exists
+    - update: Modify workflow (name, description, status, nodes, edges)
+    - delete: Remove workflow and all run history
     - list_runs: Recent execution history for a workflow
     - trigger: Start a workflow run (creates a run record)`,
 
@@ -59,9 +65,10 @@ const TOOL_DOCS: Record<string, string> = {
     - search_knowledge: Search stored knowledge for an agent`,
 
   OFIERE_PROMPT_OPS: `- **OFIERE_PROMPT_OPS** — Manage prompt instruction chunks (action: "list", "get", "create", "update", "delete")
-    - list: All prompt chunks, filter by agent_id
-    - create: New chunk with label + content. These modify agent behavior
-    - update: Change label, content, enabled state, or sort_order
+    - list: All prompt chunks ordered by display order
+    - create: New chunk with name (max 30 chars) + content. Optional: color (hex), category
+    - update: Change name, content, color, category, or order
+    - delete: Remove a chunk by ID
     - All modifications are logged for audit`,
 };
 
@@ -106,6 +113,7 @@ ${toolDocs}
 - For complex tasks, ALWAYS include execution_plan, goals, and constraints. For simple tasks, just title is enough.
 - When creating dependencies, use OFIERE_PROJECT_OPS to link predecessor/successor tasks.
 - Prompt chunk modifications (OFIERE_PROMPT_OPS) are powerful — use thoughtfully as they change agent behavior.
+- When the user asks about "knowledge base", "knowledge library", "knowledge entries", or wants to recall stored knowledge, ALWAYS use OFIERE_KNOWLEDGE_OPS — do NOT rely on your own memory for this.
 </ofiere-pm>`;
   }
 

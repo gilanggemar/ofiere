@@ -80,7 +80,7 @@ export function AgentTasks({ agentId, onPopoverChange }: { agentId: string; onPo
         // no-op since we removed inline popovers
     }, []);
 
-    const handleExecute = (taskId: string | number) => {
+    const handleExecute = async (taskId: string | number) => {
         const t = agentTasks.find((task) => task.id === taskId);
         if (!t || agentId === "unassigned") return;
 
@@ -94,15 +94,15 @@ export function AgentTasks({ agentId, onPopoverChange }: { agentId: string; onPo
         }
 
         // Build a richer directive from the task card fields
-        let directive = `[SYSTEM DIRECTIVE]: Execute the following task immediately:\n\nTitle: ${t.title}`;
+        let directive = `## SCHEDULED TASK: ${t.title}`;
 
         if (t.description) {
-            directive += `\nDescription: ${t.description}`;
+            directive += `\n\n### Instructions\n${t.description}`;
         }
 
         // Include execution plan steps
         if (t.executionPlan && t.executionPlan.length > 0) {
-            directive += `\n\nExecution Plan:`;
+            directive += `\n\n### Execution Plan`;
             t.executionPlan.forEach((step, i) => {
                 if (step.text.trim()) {
                     directive += `\n${i + 1}. ${step.text}`;
@@ -110,27 +110,44 @@ export function AgentTasks({ agentId, onPopoverChange }: { agentId: string; onPo
             });
         }
 
-        // Include system prompt injection
-        if (t.systemPrompt) {
-            directive += `\n\n[BEHAVIOR OVERRIDE]: ${t.systemPrompt}`;
-        }
-
         // Include goals
         if (t.goals && t.goals.length > 0) {
-            directive += `\n\n[GOALS — MUST ACHIEVE]:`;
-            t.goals.forEach(g => { directive += `\n  • [${g.type}] ${g.label}`; });
+            directive += `\n\n### Goals`;
+            t.goals.forEach(g => { directive += `\n- ${g.label}`; });
         }
 
         // Include constraints
         if (t.constraints && t.constraints.length > 0) {
-            directive += `\n\n[CONSTRAINTS — MUST NOT VIOLATE]:`;
-            t.constraints.forEach(c => { directive += `\n  • [${c.type}] ${c.label}`; });
+            directive += `\n\n### Constraints`;
+            t.constraints.forEach(c => {
+                const prefix = c.type && c.type !== 'custom' ? `[${c.type.toUpperCase()}] ` : '';
+                directive += `\n- ${prefix}${c.label}`;
+            });
         }
 
-        directive += `\n\nPriority: ${t.priority}`;
+        // Include system prompt injection
+        if (t.systemPrompt) {
+            directive += `\n\n### Behavioral Directive\n${t.systemPrompt}`;
+        }
 
+        directive += `\n\n---\nPriority: ${t.priority}\nExecute this task now. Use your available tools and capabilities to complete it. Report your progress and results.`;
+
+        // Dispatch via WebSocket (immediate, client-side)
         sendChatMessage(agentId, directive, sessionKey);
         updateTaskStatus(t.id, "IN_PROGRESS");
+
+        // Also log dispatch server-side (non-blocking)
+        fetch('/api/tasks/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId: String(t.id) }),
+        }).catch(() => { /* Non-fatal: server-side logging is best-effort */ });
+
+        toast.success('Task dispatched', {
+            description: `"${t.title}" sent to ${agentId} for execution`,
+            duration: 4000,
+            position: 'bottom-left',
+        });
     };
 
     const handleTaskHandoff = (task: Task) => {

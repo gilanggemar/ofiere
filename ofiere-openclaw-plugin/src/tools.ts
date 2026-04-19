@@ -345,7 +345,7 @@ async function handleCreateTask(
   try {
     if (!params.title) return err("Missing required field: title");
 
-    const id = `task-${Date.now()}`;
+    const id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const now = new Date().toISOString();
 
     // Handle explicit "none"/"unassigned"
@@ -423,17 +423,55 @@ async function handleCreateTask(
       return err(error.message);
     }
 
+    // ── Auto-create scheduler event if task has a start_date ──────────────
+    // This bridges the plugin → scheduler so the pg_cron task-dispatcher
+    // Edge Function picks up the task at the right time.
+    const startDate = params.start_date as string | undefined;
+    const effectiveAgentId = (insertData.agent_id as string) || assignee;
+    if (startDate && effectiveAgentId) {
+      try {
+        const scheduledTime = (params.scheduled_time as string) || "09:00"; // default 9am
+        const datePart = startDate; // YYYY-MM-DD
+        const timePart = scheduledTime; // HH:MM
+        const dt = new Date(`${datePart}T${timePart}:00`);
+        const nextRunAt = Math.floor(dt.getTime() / 1000);
+
+        await supabase.from("scheduler_events").insert({
+          id: crypto.randomUUID(),
+          user_id: userId,
+          task_id: id,
+          agent_id: effectiveAgentId,
+          title: params.title,
+          description: (params.description as string) || (params.instructions as string) || null,
+          scheduled_date: datePart,
+          scheduled_time: timePart,
+          duration_minutes: 30,
+          recurrence_type: "none",
+          recurrence_interval: 1,
+          status: "scheduled",
+          next_run_at: nextRunAt,
+          run_count: 0,
+          priority: params.priority !== undefined ? params.priority : 1,
+        });
+      } catch (schedErr) {
+        // Non-fatal: task was created, just the scheduler event failed
+        console.error("[ofiere] Failed to auto-create scheduler event:", schedErr);
+      }
+    }
+
     const extras = [];
     if (cf.execution_plan) extras.push(`${(cf.execution_plan as any[]).length} execution steps`);
     if (cf.goals) extras.push(`${(cf.goals as any[]).length} goals`);
     if (cf.constraints) extras.push(`${(cf.constraints as any[]).length} constraints`);
     if (cf.system_prompt) extras.push("custom system prompt");
+    if (startDate) extras.push(`scheduled for ${startDate}`);
     const extrasStr = extras.length > 0 ? ` with ${extras.join(", ")}` : "";
 
     return ok({
       id,
       message: `Task "${params.title}" created and assigned to ${assignee || "no one"}${extrasStr}`,
       task: insertData,
+      scheduledExecution: startDate ? `Will auto-execute on ${startDate}` : undefined,
     });
   } catch (e) {
     return err(e instanceof Error ? e.message : String(e));
@@ -518,7 +556,7 @@ async function handleUpdateTask(
       .update(updates)
       .eq("id", params.task_id as string)
       .eq("user_id", userId)
-      .select("id, title, status, priority, agent_id")
+      .select("id, title, status, priority, agent_id, start_date, due_date, progress, updated_at")
       .single();
 
     if (error) return err(error.message);
@@ -936,11 +974,12 @@ function registerKnowledgeOps(
     name: "OFIERE_KNOWLEDGE_OPS",
     label: "Ofiere Knowledge Operations",
     description:
-      `Search, add, and manage knowledge documents. This is the long-term memory system.\n\n` +
+      `Access the Ofiere Knowledge Library — the stored knowledge base in the dashboard. ` +
+      `Use this tool whenever the user mentions "knowledge base", "knowledge library", "knowledge entries", or asks to retrieve stored knowledge.\n\n` +
       `Actions:\n` +
-      `- "search": Search docs by keyword. Required: query. Optional: limit\n` +
-      `- "list": List recent docs. Optional: page, page_size, search\n` +
-      `- "create": Add a document. Required: file_name. Optional: content, text, source, source_type, author, credibility_tier\n` +
+      `- "search": Search the knowledge library by keyword. Required: query. Optional: limit\n` +
+      `- "list": List recent entries from the knowledge library. Optional: page, page_size, search\n` +
+      `- "create": Add a document to the knowledge library. Required: file_name. Optional: content, text, source, source_type, author, credibility_tier\n` +
       `- "update": Edit a document. Required: id. Optional: file_name, content, text, source, source_type, author\n` +
       `- "delete": Remove a document. Required: id`,
     parameters: {
@@ -985,7 +1024,7 @@ function registerKnowledgeOps(
           const from = (page - 1) * pageSize;
           const to = from + pageSize - 1;
           let q = supabase.from("knowledge_documents")
-            .select("id, file_name, file_type, source, source_type, author, credibility_tier, created_at", { count: "exact" })
+            .select("id, file_name, file_type, content, text, source, source_type, author, credibility_tier, created_at", { count: "exact" })
             .order("created_at", { ascending: false })
             .range(from, to);
           if (params.search) {
@@ -1052,23 +1091,75 @@ function registerWorkflowOps(
     name: "OFIERE_WORKFLOW_OPS",
     label: "Ofiere Workflow Operations",
     description:
-      `Manage and trigger automated workflows.\n\n` +
+      `Manage, build, and trigger automated workflows in the Ofiere dashboard.\n\n` +
       `Actions:\n` +
       `- "list": List all workflows. Optional: status\n` +
       `- "get": Get workflow details. Required: id\n` +
-      `- "create": Create a workflow. Required: name. Optional: description, steps, schedule, status\n` +
+      `- "create": Create a workflow WITH nodes and edges. Required: name. Optional: description, nodes, edges, schedule, status\n` +
+      `- "update": Update a workflow. Required: id. Optional: name, description, status, nodes, edges, schedule\n` +
+      `- "delete": Delete a workflow and its run history. Required: id\n` +
       `- "list_runs": List recent runs. Required: workflow_id. Optional: limit\n` +
-      `- "trigger": Start a workflow run. Required: workflow_id`,
+      `- "trigger": Start a workflow run. Required: workflow_id\n\n` +
+      `NODE TYPES (use these exact types when creating nodes):\n` +
+      `  TRIGGERS (start of workflow — pick one):\n` +
+      `    - "manual_trigger": User clicks Execute to start\n` +
+      `    - "webhook_trigger": External HTTP request triggers it\n` +
+      `    - "schedule_trigger": Runs on cron schedule. data: { label, cron: "0 9 * * 1-5" }\n` +
+      `  STEPS (the work):\n` +
+      `    - "agent_step": Delegates task to an AI agent. data: { label, agentId, task, responseMode: "text", timeoutSec: 120 }\n` +
+      `    - "http_request": Calls an external API. data: { label, method: "GET"|"POST", url }\n` +
+      `    - "formatter_step": Formats/transforms text or JSON. data: { label, template }\n` +
+      `    - "task_call": Runs a saved task. data: { label, agentId, taskId }\n` +
+      `    - "variable_set": Stores data in a variable. data: { label, variableName, variableValue }\n` +
+      `  CONTROL FLOW:\n` +
+      `    - "condition": If/else branch. data: { label, expression }\n` +
+      `    - "human_approval": Pauses for human approval. data: { label, instructions }\n` +
+      `    - "delay": Waits for a set time. data: { label, delaySec: 5 }\n` +
+      `    - "loop": Repeats actions. data: { label, loopType: "count", maxIterations: 3 }\n` +
+      `    - "convergence": Waits for multiple parallel inputs. data: { label, mergeStrategy: "wait_all" }\n` +
+      `  END:\n` +
+      `    - "output": Returns final result. data: { label, outputMode: "return" }\n` +
+      `  SPECIAL:\n` +
+      `    - "checkpoint": Loop target marker. data: { label }\n` +
+      `    - "note": Sticky note annotation. data: { label, noteText }\n\n` +
+      `Each node: { type, data: { label, ... }, position?: { x, y } }. IDs and positions are auto-generated if omitted.\n` +
+      `Each edge: { source: "node_id", target: "node_id" }. IDs auto-generated.\n` +
+      `A manual_trigger node is always auto-prepended if no trigger node is included.`,
     parameters: {
       type: "object",
       required: ["action"],
       properties: {
-        action: { type: "string", enum: ["list", "get", "create", "list_runs", "trigger"] },
+        action: { type: "string", enum: ["list", "get", "create", "update", "delete", "list_runs", "trigger"] },
         id: { type: "string", description: "Workflow ID" },
         workflow_id: { type: "string", description: "Workflow ID for runs/trigger" },
         name: { type: "string", description: "Workflow name" },
         description: { type: "string" },
-        steps: { type: "array", items: { type: "object" }, description: "Workflow step definitions" },
+        nodes: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "Node ID (auto-generated if omitted)" },
+              type: { type: "string", enum: ["manual_trigger", "webhook_trigger", "schedule_trigger", "agent_step", "formatter_step", "http_request", "task_call", "variable_set", "condition", "human_approval", "delay", "loop", "convergence", "output", "checkpoint", "note"] },
+              position: { type: "object", properties: { x: { type: "number" }, y: { type: "number" } } },
+              data: { type: "object", description: "Node config — always include a 'label' field. See NODE TYPES above for type-specific fields." },
+            },
+          },
+          description: "Workflow graph nodes",
+        },
+        edges: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "Edge ID (auto-generated if omitted)" },
+              source: { type: "string", description: "Source node ID" },
+              target: { type: "string", description: "Target node ID" },
+            },
+          },
+          description: "Connections between nodes. Each edge: { source, target }",
+        },
+        steps: { type: "array", items: { type: "object" }, description: "Legacy V1 step definitions" },
         schedule: { type: "string", description: "Cron expression or schedule" },
         status: { type: "string", enum: ["draft", "active", "paused", "archived"] },
         limit: { type: "number", description: "Max results" },
@@ -1076,6 +1167,43 @@ function registerWorkflowOps(
     },
     async execute(_id: string, params: Record<string, unknown>) {
       const action = params.action as string;
+
+      // Default data for each node type — ensures dashboard renders them properly
+      const NODE_DEFAULTS: Record<string, Record<string, any>> = {
+        manual_trigger: { label: "Execute Trigger" },
+        webhook_trigger: { label: "Webhook Trigger" },
+        schedule_trigger: { label: "Schedule Trigger", cron: "0 9 * * 1-5" },
+        agent_step: { label: "Agent Step", agentId: "", task: "", responseMode: "text", timeoutSec: 120 },
+        formatter_step: { label: "Formatter", template: "" },
+        http_request: { label: "HTTP Request", method: "GET", url: "" },
+        task_call: { label: "Task", agentId: "", taskId: "", taskTitle: "", agentName: "" },
+        variable_set: { label: "Set Variable", variableName: "", variableValue: "" },
+        condition: { label: "Condition", expression: "" },
+        human_approval: { label: "Human Approval", instructions: "" },
+        delay: { label: "Delay", delaySec: 5 },
+        loop: { label: "Loop", loopType: "count", maxIterations: 3 },
+        convergence: { label: "Convergence", mergeStrategy: "wait_all" },
+        output: { label: "Output", outputMode: "return" },
+        checkpoint: { label: "Checkpoint" },
+        note: { label: "Note", noteText: "" },
+      };
+
+      // Valid node types
+      const VALID_TYPES = new Set(Object.keys(NODE_DEFAULTS));
+
+      // Helper: normalize a single node with defaults and auto-ID
+      function normalizeNode(n: any, i: number) {
+        let type = n.type || "agent_step";
+        if (!VALID_TYPES.has(type)) type = "agent_step"; // fallback invalid types
+        const defaults = NODE_DEFAULTS[type] || {};
+        return {
+          id: n.id || `${type}-${Date.now()}-${i}`,
+          type,
+          position: n.position || { x: 250, y: 80 + i * 150 },
+          data: { ...defaults, ...(n.data || {}), label: n.data?.label || defaults.label || type },
+        };
+      }
+
       switch (action) {
         case "list": {
           let q = supabase.from("workflows").select("*").eq("user_id", userId).order("updated_at", { ascending: false });
@@ -1097,6 +1225,54 @@ function registerWorkflowOps(
           const stepsWithIds = ((params.steps as any[]) || []).map((s: any, i: number) => ({
             ...s, id: s.id || `step-${i}`,
           }));
+
+          // Build nodes — normalize provided nodes
+          let rawNodes = (params.nodes as any[]) || [];
+          let finalNodes = rawNodes.map((n, i) => normalizeNode(n, i));
+
+          // Auto-prepend a trigger node if none is present
+          const hasTrigger = finalNodes.some(n => n.type.includes("trigger"));
+          if (!hasTrigger) {
+            const triggerNode = {
+              id: `manual_trigger-${Date.now()}`,
+              type: "manual_trigger",
+              position: { x: 100, y: 200 },
+              data: { label: "Execute Trigger" },
+            };
+            // Shift all other nodes to the right
+            finalNodes = finalNodes.map(n => ({
+              ...n,
+              position: { x: (n.position?.x || 250) + 200, y: n.position?.y || 200 },
+            }));
+            finalNodes.unshift(triggerNode);
+          }
+
+          // Build edges — ensure IDs exist
+          let finalEdges = (params.edges as any[]) || [];
+          finalEdges = finalEdges.map((e: any, i: number) => ({
+            id: e.id || `edge-${Date.now()}-${i}`,
+            source: e.source,
+            target: e.target,
+            ...(e.sourceHandle ? { sourceHandle: e.sourceHandle } : {}),
+            ...(e.targetHandle ? { targetHandle: e.targetHandle } : {}),
+          }));
+
+          // Auto-wire trigger to first non-trigger node if no edge connects from trigger
+          if (hasTrigger === false && finalNodes.length > 1 && finalEdges.length === 0) {
+            // No edges at all — auto-connect trigger → first step
+          } else if (hasTrigger === false && finalNodes.length > 1) {
+            const triggerId = finalNodes[0].id;
+            const firstStepId = finalNodes[1].id;
+            const triggerHasEdge = finalEdges.some(e => e.source === triggerId);
+            if (!triggerHasEdge) {
+              finalEdges.unshift({
+                id: `edge-trigger-${Date.now()}`,
+                source: triggerId,
+                target: firstStepId,
+              });
+            }
+          }
+
           const { data, error } = await supabase.from("workflows").insert({
             id: wfId, user_id: userId,
             name: params.name,
@@ -1104,10 +1280,46 @@ function registerWorkflowOps(
             steps: stepsWithIds,
             schedule: (params.schedule as string) || null,
             status: (params.status as string) || "draft",
-            nodes: [], edges: [], definition_version: 1,
+            nodes: finalNodes,
+            edges: finalEdges,
+            definition_version: 2,
           }).select().single();
           if (error) return err(error.message);
-          return ok({ message: `Workflow "${params.name}" created`, workflow: data });
+          return ok({
+            message: `Workflow "${params.name}" created with ${finalNodes.length} node(s) and ${finalEdges.length} edge(s)`,
+            workflow: data,
+          });
+        }
+        case "update": {
+          const wfId = (params.id || params.workflow_id) as string;
+          if (!wfId) return err("Missing required: id");
+          const upd: Record<string, any> = { updated_at: new Date().toISOString() };
+          for (const f of ["name", "description", "status", "steps", "schedule", "nodes", "edges"]) {
+            if ((params as any)[f] !== undefined) upd[f] = (params as any)[f];
+          }
+          // Normalize nodes using the same defaults as create
+          if (upd.nodes && Array.isArray(upd.nodes)) {
+            upd.nodes = upd.nodes.map((n: any, i: number) => normalizeNode(n, i));
+          }
+          if (upd.edges && Array.isArray(upd.edges)) {
+            upd.edges = upd.edges.map((e: any, i: number) => ({
+              id: e.id || `edge-${Date.now()}-${i}`,
+              source: e.source,
+              target: e.target,
+            }));
+          }
+          const { data, error } = await supabase.from("workflows").update(upd).eq("id", wfId).eq("user_id", userId).select().single();
+          if (error) return err(error.message);
+          return ok({ message: "Workflow updated", workflow: data });
+        }
+        case "delete": {
+          const wfId = (params.id || params.workflow_id) as string;
+          if (!wfId) return err("Missing required: id");
+          // Delete associated runs first
+          await supabase.from("workflow_runs").delete().eq("workflow_id", wfId);
+          const { error } = await supabase.from("workflows").delete().eq("id", wfId).eq("user_id", userId);
+          if (error) return err(error.message);
+          return ok({ message: "Workflow and associated runs deleted", ok: true });
         }
         case "list_runs": {
           const wfId = (params.workflow_id || params.id) as string;
@@ -1325,10 +1537,10 @@ function registerPromptOps(
     description:
       `Manage system prompt instruction chunks. These are the building blocks of agent behavior.\n\n` +
       `Actions:\n` +
-      `- "list": List all prompt chunks. Optional: agent_id\n` +
+      `- "list": List all prompt chunks\n` +
       `- "get": Get a specific chunk. Required: id\n` +
-      `- "create": Create a new chunk. Required: label, content. Optional: agent_id, sort_order\n` +
-      `- "update": Update a chunk. Required: id. Optional: label, content, enabled, sort_order\n` +
+      `- "create": Create a new chunk. Required: name, content. Optional: color (hex), category\n` +
+      `- "update": Update a chunk. Required: id. Optional: name, content, color, category, order\n` +
       `- "delete": Delete a chunk. Required: id`,
     parameters: {
       type: "object",
@@ -1336,59 +1548,69 @@ function registerPromptOps(
       properties: {
         action: { type: "string", enum: ["list", "get", "create", "update", "delete"] },
         id: { type: "string", description: "Chunk ID" },
-        label: { type: "string", description: "Chunk label/name" },
-        content: { type: "string", description: "Prompt chunk content" },
-        agent_id: { type: "string", description: "Associate with specific agent" },
-        enabled: { type: "boolean", description: "Whether chunk is active" },
-        sort_order: { type: "number", description: "Display order" },
+        name: { type: "string", description: "Chunk name/label (max 30 chars)" },
+        content: { type: "string", description: "Prompt chunk content text" },
+        color: { type: "string", description: "Hex color for display (e.g. #6B7280)" },
+        category: { type: "string", description: "Category grouping (e.g. Personality, Instructions)" },
+        order: { type: "number", description: "Display order (0-based)" },
       },
     },
     async execute(_id: string, params: Record<string, unknown>) {
       const action = params.action as string;
       switch (action) {
         case "list": {
-          let q = supabase.from("prompt_chunks").select("*").eq("user_id", userId).order("sort_order");
-          if (params.agent_id) q = q.eq("agent_id", params.agent_id as string);
-          const { data, error } = await q;
+          const { data, error } = await supabase.from("prompt_chunks").select("*").eq("user_id", userId).order("order", { ascending: true });
           if (error) return err(error.message);
           return ok({ chunks: data || [], count: (data || []).length });
         }
         case "get": {
           if (!params.id) return err("Missing required: id");
-          const { data, error } = await supabase.from("prompt_chunks").select("*").eq("id", params.id).single();
+          const { data, error } = await supabase.from("prompt_chunks").select("*").eq("id", params.id).eq("user_id", userId).single();
           if (error) return err(error.message);
           return ok({ chunk: data });
         }
         case "create": {
-          if (!params.label || !params.content) return err("Missing required: label, content");
+          if (!params.name || !params.content) return err("Missing required: name, content");
+          const chunkName = String(params.name).slice(0, 30);
           const chunkId = crypto.randomUUID();
+
+          // Get current max order to append at end
+          const { data: existing } = await supabase
+            .from("prompt_chunks")
+            .select("order")
+            .eq("user_id", userId);
+          const maxOrder = existing && existing.length > 0
+            ? Math.max(...existing.map((c: any) => c.order ?? 0))
+            : -1;
+
           const { data, error } = await supabase.from("prompt_chunks").insert({
             id: chunkId,
             user_id: userId,
-            label: params.label,
+            name: chunkName,
             content: params.content,
-            agent_id: (params.agent_id as string) || null,
-            enabled: true,
-            sort_order: (params.sort_order as number) || 0,
+            color: (params.color as string) || "#6B7280",
+            category: (params.category as string) || "Uncategorized",
+            order: (params.order as number) ?? maxOrder + 1,
           }).select().single();
           if (error) return err(error.message);
-          api.logger?.info?.(`[ofiere] Prompt chunk created: "${params.label}" by agent`);
-          return ok({ message: `Prompt chunk "${params.label}" created`, chunk: data });
+          api.logger?.info?.(`[ofiere] Prompt chunk created: "${chunkName}" by agent`);
+          return ok({ message: `Prompt chunk "${chunkName}" created`, chunk: data });
         }
         case "update": {
           if (!params.id) return err("Missing required: id");
           const upd: Record<string, any> = { updated_at: new Date().toISOString() };
-          for (const f of ["label", "content", "enabled", "sort_order", "agent_id"]) {
+          for (const f of ["name", "content", "color", "category", "order"]) {
             if ((params as any)[f] !== undefined) upd[f] = (params as any)[f];
           }
-          const { error } = await supabase.from("prompt_chunks").update(upd).eq("id", params.id);
+          if (upd.name) upd.name = String(upd.name).slice(0, 30);
+          const { data, error } = await supabase.from("prompt_chunks").update(upd).eq("id", params.id).eq("user_id", userId).select().single();
           if (error) return err(error.message);
           api.logger?.info?.(`[ofiere] Prompt chunk ${params.id} updated by agent`);
-          return ok({ message: "Prompt chunk updated", ok: true });
+          return ok({ message: "Prompt chunk updated", chunk: data });
         }
         case "delete": {
           if (!params.id) return err("Missing required: id");
-          const { error } = await supabase.from("prompt_chunks").delete().eq("id", params.id);
+          const { error } = await supabase.from("prompt_chunks").delete().eq("id", params.id).eq("user_id", userId);
           if (error) return err(error.message);
           api.logger?.info?.(`[ofiere] Prompt chunk ${params.id} deleted by agent`);
           return ok({ message: "Prompt chunk deleted", ok: true });
