@@ -72,7 +72,7 @@ function getPopoverPosition(snap: SnapPosition): React.CSSProperties {
 }
 
 export function PinnedChatPopover() {
-    const { pinnedChat, isPopoverOpen, setPopoverOpen, snapPosition, unpinChat, incrementUnread } = usePinnedChatStore();
+    const { pinnedChat, isPopoverOpen, setPopoverOpen, snapPosition, unpinChat, incrementUnread, clearPopoverHistory } = usePinnedChatStore();
     const { integratedAgents, dispatchMessage } = useChatRouter();
 
     // Close animation state
@@ -110,19 +110,15 @@ export function PinnedChatPopover() {
         setPopoverOpen(false);
     }, [setPopoverOpen]);
 
-    const handleClearHistory = useCallback(async () => {
+    const handleClearHistory = useCallback(() => {
         if (!pinnedChat) return;
-        // Clear local state only — this does NOT affect the original chat page
+        // Clear local UI state only — DB messages (chat page) are untouched
         setDbMessages([]);
         setLocalMessages([]);
         persistedMsgIds.current.clear();
-        // Also clear persisted messages for this conversation in the popover DB table
-        try {
-            await fetch(`/api/chat/messages?conversation_id=${encodeURIComponent(pinnedChat.conversationId)}`, {
-                method: 'DELETE',
-            });
-        } catch {}
-    }, [pinnedChat]);
+        // Set clearedAt timestamp so reopening the popup filters old messages
+        clearPopoverHistory();
+    }, [pinnedChat, clearPopoverHistory]);
 
     // Local message state
     const [dbMessages, setDbMessages] = useState<any[]>([]);
@@ -302,8 +298,17 @@ export function PinnedChatPopover() {
             return ta - tb;
         });
 
+        // Filter out messages before clearedAt (popup-only clear)
+        if (pinnedChat?.clearedAt) {
+            const cutoff = new Date(pinnedChat.clearedAt).getTime();
+            return merged.filter((m: any) => {
+                const t = m.created_at ? new Date(m.created_at).getTime() : (m._sortTime || 0);
+                return t > cutoff;
+            });
+        }
+
         return merged;
-    }, [dbMessages, localMessages]);
+    }, [dbMessages, localMessages, pinnedChat?.clearedAt]);
 
     // Auto-scroll on new messages
     useEffect(() => {

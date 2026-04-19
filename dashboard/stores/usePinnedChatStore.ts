@@ -12,6 +12,7 @@ export interface PinnedChat {
     conversationId: string;
     conversationTitle?: string;
     mode: 'agent' | 'companion';
+    clearedAt?: string;  // ISO timestamp — popup hides messages before this
 }
 
 interface PinnedChatState {
@@ -27,6 +28,7 @@ interface PinnedChatState {
     setPopoverOpen: (open: boolean) => void;
     incrementUnread: () => void;
     clearUnread: () => void;
+    clearPopoverHistory: () => void;
 }
 
 const STORAGE_KEY = 'ofiere_pinned_chat_position';
@@ -86,5 +88,13 @@ export const usePinnedChatStore = create<PinnedChatState>((set, get) => ({
 
     clearUnread: () => {
         set({ unreadCount: 0 });
+    },
+
+    clearPopoverHistory: () => {
+        const current = get().pinnedChat;
+        if (!current) return;
+        const updated = { ...current, clearedAt: new Date().toISOString() };
+        localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(updated));
+        set({ pinnedChat: updated });
     },
 }));

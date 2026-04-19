@@ -147,51 +147,15 @@ export async function POST(request: Request) {
 
 /**
  * DELETE /api/chat/messages
- * Two modes:
- * 1) Full clear: DELETE /api/chat/messages?conversation_id={id}
- *    Deletes ALL messages in the conversation (used by pinned chat "clear" button).
- * 2) Truncate: Body { conversation_id, from_message_id }
- *    Deletes from a specific message onward (inclusive).
+ * Truncate messages from a given message onward (inclusive).
+ * Body: { conversation_id, from_message_id }
+ * Deletes the message with from_message_id and all messages created after it.
  */
 export async function DELETE(request: Request) {
     const userId = await getAuthUserId();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        const { searchParams } = new URL(request.url);
-        const qsConversationId = searchParams.get('conversation_id');
-
-        // ── Mode 1: Full clear via query string ──
-        if (qsConversationId) {
-            // Verify conversation belongs to user
-            const { data: convo, error: convoErr } = await db
-                .from('conversations')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('id', qsConversationId)
-                .single();
-
-            if (convoErr || !convo) {
-                return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
-            }
-
-            const { error: deleteErr, count } = await db
-                .from('conversation_messages')
-                .delete({ count: 'exact' })
-                .eq('conversation_id', qsConversationId);
-
-            if (deleteErr) throw new Error(deleteErr.message);
-
-            // Reset message count
-            await db
-                .from('conversations')
-                .update({ updated_at: new Date().toISOString(), message_count: 0 })
-                .eq('id', qsConversationId);
-
-            return NextResponse.json({ deleted: count || 0, mode: 'full_clear' });
-        }
-
-        // ── Mode 2: Truncate via body ──
         const body = await request.json();
         const { conversation_id, from_message_id } = body;
 
@@ -249,9 +213,10 @@ export async function DELETE(request: Request) {
             })
             .eq('id', conversation_id);
 
-        return NextResponse.json({ deleted: count || 0, mode: 'truncate' });
+        return NextResponse.json({ deleted: count || 0 });
     } catch (error: unknown) {
         console.error('[chat/messages DELETE]', error);
         return NextResponse.json({ error: 'Failed to delete messages' }, { status: 500 });
     }
 }
+
