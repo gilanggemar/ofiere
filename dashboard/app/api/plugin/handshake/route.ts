@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Server missing Supabase credentials' }, { status: 500 });
     }
 
-    const baseUrl = 'https://raw.githubusercontent.com/gilanggemar/Ofiere/main/ofiere-openclaw-plugin';
+    const baseUrl = 'https://raw.githubusercontent.com/gilanggemar/ofiere/main/ofiere-openclaw-plugin';
 
     // ── Install Commands ──
     const installArgs = `--supabase-url "${SUPABASE_URL}" --service-key "${SERVICE_ROLE_KEY}" --user-id "${userId}"`;
