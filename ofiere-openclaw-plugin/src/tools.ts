@@ -1705,6 +1705,22 @@ function registerConstellationOps(
     fs.existsSync("/data/.openclaw") ? "/data/.openclaw"
     : path.join(process.env.HOME || process.env.USERPROFILE || "/root", ".openclaw");
 
+  // ── Resolve the `openclaw` CLI binary path ──
+  // Inside Docker, the binary is NOT in PATH — we need the absolute path.
+  const OPENCLAW_CLI = (() => {
+    const candidates = [
+      "/data/.npm-global/bin/openclaw",        // Docker container (npm global)
+      "/usr/local/bin/openclaw",               // Standard global install
+      path.join(process.env.HOME || "/root", ".npm-global/bin/openclaw"),
+      path.join(process.env.HOME || "/root", "node_modules/.bin/openclaw"),
+    ];
+    for (const c of candidates) {
+      try { if (fs.existsSync(c)) return c; } catch {}
+    }
+    // Last resort: hope it's in PATH (works for native installs)
+    return "openclaw";
+  })();
+
   // ── Helpers ──
 
   function getWorkspacePath(agentName: string): string {
@@ -1952,7 +1968,7 @@ function registerConstellationOps(
   function tryRegisterAgent(agentName: string): { success: boolean; message: string } {
     const wsPath = getWorkspacePath(agentName);
     try {
-      const cmd = `openclaw agents add ${agentName} --workspace ${wsPath} --non-interactive 2>&1`;
+      const cmd = `${OPENCLAW_CLI} agents add ${agentName} --workspace ${wsPath} --non-interactive 2>&1`;
       const output = execSync(cmd, { encoding: "utf8", timeout: 15000 });
       api.logger?.info?.(`[ofiere] Auto-registered agent "${agentName}": ${output.slice(0, 200)}`);
       return { success: true, message: `Agent "${agentName}" registered in OpenClaw` };
@@ -1963,7 +1979,7 @@ function registerConstellationOps(
         return { success: true, message: `Agent "${agentName}" was already registered` };
       }
       api.logger?.warn?.(`[ofiere] Auto-registration failed for "${agentName}": ${msg.slice(0, 300)}`);
-      return { success: false, message: `Auto-registration failed. Manual step: openclaw agents add ${agentName} --workspace ${wsPath}` };
+      return { success: false, message: `Auto-registration failed: ${msg.slice(0, 200)}. CLI path: ${OPENCLAW_CLI}` };
     }
   }
 
@@ -2282,11 +2298,12 @@ function registerConstellationOps(
           // Unregister from OpenClaw (best-effort)
           let unregResult = { success: false, message: "" };
           try {
-            const cmd = `openclaw agents delete ${agentName} --force 2>&1`;
+            const cmd = `${OPENCLAW_CLI} agents delete ${agentName} --force 2>&1`;
             const output = execSync(cmd, { encoding: "utf8", timeout: 15000 });
             unregResult = { success: true, message: output.slice(0, 200) };
           } catch (e: any) {
-            unregResult = { success: false, message: `Manual step needed: openclaw agents delete ${agentName} --force` };
+            const emsg = e?.stderr || e?.stdout || String(e);
+            unregResult = { success: false, message: `Unregistration failed: ${emsg.slice(0, 200)}. CLI path: ${OPENCLAW_CLI}` };
           }
 
           api.logger?.info?.(`[ofiere] Deleted agent "${agentName}" — ${deletedFiles.length} files removed`);
