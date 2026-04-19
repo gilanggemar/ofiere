@@ -1973,13 +1973,21 @@ function registerConstellationOps(
       api.logger?.info?.(`[ofiere] Auto-registered agent "${agentName}": ${output.slice(0, 200)}`);
       return { success: true, message: `Agent "${agentName}" registered in OpenClaw` };
     } catch (e: any) {
-      const msg = e?.stderr || e?.stdout || String(e);
-      // Check if already registered
-      if (msg.includes("already exists") || msg.includes("duplicate")) {
+      // OpenClaw CLI may exit non-zero due to config warnings even when the
+      // actual operation succeeded. Check the combined stdout+stderr for
+      // success indicators before reporting failure.
+      const combined = [e?.stdout, e?.stderr, e?.output?.join?.("\n"), String(e)]
+        .filter(Boolean).join("\n");
+      // Success indicators: JSON output with agentId, or "already exists"
+      if (combined.includes(`"agentId"`) || combined.includes(`"${agentName}"`)) {
+        api.logger?.info?.(`[ofiere] Auto-registered agent "${agentName}" (exit non-zero but output confirms success)`);
+        return { success: true, message: `Agent "${agentName}" registered in OpenClaw` };
+      }
+      if (combined.includes("already exists") || combined.includes("duplicate")) {
         return { success: true, message: `Agent "${agentName}" was already registered` };
       }
-      api.logger?.warn?.(`[ofiere] Auto-registration failed for "${agentName}": ${msg.slice(0, 300)}`);
-      return { success: false, message: `Auto-registration failed: ${msg.slice(0, 200)}. CLI path: ${OPENCLAW_CLI}` };
+      api.logger?.warn?.(`[ofiere] Auto-registration failed for "${agentName}": ${combined.slice(0, 300)}`);
+      return { success: false, message: `Auto-registration failed: ${combined.slice(0, 200)}` };
     }
   }
 
@@ -2300,10 +2308,17 @@ function registerConstellationOps(
           try {
             const cmd = `${OPENCLAW_CLI} agents delete ${agentName} --force 2>&1`;
             const output = execSync(cmd, { encoding: "utf8", timeout: 15000 });
-            unregResult = { success: true, message: output.slice(0, 200) };
+            unregResult = { success: true, message: `Agent "${agentName}" unregistered from OpenClaw` };
           } catch (e: any) {
-            const emsg = e?.stderr || e?.stdout || String(e);
-            unregResult = { success: false, message: `Unregistration failed: ${emsg.slice(0, 200)}. CLI path: ${OPENCLAW_CLI}` };
+            // OpenClaw CLI may exit non-zero due to config warnings even when
+            // the delete operation succeeded. Check output for success indicators.
+            const combined = [e?.stdout, e?.stderr, e?.output?.join?.("\n"), String(e)]
+              .filter(Boolean).join("\n");
+            if (combined.includes(`"agentId"`) || combined.includes(`"${agentName}"`)) {
+              unregResult = { success: true, message: `Agent "${agentName}" unregistered from OpenClaw` };
+            } else {
+              unregResult = { success: false, message: `Unregistration may have failed: ${combined.slice(0, 200)}` };
+            }
           }
 
           api.logger?.info?.(`[ofiere] Deleted agent "${agentName}" — ${deletedFiles.length} files removed`);
