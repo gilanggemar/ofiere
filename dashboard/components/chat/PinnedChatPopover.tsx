@@ -12,7 +12,7 @@ import { MessageRenderer } from '@/components/chat/MessageRenderer';
 import { parseOpenClawToolCalls } from '@/lib/openclawToolParser';
 import { tryParseAgentZeroJSON, AgentZeroMessageCard } from '@/components/chat/AgentZeroMessageCard';
 import {
-    X as XIcon, Send, Minimize2, MessageSquare, Loader2, ChevronDown
+    X as XIcon, Send, Minimize2, MessageSquare, Loader2, ChevronDown, Trash2
 } from 'lucide-react';
 
 /* ─── Simplified message content renderer ─── */
@@ -110,6 +110,20 @@ export function PinnedChatPopover() {
         setPopoverOpen(false);
     }, [setPopoverOpen]);
 
+    const handleClearHistory = useCallback(async () => {
+        if (!pinnedChat) return;
+        // Clear local state only — this does NOT affect the original chat page
+        setDbMessages([]);
+        setLocalMessages([]);
+        persistedMsgIds.current.clear();
+        // Also clear persisted messages for this conversation in the popover DB table
+        try {
+            await fetch(`/api/chat/messages?conversation_id=${encodeURIComponent(pinnedChat.conversationId)}`, {
+                method: 'DELETE',
+            });
+        } catch {}
+    }, [pinnedChat]);
+
     // Local message state
     const [dbMessages, setDbMessages] = useState<any[]>([]);
     const [localMessages, setLocalMessages] = useState<any[]>([]);
@@ -155,6 +169,9 @@ export function PinnedChatPopover() {
                         // Update content if changed
                         if (updated[existingIdx].content !== socketMsg.content ||
                             updated[existingIdx].streaming !== socketMsg.streaming) {
+                            // Detect stream completion: was streaming, now done
+                            const wasStreaming = updated[existingIdx].streaming;
+                            const nowDone = !socketMsg.streaming;
                             updated[existingIdx] = {
                                 ...updated[existingIdx],
                                 content: socketMsg.content,
@@ -162,6 +179,11 @@ export function PinnedChatPopover() {
                                 tool_calls: socketMsg.tool_calls,
                             };
                             changed = true;
+
+                            // Increment unread when message finishes streaming
+                            if (wasStreaming && nowDone && socketMsg.content) {
+                                incrementUnread();
+                            }
                         }
                     } else {
                         updated.push({
@@ -170,10 +192,8 @@ export function PinnedChatPopover() {
                         });
                         changed = true;
 
-                        // Increment unread if popover is closed
-                        if (!socketMsg.streaming) {
-                            incrementUnread();
-                        }
+                        // Increment unread for any new assistant message
+                        incrementUnread();
                     }
                 }
 
@@ -444,8 +464,10 @@ export function PinnedChatPopover() {
                         }),
                     }).catch(() => {});
 
-                    // Increment unread if popover was closed during streaming
-                    incrementUnread();
+                    // Increment unread only if popover is closed
+                    if (!usePinnedChatStore.getState().isPopoverOpen) {
+                        incrementUnread();
+                    }
                 }
             } catch (err: any) {
                 setLocalMessages(prev =>
@@ -607,6 +629,33 @@ export function PinnedChatPopover() {
                     title="Minimize"
                 >
                     <Minimize2 style={{ width: 12, height: 12 }} />
+                </button>
+                <button
+                    onClick={handleClearHistory}
+                    style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 4,
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--muted-foreground)',
+                        transition: 'background 0.15s, color 0.15s',
+                    }}
+                    onMouseEnter={e => {
+                        (e.target as HTMLElement).style.background = 'rgba(251,191,36,0.12)';
+                        (e.target as HTMLElement).style.color = '#fbbf24';
+                    }}
+                    onMouseLeave={e => {
+                        (e.target as HTMLElement).style.background = 'transparent';
+                        (e.target as HTMLElement).style.color = 'var(--muted-foreground)';
+                    }}
+                    title="Clear chat history"
+                >
+                    <Trash2 style={{ width: 12, height: 12 }} />
                 </button>
                 <button
                     onClick={() => { setPopoverOpen(false); unpinChat(); }}
